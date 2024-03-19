@@ -6,10 +6,10 @@ import (
 
 // 读取配置文件config
 type Config struct {
-	Mysql MysqlConfig
+	Mysql MysqlTable
 }
 
-type MysqlConfig struct {
+type MysqlTable struct {
 	Host     string
 	User     string
 	Password string
