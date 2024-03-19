@@ -6,14 +6,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type AuthController struct {
-	svc *services.AuthService
+type Auth struct {
+	svc *services.Auth
 }
 
-func NewController(svc *services.AuthService) *AuthController {
-	return &AuthController{svc: svc}
+func NewController(svc *services.Auth) *Auth {
+	return &Auth{svc: svc}
 }
 
-func (ctrl *AuthController) SignUp(ctx *gin.Context) {
+func (ctrl *Auth) SignUp(ctx *gin.Context) {
 	ctrl.svc.CreateToken()
 }

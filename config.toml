@@ -1,5 +1,7 @@
-[module1]
-item = "example"
+[mysql]
+host = "localhost:3306"
+user = "root"
+password = "123.com"
 
-[module2]
-item = 123456
+[gin]
+port = "8080"
