@@ -7,9 +7,6 @@ import (
 )
 
 type Database struct {
-	host     string
-	user     string
-	password string
 	engine   *xorm.Engine
 }
 
@@ -19,9 +16,6 @@ func NewDatabase(host string, user string, password string) *Database {
 		log.Fatal(err)
 	}
 	m := &Database{
-		host:     host,
-		user:     user,
-		password: password,
 		engine:   engine,
 	}
 	return m
