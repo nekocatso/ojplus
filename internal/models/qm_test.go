@@ -265,14 +265,13 @@ func TestMessageQueue_GetMessage(t *testing.T) {
 	if err != nil {
 		log.Fatalf("Failed to declare a queue: %s", err)
 	}
-	m := make(chan []byte)
-	c := make(chan bool)
+
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
 		wantErr bool
-	}{{name: "success", fields: fields{Channel: ch, Queue: q}, args: args{message: m, control: c}, wantErr: false}} // TODO: Add test cases.
+	}{{name: "success", fields: fields{Channel: ch, Queue: q}, args: args{}, wantErr: false}} // TODO: Add test cases.
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -280,10 +279,9 @@ func TestMessageQueue_GetMessage(t *testing.T) {
 				Channel: tt.fields.Channel,
 				Queue:   tt.fields.Queue,
 			}
-			if _, err := q.GetMessage(tt.args.control, tt.args.message); (err != nil) != tt.wantErr {
+			if _, err := q.GetMessage(); (err != nil) != tt.wantErr {
 				t.Errorf("MessageQueue.GetMessage() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			close(c)
 
 		})
 	}
