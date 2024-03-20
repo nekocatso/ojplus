@@ -4,19 +4,22 @@ import (
 	"github.com/spf13/viper"
 )
 
-// 读取配置文件config
-type Config struct {
-	Mysql MysqlTable
+type GlobalConfig struct {
+	Mysql *MysqlConfig
+	Gin   *GinConfig
 }
 
-type MysqlTable struct {
+type MysqlConfig struct {
 	Host     string
 	User     string
 	Password string
 }
+type GinConfig struct {
+	Port string
+}
 
-func NewConfig(configPath, configName string) (*Config, error) {
-	var config Config
+func NewConfig(configPath, configName string) (*GlobalConfig, error) {
+	var config GlobalConfig
 	viper.SetConfigName(configName)
 	viper.AddConfigPath(configPath)
 	err := viper.ReadInConfig()

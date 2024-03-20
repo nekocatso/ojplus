@@ -1,6 +1,8 @@
 package models
 
 import (
+	"Alarm/internal/config"
+
 	"xorm.io/xorm"
 )
 
@@ -11,15 +13,15 @@ type Database struct {
 	Engine   *xorm.Engine
 }
 
-func NewDatabase(host string, user string, password string) (*Database, error) {
+func NewDatabase(cfg *config.MysqlConfig) (*Database, error) {
 	engine, err := xorm.NewEngine("mysql", "")
 	if err != nil {
 		return nil, err
 	}
 	m := &Database{
-		host:     host,
-		user:     user,
-		password: password,
+		host:     cfg.Host,
+		user:     cfg.User,
+		password: cfg.Password,
 		Engine:   engine,
 	}
 	return m, nil
