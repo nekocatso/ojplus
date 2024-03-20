@@ -1,20 +1,17 @@
 package services
 
 import (
-	"Alarm/example/models"
-	"fmt"
+	"Alarm/internal/web/models"
 )
 
 type Auth struct {
 	db *models.Database
 }
 
-func NewAuthService(db *models.Database) *Auth {
+func NewAuth(db *models.Database) *Auth {
 	return &Auth{db: db}
 }
 
 func (svc *Auth) CreateToken() error {
-	var user *models.User
-	fmt.Println(user)
 	return nil
 }
