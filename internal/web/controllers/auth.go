@@ -7,21 +7,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Auth struct {
-	svc *services.Auth
+type AuthController struct {
+	svc *services.AuthService
 }
 
-func NewAuth(db *models.Database) *Auth {
+func NewAuthController(db *models.Database) *AuthController {
 	svc := services.NewAuth(db)
-	return &Auth{svc: svc}
+	return &AuthController{svc: svc}
 }
 
-func (ctrl *Auth) Login(ctx *gin.Context) {
+func (ctrl *AuthController) Login(ctx *gin.Context) {
 	ctrl.svc.CreateToken()
 }
-func (ctrl *Auth) Logout(ctx *gin.Context) {
-
-}
-func (ctrl *Auth) Register(ctx *gin.Context) {
+func (ctrl *AuthController) Logout(ctx *gin.Context) {
 
 }

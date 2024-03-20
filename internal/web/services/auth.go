@@ -4,14 +4,14 @@ import (
 	"Alarm/internal/web/models"
 )
 
-type Auth struct {
+type AuthService struct {
 	db *models.Database
 }
 
-func NewAuth(db *models.Database) *Auth {
-	return &Auth{db: db}
+func NewAuth(db *models.Database) *AuthService {
+	return &AuthService{db: db}
 }
 
-func (svc *Auth) CreateToken() error {
+func (svc *AuthService) CreateToken() error {
 	return nil
 }

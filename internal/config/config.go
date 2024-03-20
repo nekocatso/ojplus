@@ -6,12 +6,16 @@ import (
 
 type GlobalConfig struct {
 	Mysql *MysqlConfig
+	Gin   *GinConfig
 }
 
 type MysqlConfig struct {
 	Host     string
 	User     string
 	Password string
+}
+type GinConfig struct {
+	Port string
 }
 
 func NewConfig(configPath, configName string) (*GlobalConfig, error) {

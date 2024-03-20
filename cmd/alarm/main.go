@@ -15,15 +15,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Database Init
+	// Mysql Init
 	db, err := models.NewDatabase(config.Mysql)
 	if err != nil {
 		log.Fatal(err)
 	}
-	router := routers.NewRouter()
 
-	// Auth Module
-	authController := controllers.NewAuth(db)
-	router.AuthInit(authController)
-	router.Run()
+	// Gin routers Init
+	router := routers.NewRouter()
+	router.AccountCtrl(controllers.NewAccountController(db))
+	router.AuthCtrl(controllers.NewAuthController(db))
+	router.Run(config.Gin.Port)
 }

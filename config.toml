@@ -4,4 +4,4 @@ user = "root"
 password = "123.com"
 
 [gin]
-port = "8080"
+port = ":8080"
