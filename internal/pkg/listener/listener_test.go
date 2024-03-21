@@ -1,7 +1,7 @@
-package services
+package listener
 
 import (
-	"Alarm/internal/models"
+	"Alarm/internal/pkg/messagequeue"
 	"testing"
 
 	"github.com/streadway/amqp"
@@ -48,8 +48,8 @@ func TestNewListener(t *testing.T) {
 
 func TestListener_Logout(t *testing.T) {
 	type fields struct {
-		Connection *models.Connection
-		Queue      *models.MessageQueue
+		Connection *messagequeue.Connection
+		Queue      *messagequeue.MessageQueue
 		Ans        int
 		Control    chan bool
 		Messages   chan []byte
@@ -84,8 +84,8 @@ func TestListener_Logout(t *testing.T) {
 
 func TestListener_Stop(t *testing.T) {
 	type fields struct {
-		Connection *models.Connection
-		Queue      *models.MessageQueue
+		Connection *messagequeue.Connection
+		Queue      *messagequeue.MessageQueue
 		Ans        int
 		Control    chan bool
 		Messages   chan []byte
@@ -116,8 +116,8 @@ func TestListener_Stop(t *testing.T) {
 
 func TestListener_Listening(t *testing.T) {
 	type fields struct {
-		Connection *models.Connection
-		Queue      *models.MessageQueue
+		Connection *messagequeue.Connection
+		Queue      *messagequeue.MessageQueue
 		Ans        int
 		Control    chan bool
 		Messages   chan []byte

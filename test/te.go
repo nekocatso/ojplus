@@ -1,8 +1,8 @@
 package main
 
 import (
-	"Alarm/internal/models"
-	"Alarm/internal/services"
+	"Alarm/internal/pkg/listener"
+	"Alarm/internal/pkg/messagequeue"
 	"fmt"
 	"runtime"
 	"time"
@@ -16,7 +16,7 @@ func f(n int, ch chan bool) bool {
 			return false
 		}
 	}
-	return false
+
 }
 func main() {
 	ch := make(chan bool)
@@ -34,10 +34,10 @@ func main1() {
 }
 
 func main2() {
-	L, _ := services.NewListener("amqp://user:mkjsix7@172.16.0.15:5672/")
+	L, _ := listener.NewListener("amqp://user:mkjsix7@172.16.0.15:5672/")
 	defer L.Logout()
 	L.Listening()
-	c, _ := models.NewConnection("amqp://user:mkjsix7@172.16.0.15:5672/")
+	c, _ := messagequeue.NewConnection("amqp://user:mkjsix7@172.16.0.15:5672/")
 	q, _ := c.MessageQueueDeclare("hello", // 队列名称
 		false, // 是否持久化
 		false, // 是否自动删除

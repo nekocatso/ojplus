@@ -1,7 +1,7 @@
-package services
+package listener
 
 import (
-	"Alarm/internal/models"
+	"Alarm/internal/pkg/messagequeue"
 	"errors"
 	"fmt"
 
@@ -9,8 +9,8 @@ import (
 )
 
 type Listener struct {
-	Connection *models.Connection
-	Queue      *models.MessageQueue
+	Connection *messagequeue.Connection
+	Queue      *messagequeue.MessageQueue
 	Ans        int
 	Control    chan bool
 	Messages   chan []byte
@@ -19,7 +19,7 @@ type Listener struct {
 func NewListener(url string) (*Listener, error) {
 	var L Listener
 	var err error
-	L.Connection, err = models.NewConnection(url)
+	L.Connection, err = messagequeue.NewConnection(url)
 
 	if err != nil {
 		return &Listener{}, err
