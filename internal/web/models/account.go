@@ -4,9 +4,31 @@ import "time"
 
 type User struct {
 	ID        int       `xorm:"'id' pk autoincr"`
-	Name      string    `xorm:"'name' notnull"`
-	Email     string    `xorm:"'email' notnull unique"`
-	Password  string    `xorm:"'password' notnull"`
-	CreatedAt time.Time `xorm:"'created_at' created"`
-	UpdatedAt time.Time `xorm:"'updated_at' updated"`
+	Username  string    `xorm:"notnull"`
+	Name      string    `xorm:"notnull"`
+	Password  string    `xorm:"notnull"`
+	Email     string    `xorm:"null"`
+	Phone     string    `xorm:"null"`
+	CreatedAt time.Time `xorm:"created"`
+	UpdatedAt time.Time `xorm:"updated"`
+	DeletedAt time.Time `xorm:"deleted"`
+	Version   int       `xorm:"version"`
+}
+
+func (u *User) GetInfo() *UserInfo {
+	return &UserInfo{
+		ID:        u.ID,
+		Username:  u.Username,
+		Name:      u.Name,
+		Email:     u.Email,
+		Telephone: u.Phone,
+	}
+}
+
+type UserInfo struct {
+	ID        int
+	Username  string
+	Name      string
+	Email     string
+	Telephone string
 }

@@ -4,22 +4,23 @@ import (
 	"github.com/spf13/viper"
 )
 
-type GlobalConfig struct {
+type GinConfig struct {
 	Mysql *MysqlConfig
-	Gin   *GinConfig
+	Redis *RedisConfig
+	Port  string
 }
 
 type MysqlConfig struct {
-	Host     string
-	User     string
-	Password string
+	DSN string
 }
-type GinConfig struct {
-	Port string
+type RedisConfig struct {
+	Addr     string
+	Password string
+	DB       int
 }
 
-func NewConfig(configPath, configName string) (*GlobalConfig, error) {
-	var config GlobalConfig
+func NewConfig(configPath, configName string) (*GinConfig, error) {
+	var config GinConfig
 	viper.SetConfigName(configName)
 	viper.AddConfigPath(configPath)
 	err := viper.ReadInConfig()

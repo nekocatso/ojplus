@@ -7,22 +7,23 @@ import (
 )
 
 type Database struct {
-	host     string
-	user     string
-	password string
-	Engine   *xorm.Engine
+	Engine *xorm.Engine
 }
 
 func NewDatabase(cfg *config.MysqlConfig) (*Database, error) {
-	engine, err := xorm.NewEngine("mysql", "")
+	engine, err := xorm.NewEngine("mysql", cfg.DSN)
 	if err != nil {
 		return nil, err
 	}
 	m := &Database{
-		host:     cfg.Host,
-		user:     cfg.User,
-		password: cfg.Password,
-		Engine:   engine,
+		Engine: engine,
+	}
+	err = engine.Sync(
+		new(User),
+		new(Token),
+	)
+	if err != nil {
+		return nil, err
 	}
 	return m, nil
 }

@@ -20,13 +20,16 @@ func (r *Router) Run(addr ...string) {
 	r.engine.Run(addr...)
 }
 
-func (r *Router) AccountCtrl(ctrl *controllers.AccountController) {
+func (r *Router) AccountCtrl(ctrl *controllers.Account) {
 	group := r.engine.Group("")
 	{
-		group.POST("/register", ctrl.Register)
+		group.POST("/register", ctrl.CreateUser)
+		group.GET("/users", ctrl.AllUser)
+		group.GET("/users/:id", ctrl.GetUserByID)
+		group.PATCH("/users/:id", ctrl.UpdateUserByID)
 	}
 }
-func (r *Router) AuthCtrl(ctrl *controllers.AuthController) {
+func (r *Router) AuthCtrl(ctrl *controllers.Auth) {
 	group := r.engine.Group("")
 	{
 		group.POST("/login", ctrl.Login)

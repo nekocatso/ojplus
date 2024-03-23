@@ -6,6 +6,8 @@ import (
 	"Alarm/internal/web/models"
 	"Alarm/internal/web/routers"
 	"log"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func main() {
@@ -20,10 +22,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	cache, err := models.NewCache(config.Redis)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Gin routers Init
 	router := routers.NewRouter()
-	router.AccountCtrl(controllers.NewAccountController(db))
-	router.AuthCtrl(controllers.NewAuthController(db))
-	router.Run(config.Gin.Port)
+	router.AccountCtrl(controllers.NewAccountController(db, cache))
+	router.AuthCtrl(controllers.NewAuthController(db, cache))
+	router.Run(config.Port)
 }
