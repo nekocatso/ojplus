@@ -10,7 +10,7 @@ type Database struct {
 	Engine *xorm.Engine
 }
 
-func NewDatabase(cfg *config.MysqlConfig) (*Database, error) {
+func NewDatabase(cfg *config.Mysql) (*Database, error) {
 	engine, err := xorm.NewEngine("mysql", cfg.DSN)
 	if err != nil {
 		return nil, err

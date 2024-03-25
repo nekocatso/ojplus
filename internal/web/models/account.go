@@ -26,9 +26,9 @@ func (u *User) GetInfo() *UserInfo {
 }
 
 type UserInfo struct {
-	ID        int
-	Username  string
-	Name      string
-	Email     string
-	Telephone string
+	ID        int    `json:"id"`
+	Username  string `json:"username"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Telephone string `json:"telephone"`
 }

@@ -1,6 +1,8 @@
 package forms
 
 import (
+	"strings"
+
 	"github.com/go-playground/locales/zh"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
@@ -23,7 +25,8 @@ func Verify(form Form) (bool, map[string]map[string]string, error) {
 		if errV, ok := err.(validator.ValidationErrors); ok {
 			flag = false
 			for _, err := range errV {
-				errorMap[err.Field()] = err.Translate(trans)
+
+				errorMap[lowerFirstLetter(err.Field())] = err.Translate(trans)
 			}
 		} else {
 			return false, nil, err
@@ -38,4 +41,12 @@ func Verify(form Form) (bool, map[string]map[string]string, error) {
 	}
 	result := map[string]map[string]string{"errors": errorMap}
 	return flag, result, nil
+}
+
+func lowerFirstLetter(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	firstChar := strings.ToLower(string(s[0]))
+	return firstChar + s[1:]
 }

@@ -2,7 +2,7 @@ package util
 
 import "strconv"
 
-func isInteger(s string) bool {
+func IsInteger(s string) bool {
 	_, err := strconv.Atoi(s)
 	return err == nil
 }

@@ -80,11 +80,10 @@ func response(ctx *gin.Context, code int, data interface{}) {
 }
 
 func responseWithMessage(ctx *gin.Context, message string, code int, data interface{}) {
-	var statusCode int
-	if code >= 999 {
-		statusCode = code / 100
-	}
-	if statusCode > 599 || statusCode < 100 {
+	statusCode := code
+	if statusCode >= 999 {
+		statusCode = statusCode / 100
+	} else if _, ok := responseStatus[statusCode]; !ok {
 		statusCode = 200
 	}
 	ctx.JSON(statusCode, gin.H{

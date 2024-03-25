@@ -8,11 +8,11 @@ import (
 )
 
 type UserCreate struct {
-	Username string `Name:"username" validate:"required"`
-	Password string `Name:"password" validate:"required"`
-	Name     string `Name:"name" validate:"required"`
-	Email    string `Name:"email" validate:"omitempty,email"`
-	Phone    string `Name:"phone" validate:"omitempty,number"`
+	Username string `validate:"required,min=3,max=32"`
+	Password string `validate:"required,min=6,max=128"`
+	Name     string `validate:"required,max=24"`
+	Email    string `validate:"omitempty,email"`
+	Phone    string `validate:"omitempty,number,min=6,max=32"`
 	Model    *models.User
 }
 
