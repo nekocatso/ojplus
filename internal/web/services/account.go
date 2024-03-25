@@ -8,10 +8,15 @@ import (
 type Account struct {
 	db    *models.Database
 	cache *models.Cache
+	cfg   map[string]interface{}
 }
 
-func NewAccount(db *models.Database, cache *models.Cache) *Account {
-	return &Account{db: db, cache: cache}
+func NewAccount(cfg map[string]interface{}) *Account {
+	return &Account{
+		db:    cfg["db"].(*models.Database),
+		cache: cfg["cache"].(*models.Cache),
+		cfg:   cfg,
+	}
 }
 
 func (svc *Account) CreateUser(user *models.User) error {
@@ -20,7 +25,7 @@ func (svc *Account) CreateUser(user *models.User) error {
 }
 
 func (svc *Account) DeleteUser(user *models.User) error {
-	has, err := svc.GetUser(user)
+	has, err := svc.getUser(user)
 	if err != nil {
 		return err
 	}
@@ -31,7 +36,7 @@ func (svc *Account) DeleteUser(user *models.User) error {
 	return err
 }
 func (svc *Account) DeletedUser(user *models.User) error {
-	has, err := svc.GetUser(user)
+	has, err := svc.getUser(user)
 	if err != nil {
 		return err
 	}
@@ -47,13 +52,23 @@ func (svc *Account) UpdateUserByID(id int, user *models.User) error {
 	return err
 }
 
-func (svc *Account) GetUser(user *models.User) (bool, error) {
+func (svc *Account) getUser(user *models.User) (bool, error) {
+	if user.ID != 0 {
+		has, err := svc.db.Engine.ID(user.ID).Get(user)
+		if err != nil {
+			return false, err
+		}
+		if !has {
+			return false, nil
+		}
+		return true, nil
+	}
 	return svc.db.Engine.Cols("id", "username", "email", "telephone").Get(user)
 }
 func (svc *Account) GetUserByID(id int) (*models.UserInfo, error) {
 	user := new(models.User)
 	user.ID = id
-	has, err := svc.GetUser(user)
+	has, err := svc.getUser(user)
 	if err != nil {
 		return nil, err
 	}

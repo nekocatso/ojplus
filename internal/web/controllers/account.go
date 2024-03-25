@@ -13,11 +13,12 @@ import (
 
 type Account struct {
 	svc *services.Account
+	cfg map[string]interface{}
 }
 
-func NewAccountController(db *models.Database, cache *models.Cache) *Account {
-	svc := services.NewAccount(db, cache)
-	return &Account{svc: svc}
+func NewAccount(cfg map[string]interface{}) *Account {
+	svc := services.NewAccount(cfg)
+	return &Account{svc: svc, cfg: cfg}
 }
 
 func (ctrl *Account) CreateUser(ctx *gin.Context) {
@@ -28,7 +29,7 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 	}
 	isValid, errorsMap, err := forms.Verify(form)
 	if err != nil {
-		log.Panicln(err)
+		response(ctx, 50001, nil)
 		return
 	}
 	if !isValid {
@@ -54,7 +55,7 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 	} else if err != nil {
 		response(ctx, 400, nil)
 	}
-	response(ctx, 201, nil)
+	response(ctx, 201, map[string]int{"userId": user.ID})
 }
 
 func (ctrl *Account) AllUser(ctx *gin.Context) {

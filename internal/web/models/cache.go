@@ -11,7 +11,7 @@ type Cache struct {
 	Client *redis.Client
 }
 
-func NewCache(cfg *config.RedisConfig) (*Cache, error) {
+func NewCache(cfg *config.Redis) (*Cache, error) {
 	if cfg.Addr == "" {
 		return nil, errors.New("the address must be given")
 	}
