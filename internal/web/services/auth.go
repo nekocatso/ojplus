@@ -2,7 +2,6 @@ package services
 
 import (
 	"Alarm/internal/web/models"
-	"errors"
 	"fmt"
 	"time"
 
@@ -83,18 +82,18 @@ func (svc *Auth) DeleteToken(token string) error {
 	return nil
 }
 
-func (svc *Auth) VerifyPassword(username string, password string) (int, error) {
+func (svc *Auth) VerifyPassword(username string, password string) (bool, error) {
 	user := &models.User{
 		Username: username,
 	}
-	has, err := svc.db.Engine.Cols("id", "password").Get(user)
+	has, err := svc.db.Engine.Cols("password").Get(user)
 	if err != nil {
-		return 0, err
+		return false, err
 	}
 	if !has {
-		return 0, errors.New("user not found")
+		return false, nil
 	}
-	return user.ID, nil
+	return password == user.Password, nil
 }
 
 func generateToken(user *models.User, validSeconds int, privateKey interface{}) (string, error) {
@@ -111,4 +110,10 @@ func generateToken(user *models.User, validSeconds int, privateKey interface{}) 
 	}
 
 	return tokenStr, nil
+}
+
+func (svc *Auth) GetUserByUsername(username string) models.User {
+	user := models.User{Username: username}
+	svc.db.Engine.Cols("id", "username", "email", "telephone").Get(user)
+	return user
 }

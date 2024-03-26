@@ -17,10 +17,13 @@ func Verify(form Form) (bool, map[string]map[string]string, error) {
 	validate := validator.New()
 	uniTrans := ut.New(zh.New())
 	trans, _ := uniTrans.GetTranslator("zh")
-	zhTrans.RegisterDefaultTranslations(validate, trans)
+	err := zhTrans.RegisterDefaultTranslations(validate, trans)
+	if err != nil {
+		return false, nil, err
+	}
 	errorMap := make(map[string]string)
 	flag := true
-	err := validate.Struct(form)
+	err = validate.Struct(form)
 	if err != nil {
 		if errV, ok := err.(validator.ValidationErrors); ok {
 			flag = false

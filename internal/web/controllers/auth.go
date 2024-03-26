@@ -48,32 +48,33 @@ func (ctrl *Auth) Login(ctx *gin.Context) {
 	}
 	isValid, errorsMap, err := forms.Verify(form)
 	if err != nil {
-		response(ctx, 50001, nil)
+		response(ctx, 500, nil)
 		return
 	}
 	if !isValid {
 		response(ctx, 400, errorsMap)
 		return
 	}
-	userID, err := ctrl.svc.VerifyPassword(form.Username, form.Password)
+	pass, err := ctrl.svc.VerifyPassword(form.Username, form.Password)
 	if err != nil {
-		response(ctx, 50001, nil)
+		log.Println(err)
+		response(ctx, 500, nil)
 		return
 	}
-	if userID == 0 {
+	if !pass {
 		response(ctx, 203, nil)
 		return
 	}
-	form.Model.ID = userID
+	user := ctrl.svc.GetUserByUsername(form.Username)
 	token, err := ctrl.svc.RefreshToken(form.Model, "", ctrl.cfg["tokenValidSeconds"].(int))
 	if err != nil {
 		log.Println(err)
-		response(ctx, 50001, nil)
+		response(ctx, 500, nil)
 		return
 	}
 	data := map[string]interface{}{
 		"token":  token,
-		"userId": userID,
+		"userId": user.ID,
 	}
 	response(ctx, 200, data)
 }

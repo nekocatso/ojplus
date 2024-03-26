@@ -71,8 +71,8 @@ var responseStatus = map[int]string{
 
 	// Other Status
 	40001: "请求格式错误",
+	40002: "请求参数非法",
 	40901: "唯一性约束数据已存在",
-	50001: "服务端严重性错误",
 }
 
 func response(ctx *gin.Context, code int, data interface{}) {

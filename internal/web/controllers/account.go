@@ -29,17 +29,17 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 	}
 	isValid, errorsMap, err := forms.Verify(form)
 	if err != nil {
-		response(ctx, 50001, nil)
+		response(ctx, 500, nil)
 		return
 	}
 	if !isValid {
-		response(ctx, 400, errorsMap)
+		response(ctx, 40002, errorsMap)
 		return
 	}
 	user := form.Model
 	has, hasMessage, err := ctrl.svc.IsUserExist(user)
 	if err != nil {
-		response(ctx, 50001, nil)
+		response(ctx, 500, nil)
 		return
 	}
 	if has {
@@ -53,7 +53,7 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 			return
 		}
 	} else if err != nil {
-		response(ctx, 400, nil)
+		response(ctx, 500, nil)
 	}
 	response(ctx, 201, map[string]int{"userId": user.ID})
 }
