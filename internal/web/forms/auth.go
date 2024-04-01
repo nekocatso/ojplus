@@ -7,8 +7,8 @@ import (
 )
 
 type Login struct {
-	Username string `validate:"required"`
-	Password string `validate:"required"`
+	Username string `validate:"required,max=32"`
+	Password string `validate:"required,max=32"`
 	Model    *models.User
 }
 
