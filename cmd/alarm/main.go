@@ -51,11 +51,12 @@ func main() {
 		"cache": cache,
 	}
 	authConfig := map[string]interface{}{
-		"db":                db,
-		"cache":             cache,
-		"privateKey":        privateKey,
-		"publicKey":         publicKey,
-		"tokenValidSeconds": globalConfig.Gin.Token.ValidSeconds,
+		"db":                   db,
+		"cache":                cache,
+		"privateKey":           privateKey,
+		"publicKey":            publicKey,
+		"accessTokenValidity":  globalConfig.Gin.Token.AccessValidity,
+		"refreshTokenValidity": globalConfig.Gin.Token.RefreshValidity,
 	}
 	AccountCtrl := controllers.NewAccount(ctrlConfig)
 	AuthCtrl := controllers.NewAuthController(authConfig)
@@ -70,7 +71,7 @@ func main() {
 
 		group.GET("/authtest", AuthCtrl.LoginMiddleware, AuthCtrl.Test)
 		group.POST("/login", AuthCtrl.Login)
-		group.POST("/logout", AuthCtrl.Logout)
+		group.POST("/token", AuthCtrl.Refresh)
 	}
 	engine.Run(globalConfig.Gin.Port)
 }

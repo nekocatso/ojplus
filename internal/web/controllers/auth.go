@@ -26,8 +26,14 @@ func (ctrl *Auth) LoginMiddleware(ctx *gin.Context) {
 		return
 	}
 
-	claims, err := ctrl.svc.ValidateToken(token)
+	claims, err := ctrl.svc.ParseToken(ctrl.cfg["publicKey"], token)
 	if err != nil || claims == nil {
+		response(ctx, 203, nil)
+		log.Println(err)
+		ctx.Abort()
+		return
+	}
+	if claims["type"].(string) != "access" {
 		response(ctx, 203, nil)
 		ctx.Abort()
 		return
@@ -36,11 +42,8 @@ func (ctrl *Auth) LoginMiddleware(ctx *gin.Context) {
 	ctx.Next()
 }
 
-func (ctrl *Auth) Test(ctx *gin.Context) {
-	response(ctx, 200, ctx.Value("claims"))
-}
-
 func (ctrl *Auth) Login(ctx *gin.Context) {
+	//校验表单
 	form, err := forms.NewLogin(ctx)
 	if err != nil {
 		response(ctx, 40001, nil)
@@ -48,6 +51,7 @@ func (ctrl *Auth) Login(ctx *gin.Context) {
 	}
 	isValid, errorsMap, err := forms.Verify(form)
 	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}
@@ -55,6 +59,7 @@ func (ctrl *Auth) Login(ctx *gin.Context) {
 		response(ctx, 400, errorsMap)
 		return
 	}
+	//校验密码
 	pass, err := ctrl.svc.VerifyPassword(form.Username, form.Password)
 	if err != nil {
 		log.Println(err)
@@ -65,19 +70,101 @@ func (ctrl *Auth) Login(ctx *gin.Context) {
 		response(ctx, 203, nil)
 		return
 	}
-	user := ctrl.svc.GetUserByUsername(form.Username)
-	token, err := ctrl.svc.RefreshToken(form.Model, "", ctrl.cfg["tokenValidSeconds"].(int))
+	//获取用户信息
+	user, err := ctrl.svc.GetUserByUsername(form.Username)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	//生成Token
+	accessClaims := map[string]interface{}{
+		"userID": user.ID,
+		"type":   "access",
+	}
+	accessToken, err := ctrl.svc.GenerateToken(ctrl.cfg["privateKey"], ctrl.cfg["accessTokenValidity"].(int), accessClaims)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	refreshClaims := map[string]interface{}{
+		"userID": user.ID,
+		"type":   "refresh",
+	}
+	refreshToken, err := ctrl.svc.GenerateToken(ctrl.cfg["privateKey"], ctrl.cfg["refreshTokenValidity"].(int), refreshClaims)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	//响应
+	data := map[string]interface{}{
+		"accessToken":  accessToken,
+		"refreshToken": refreshToken,
+		"userID":       user.ID,
+	}
+	response(ctx, 200, data)
+}
+
+func (ctrl *Auth) Refresh(ctx *gin.Context) {
+	form, err := forms.NewRefresh(ctx)
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	isValid, errorsMap, err := forms.Verify(form)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !isValid {
+		response(ctx, 400, errorsMap)
+		return
+	}
+	//解析刷新令牌
+	claims, err := ctrl.svc.ParseToken(ctrl.cfg["publicKey"], form.RefreshToken)
+	if err != nil || claims == nil {
+		response(ctx, 203, nil)
+		log.Println(err)
+		ctx.Abort()
+		return
+	}
+	if claims["type"].(string) != "refresh" {
+		response(ctx, 203, nil)
+		log.Println("not refresh")
+		ctx.Abort()
+		return
+	}
+	//生成Token
+	accessClaims := map[string]interface{}{
+		"userID": claims["userID"],
+		"type":   "access",
+	}
+	accessToken, err := ctrl.svc.GenerateToken(ctrl.cfg["privateKey"], ctrl.cfg["accessTokenValidity"].(int), accessClaims)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	refreshClaims := map[string]interface{}{
+		"userID": claims["userID"],
+		"type":   "refresh",
+	}
+	refreshToken, err := ctrl.svc.GenerateToken(ctrl.cfg["privateKey"], ctrl.cfg["refreshTokenValidity"].(int), refreshClaims)
 	if err != nil {
 		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}
 	data := map[string]interface{}{
-		"token":  token,
-		"userId": user.ID,
+		"accessToken":  accessToken,
+		"refreshToken": refreshToken,
 	}
 	response(ctx, 200, data)
 }
-func (ctrl *Auth) Logout(ctx *gin.Context) {
 
+func (ctrl *Auth) Test(ctx *gin.Context) {
+	response(ctx, 200, ctx.Value("claims"))
 }

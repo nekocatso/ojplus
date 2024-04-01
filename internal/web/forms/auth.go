@@ -29,3 +29,21 @@ func (form *Login) check() map[string]string {
 	result := make(map[string]string)
 	return result
 }
+
+type Refresh struct {
+	RefreshToken string `validate:"required"`
+}
+
+func NewRefresh(ctx *gin.Context) (*Refresh, error) {
+	var form *Refresh
+	err := ctx.BindJSON(&form)
+	if err != nil {
+		return nil, err
+	}
+	return form, nil
+}
+
+func (form *Refresh) check() map[string]string {
+	result := make(map[string]string)
+	return result
+}

@@ -25,21 +25,26 @@ func NewAuth(cfg map[string]interface{}) *Auth {
 // RefreshToken 用于刷新token，可以创建新的token或者延长现有token的过期时间。
 //
 // 如果 tokenStr 为空字符串，则使用私钥创建新的token。
-func (svc *Auth) RefreshToken(user *models.User, tokenStr string, validSeconds int) (string, error) {
-	var err error
-	if tokenStr == "" {
-		tokenStr, err = generateToken(user, validSeconds, svc.cfg["privateKey"])
-		if err != nil {
-			return "", err
-		}
+func (svc *Auth) GenerateToken(privateKey interface{}, validSeconds int, data map[string]interface{}) (string, error) {
+	claims := jwt.MapClaims{
+		"exp": time.Now().Add(time.Second * time.Duration(validSeconds)).Unix(),
 	}
+
+	for key, value := range data {
+		claims[key] = value
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+
+	tokenStr, err := token.SignedString(privateKey)
+	if err != nil {
+		return "", err
+	}
+
 	return tokenStr, nil
 }
 
-func (svc *Auth) ValidateToken(tokenStr string) (*jwt.MapClaims, error) {
-	// 读取公钥
-	publicKey := svc.cfg["publicKey"]
-
+func (svc *Auth) ParseToken(publicKey interface{}, tokenStr string) (jwt.MapClaims, error) {
 	// 解析令牌
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 		// 验证签名方法是否为RS256
@@ -70,50 +75,26 @@ func (svc *Auth) ValidateToken(tokenStr string) (*jwt.MapClaims, error) {
 		return nil, fmt.Errorf("token has expired")
 	}
 
-	return &claims, nil
+	return claims, nil
 }
-
-func (svc *Auth) DeleteToken(token string) error {
-	redisKey := fmt.Sprintf("token:%s", token)
-	err := svc.cache.Client.Del(redisKey).Err()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (svc *Auth) VerifyPassword(username string, password string) (bool, error) {
 	user := &models.User{
 		Username: username,
+		Password: password,
 	}
-	has, err := svc.db.Engine.Cols("password").Get(user)
+	has, err := svc.db.Engine.Exist(user)
 	if err != nil {
 		return false, err
 	}
-	if !has {
-		return false, nil
-	}
-	return password == user.Password, nil
+	return has, nil
 }
 
-func generateToken(user *models.User, validSeconds int, privateKey interface{}) (string, error) {
-	claims := &jwt.MapClaims{
-		"userID": user.ID,
-		"exp":    time.Now().Add(time.Second * time.Duration(validSeconds)).Unix(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-
-	tokenStr, err := token.SignedString(privateKey)
+func (svc *Auth) GetUserByUsername(username string) (*models.UserInfo, error) {
+	user := &models.User{Username: username}
+	_, err := svc.db.Engine.Get(user)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-
-	return tokenStr, nil
-}
-
-func (svc *Auth) GetUserByUsername(username string) models.User {
-	user := models.User{Username: username}
-	svc.db.Engine.Cols("id", "username", "email", "telephone").Get(user)
-	return user
+	userInfo := user.GetInfo()
+	return userInfo, nil
 }

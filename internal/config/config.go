@@ -24,8 +24,9 @@ type Redis struct {
 	DB       int
 }
 type Token struct {
-	PrivateKeyPath string
-	ValidSeconds   int
+	PrivateKeyPath  string
+	RefreshValidity int
+	AccessValidity  int
 }
 
 func NewConfig(configPath, configName string) (*Global, error) {
