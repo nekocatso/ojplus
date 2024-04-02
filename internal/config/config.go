@@ -1,33 +1,42 @@
 package config
 
 import (
-	"log"
-
 	"github.com/spf13/viper"
 )
 
-// 读取配置文件config
-type Config struct {
-	Crypto   CryptoConfig
-	Database DataBaseConfig
+type Global struct {
+	Gin *Gin
 }
 
-type CryptoConfig struct {
-	RSAPublicKeyPath string 
+type Gin struct {
+	Port  string
+	Mysql *Mysql
+	Redis *Redis
+	Token *Token
 }
-type DataBaseConfig struct {
-	Address string
+type Mysql struct {
+	DSN string
 }
 
-func NewConfig(path string) *Config {
-	var config Config
-	viper.SetConfigName("config")
-	viper.AddConfigPath(".")
+type Redis struct {
+	Addr     string
+	Password string
+	DB       int
+}
+type Token struct {
+	PrivateKeyPath  string
+	RefreshValidity int
+	AccessValidity  int
+}
+
+func NewConfig(configPath, configName string) (*Global, error) {
+	var config Global
+	viper.SetConfigName(configName)
+	viper.AddConfigPath(configPath)
 	err := viper.ReadInConfig()
 	if err != nil {
-		log.Fatalf("Fatal error config file: %s \n", err)
+		return nil, err
 	}
-
 	viper.Unmarshal(&config)
-	return &config
+	return &config, nil
 }
