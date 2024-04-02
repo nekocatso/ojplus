@@ -46,16 +46,43 @@ func TestNewMailBox(t *testing.T) {
 		name string
 		args args
 		want *MailBox
-	}{{name: "success",args: args{name:"",password: "",host: "",port: 1},want: &MailBox{}},
-		// TODO: Add test cases.
-	}
+	}{{name: "success", args: args{name: "", password: "", host: "", port: 1}, want: &MailBox{}}} // TODO: Add test cases.
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := NewMailBox(tt.args.name, tt.args.password, tt.args.host, tt.args.port); !reflect.DeepEqual(got, tt.want) {
-				if got ==nil{
+				if got == nil {
 					t.Errorf("return nil")
 				}
 			}
+		})
+	}
+}
+
+func TestMaillPool_Mail(t *testing.T) {
+	type fields struct {
+		mailmap map[string]string
+		mailbox *MailBox
+	}
+	type args struct {
+		assets  string
+		message string
+	}
+	mb := NewMailBox("yangquanmailtest@163.com", "APQJNHKHMXPGRFVO", "smtp.163.com", 25)
+
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+	}{{name: "success", fields: fields{mailmap: map[string]string{}, mailbox: mb}, args: args{assets: "asd", message: "this is mappool test"}}} // TODO: Add test cases.
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := MaillPool{
+				mailmap: tt.fields.mailmap,
+				mailbox: tt.fields.mailbox,
+			}
+			m.Mail(tt.args.assets, tt.args.message, true)
 		})
 	}
 }

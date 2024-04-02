@@ -13,7 +13,7 @@ type Config struct {
 }
 
 type CryptoConfig struct {
-	RSAPublicKeyPath string
+	RSAPublicKeyPath string 
 }
 type DataBaseConfig struct {
 	Address string

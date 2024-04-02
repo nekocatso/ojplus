@@ -2,9 +2,8 @@ package listener
 
 import (
 	"Alarm/internal/pkg/messagequeue"
+	"Alarm/internal/pkg/Cache"
 	"testing"
-
-	"github.com/streadway/amqp"
 )
 
 func TestNewListener(t *testing.T) {
@@ -35,9 +34,10 @@ func TestNewListener(t *testing.T) {
 
 		// TODO: Add test cases.
 	}
+	rcp := Cache.NewRedisClientPool()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewListener(tt.args.url)
+			got, err := NewListener(tt.args.url, "respone", rcp)
 			if (err != nil && got != nil) != tt.wantErr {
 				t.Errorf("NewListener() error = %v, wantErr %v,got %v", err, tt.wantErr, got)
 				return
@@ -46,7 +46,7 @@ func TestNewListener(t *testing.T) {
 	}
 }
 
-func TestListener_Logout(t *testing.T) {
+func TestListener_Close(t *testing.T) {
 	type fields struct {
 		Connection *messagequeue.Connection
 		Queue      *messagequeue.MessageQueue
@@ -54,7 +54,9 @@ func TestListener_Logout(t *testing.T) {
 		Control    chan bool
 		Messages   chan []byte
 	}
-	l, err := NewListener("amqp://user:mkjsix7@172.16.0.15:5672/")
+	rcp := Cache.NewRedisClientPool()
+	defer rcp.Close()
+	l, err := NewListener("amqp://user:mkjsix7@172.16.0.15:5672/", "respone", rcp)
 	if err != nil {
 		t.Log(err)
 	}
@@ -75,8 +77,8 @@ func TestListener_Logout(t *testing.T) {
 				Control:    tt.fields.Control,
 				Messages:   tt.fields.Messages,
 			}
-			if err := L.Logout(); (err != nil) != tt.wantErr {
-				t.Errorf("Listener.Logout() error = %v, wantErr %v", err, tt.wantErr)
+			if err := L.Close(); (err != nil) != tt.wantErr {
+				t.Errorf("Listener.Close() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -90,7 +92,9 @@ func TestListener_Stop(t *testing.T) {
 		Control    chan bool
 		Messages   chan []byte
 	}
-	l, _ := NewListener("amqp://user:mkjsix7@172.16.0.15:5672/")
+	rcp := Cache.NewRedisClientPool()
+	defer rcp.Close()
+	l, _ := NewListener("amqp://user:mkjsix7@172.16.0.15:5672/", "respone", rcp)
 	tests := []struct {
 		name    string
 		fields  fields
@@ -106,7 +110,7 @@ func TestListener_Stop(t *testing.T) {
 				Control:    tt.fields.Control,
 				Messages:   tt.fields.Messages,
 			}
-			l.Listening()
+			l.Listening(func([]byte) {})
 			if err := L.Stop(); (err != nil) != tt.wantErr {
 				t.Errorf("Listener.Stop() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -122,7 +126,9 @@ func TestListener_Listening(t *testing.T) {
 		Control    chan bool
 		Messages   chan []byte
 	}
-	l, _ := NewListener("amqp://user:mkjsix7@172.16.0.15:5672/")
+	rcp := Cache.NewRedisClientPool()
+	defer rcp.Close()
+	l, _ := NewListener("amqp://user:mkjsix7@172.16.0.15:5672/", "respone", rcp)
 	tests := []struct {
 		name    string
 		fields  fields
@@ -140,26 +146,10 @@ func TestListener_Listening(t *testing.T) {
 				Control:    tt.fields.Control,
 				Messages:   tt.fields.Messages,
 			}
-			if err := L.Listening(); (err != nil) != tt.wantErr {
+			if err := L.Listening(func([]byte) {}); (err != nil) != tt.wantErr {
 				t.Errorf("Listener.Listening() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			l.Stop()
-		})
-	}
-}
-
-func TestSave(t *testing.T) {
-	type args struct {
-		msg amqp.Delivery
-	}
-	tests := []struct {
-		name string
-		args args
-	}{{name: "success", args: args{}}} // TODO: Add test cases.
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			Save(tt.args.msg)
 		})
 	}
 }

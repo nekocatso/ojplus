@@ -35,7 +35,6 @@ func (q MessageQueue) Close() error {
 	if q.Channel == nil {
 		return errors.New("MessageQueue.Channel is nil")
 	}
-
 	err := q.Channel.Close()
 	return err
 }
