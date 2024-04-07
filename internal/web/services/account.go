@@ -24,31 +24,46 @@ func (svc *Account) CreateUser(user *models.User) error {
 	return err
 }
 
-func (svc *Account) DeleteUser(user *models.User) error {
-	has, err := svc.getUser(user)
-	if err != nil {
-		return err
+func (svc *Account) DeepDeleteUser(user *models.User) error {
+	if user.ID == 0 {
+		has, err := svc.getUser(user)
+		if err != nil {
+			return err
+		}
+		if !has {
+			return errors.New("无法找到user数据")
+		}
 	}
-	if !has {
-		return errors.New("无法找到user数据")
-	}
-	_, err = svc.db.Engine.ID(user.ID).Unscoped().Delete(user)
+	_, err := svc.db.Engine.ID(user.ID).Unscoped().Delete(user)
 	return err
 }
-func (svc *Account) DeletedUser(user *models.User) error {
-	has, err := svc.getUser(user)
-	if err != nil {
-		return err
+
+func (svc *Account) DeleteUser(user *models.User) error {
+	if user.ID == 0 {
+		has, err := svc.getUser(user)
+		if err != nil {
+			return err
+		}
+		if !has {
+			return errors.New("无法找到user数据")
+		}
 	}
-	if !has {
-		return errors.New("无法找到user数据")
-	}
-	_, err = svc.db.Engine.ID(user.ID).Delete(user)
+	_, err := svc.db.Engine.ID(user.ID).Delete(user)
 	return err
 }
 
 func (svc *Account) UpdateUserByID(id int, user *models.User) error {
-	_, err := svc.db.Engine.ID(id).Update(user)
+	updateFields := []string{}
+	if user.Password != "" {
+		updateFields = append(updateFields, "password")
+	}
+	if user.Email != "" {
+		updateFields = append(updateFields, "email")
+	}
+	if user.Phone != "" {
+		updateFields = append(updateFields, "phone")
+	}
+	_, err := svc.db.Engine.ID(id).Cols(updateFields...).Update(user)
 	return err
 }
 
@@ -63,7 +78,7 @@ func (svc *Account) getUser(user *models.User) (bool, error) {
 		}
 		return true, nil
 	}
-	return svc.db.Engine.Cols("id", "username", "email", "telephone").Get(user)
+	return svc.db.Engine.Cols("id", "username", "email", "phone").Get(user)
 }
 func (svc *Account) GetUserByID(id int) (*models.UserInfo, error) {
 	user := new(models.User)
@@ -93,7 +108,7 @@ func (svc *Account) AllUser() ([]models.UserInfo, error) {
 func (svc *Account) IsUserExist(user *models.User) (bool, string, error) {
 	has, err := svc.db.Engine.Where("username = ?", user.Username).Exist(&models.User{})
 	if err != nil {
-		return true, "", err
+		return has, "", err
 	}
 	if has {
 		return true, "该用户名已被使用", nil
@@ -117,4 +132,22 @@ func (svc *Account) IsUserExist(user *models.User) (bool, string, error) {
 		}
 	}
 	return false, "", nil
+}
+func (svc *Account) IsUserIDExist(userID int) (bool, error) {
+	return svc.db.Engine.ID(userID).Exist(&models.User{})
+}
+
+func (svc *Account) GetUserIDsByAssetID(assetID int) ([]int, error) {
+	var assetUsers []models.AssetUser
+	err := svc.db.Engine.Where("asset_id = ?", assetID).Find(&assetUsers)
+	if err != nil {
+		return nil, err
+	}
+
+	userIDs := []int{}
+	for _, assetUser := range assetUsers {
+		userIDs = append(userIDs, assetUser.UserID)
+	}
+
+	return userIDs, nil
 }

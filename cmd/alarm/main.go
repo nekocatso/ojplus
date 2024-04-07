@@ -26,6 +26,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	//Redis Init
 	cache, err := models.NewCache(globalConfig.Gin.Redis)
 	if err != nil {
 		log.Fatal(err)
@@ -59,19 +61,23 @@ func main() {
 		"refreshTokenValidity": globalConfig.Gin.Token.RefreshValidity,
 	}
 	AccountCtrl := controllers.NewAccount(ctrlConfig)
-	AuthCtrl := controllers.NewAuthController(authConfig)
+	AuthCtrl := controllers.NewAuth(authConfig)
+	AssetCtrl := controllers.NewAsset(ctrlConfig)
 
 	// --Router Init
 	group := engine.Group("")
 	{
 		group.POST("/register", AccountCtrl.CreateUser)
-		group.GET("/users", AccountCtrl.AllUser)
+		group.GET("/users", AccountCtrl.FindUsers)
 		group.GET("/users/:id", AccountCtrl.GetUserByID)
+		group.GET("/assets/:assetID/users", AccountCtrl.GetUsersByAsset)
 		group.PATCH("/users/:id", AccountCtrl.UpdateUserByID)
 
 		group.GET("/authtest", AuthCtrl.LoginMiddleware, AuthCtrl.Test)
 		group.POST("/login", AuthCtrl.Login)
 		group.POST("/token", AuthCtrl.Refresh)
+
+		group.POST("/asset", AuthCtrl.LoginMiddleware, AssetCtrl.CreateAsset)
 	}
 	engine.Run(globalConfig.Gin.Port)
 }
