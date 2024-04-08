@@ -71,7 +71,7 @@ func main() {
 		group.GET("/users", AuthCtrl.LoginMiddleware, AccountCtrl.FindUsers)
 		group.GET("/users/:id", AuthCtrl.LoginMiddleware, AccountCtrl.GetUserByID)
 		group.GET("/assets/:assetID/users", AuthCtrl.LoginMiddleware, AccountCtrl.GetUsersByAsset)
-		group.PATCH("/users/:id", AuthCtrl.LoginMiddleware, AccountCtrl.UpdateUserByID)
+		group.PATCH("/users/:id", AuthCtrl.LoginMiddleware, AccountCtrl.UpdateUser)
 
 		group.GET("/authtest", AuthCtrl.LoginMiddleware, AuthCtrl.Test)
 		group.POST("/login", AuthCtrl.Login)

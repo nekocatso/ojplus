@@ -58,7 +58,7 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 	response(ctx, 201, map[string]int{"userID": user.ID})
 }
 
-func (ctrl *Account) UpdateUserByID(ctx *gin.Context) {
+func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 	// 获取Param参数
 	userID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
