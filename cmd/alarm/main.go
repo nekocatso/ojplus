@@ -68,16 +68,17 @@ func main() {
 	group := engine.Group("")
 	{
 		group.POST("/register", AccountCtrl.CreateUser)
-		group.GET("/users", AccountCtrl.FindUsers)
-		group.GET("/users/:id", AccountCtrl.GetUserByID)
-		group.GET("/assets/:assetID/users", AccountCtrl.GetUsersByAsset)
-		group.PATCH("/users/:id", AccountCtrl.UpdateUserByID)
+		group.GET("/users", AuthCtrl.LoginMiddleware, AccountCtrl.FindUsers)
+		group.GET("/users/:id", AuthCtrl.LoginMiddleware, AccountCtrl.GetUserByID)
+		group.GET("/assets/:assetID/users", AuthCtrl.LoginMiddleware, AccountCtrl.GetUsersByAsset)
+		group.PATCH("/users/:id", AuthCtrl.LoginMiddleware, AccountCtrl.UpdateUserByID)
 
 		group.GET("/authtest", AuthCtrl.LoginMiddleware, AuthCtrl.Test)
 		group.POST("/login", AuthCtrl.Login)
 		group.POST("/token", AuthCtrl.Refresh)
 
 		group.POST("/asset", AuthCtrl.LoginMiddleware, AssetCtrl.CreateAsset)
+		group.POST("/assets/query", AuthCtrl.LoginMiddleware, AssetCtrl.SelectAsset)
 	}
 	engine.Run(globalConfig.Gin.Port)
 }

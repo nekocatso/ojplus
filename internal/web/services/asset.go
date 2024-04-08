@@ -180,11 +180,10 @@ func (svc *Asset) IsAssetExist(asset *models.Asset) (bool, string, error) {
 	return false, "", nil
 }
 
-func (svc *Asset) QueryAssetsWithConditions(conditions map[string]interface{}) ([]Asset, error) {
-	var assets []Asset
-
+func (svc *Asset) QueryAssetsWithConditions(userID int, conditions map[string]interface{}) ([]models.Asset, error) {
+	assets := make([]models.Asset, 0)
 	// 构建查询条件
-	queryBuilder := svc.db.Engine.Cols("id", "name", "type", "address", "note", "state", "creator_id")
+	queryBuilder := svc.db.Engine.Join("INNER", "asset_user", "asset.id = asset_user.asset_id").Where("asset_user.user_id = ?", userID)
 	for key, value := range conditions {
 		switch key {
 		case "name":
@@ -198,12 +197,13 @@ func (svc *Asset) QueryAssetsWithConditions(conditions map[string]interface{}) (
 		case "createTimeEnd":
 			queryBuilder = queryBuilder.And("created_at <= ?", value)
 		case "enable":
-			enable := value.(bool)
-			if enable {
+			if value.(int) > 0 {
 				queryBuilder = queryBuilder.And("state > 0")
 			} else {
 				queryBuilder = queryBuilder.And("state = -1")
 			}
+		case "state":
+			queryBuilder = queryBuilder.And("state = ?", value)
 		}
 	}
 
@@ -211,6 +211,5 @@ func (svc *Asset) QueryAssetsWithConditions(conditions map[string]interface{}) (
 	if err != nil {
 		return nil, err
 	}
-
 	return assets, nil
 }

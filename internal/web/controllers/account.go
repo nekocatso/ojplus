@@ -4,9 +4,7 @@ import (
 	"Alarm/internal/web/forms"
 	"Alarm/internal/web/models"
 	"Alarm/internal/web/services"
-	"fmt"
 	"log"
-	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -110,7 +108,8 @@ func (ctrl *Account) FindUsers(ctx *gin.Context) {
 	pageSizeStr := ctx.Query("pageSize")
 	var page, pageSize int
 	if pageStr != "" && pageSizeStr != "" {
-		page, err := strconv.Atoi(pageStr)
+		var err error
+		page, err = strconv.Atoi(pageStr)
 		if err != nil || page <= 0 {
 			response(ctx, 40002, nil)
 			return
@@ -119,7 +118,7 @@ func (ctrl *Account) FindUsers(ctx *gin.Context) {
 			response(ctx, 40003, nil)
 			return
 		}
-		pageSize, err := strconv.Atoi(pageSizeStr)
+		pageSize, err = strconv.Atoi(pageSizeStr)
 		if err != nil || pageSize <= 0 {
 			response(ctx, 40002, nil)
 			return
@@ -133,18 +132,20 @@ func (ctrl *Account) FindUsers(ctx *gin.Context) {
 		response(ctx, 500, nil)
 		return
 	}
-	data := make(map[string]interface{})
 	// 对用户列表进行分页处理
+	data := make(map[string]interface{})
 	start := (page - 1) * pageSize
 	end := start + pageSize
-	total := (len(users) + pageSize - 1) / pageSize
-	data["total"] = total
-	fmt.Println(len(users))
+	pages := (len(users) + pageSize - 1) / pageSize
+	if pages == 0 {
+		pages = 1
+	}
+	data["pages"] = pages
+	data["total"] = len(users)
 	if start >= len(users) {
-		// 响应重定向至最后一页
-		redirectURL := fmt.Sprintf("/users?page=%d&pageSize=%d", total, pageSize)
-		ctx.Redirect(http.StatusFound, redirectURL)
-		return
+		// 响应最后一页
+		start = (pages - 1) * pageSize
+		end = len(users)
 	}
 	if end > len(users) {
 		end = len(users)

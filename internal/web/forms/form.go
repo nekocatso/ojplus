@@ -36,6 +36,9 @@ func Verify(form Form) (bool, map[string]map[string]string, error) {
 		}
 	}
 	cleanMap := form.check()
+	if len(cleanMap) > 0 {
+		flag = false
+	}
 	for key, value := range cleanMap {
 		_, ok := errorMap[key]
 		if !ok {

@@ -3,26 +3,28 @@ package models
 import "time"
 
 type Asset struct {
-	ID        int       `xorm:"'id' pk autoincr"`
-	Name      string    `xorm:"notnull unique(name_creator)"`
-	Type      string    `xorm:"notnull"`
-	Address   string    `xorm:"'address' notnull unique"`
-	Note      string    `xorm:"'note'"`
-	State     int       `xorm:"default(0) notnull"`
-	CreatorID int       `xorm:"'creator_id' notnull unique(name_creator)"`
-	CreatedAt time.Time `xorm:"'created_at' created"`
-	UpdatedAt time.Time `xorm:"'updated_at' updated"`
-	DeletedAt time.Time `xorm:"deleted"`
+	ID        int       `json:"id" xorm:"'id' pk autoincr"`
+	Name      string    `json:"name" xorm:"notnull unique(name_creator)"`
+	Type      string    `json:"type" xorm:"notnull"`
+	Address   string    `json:"address" xorm:"'address' notnull unique"`
+	Note      string    `json:"note" xorm:"'note'"`
+	State     int       `json:"state" xorm:"default(0) notnull"`
+	CreatorID int       `json:"creatorID" xorm:"'creator_id' notnull unique(name_creator)"`
+	CreatedAt time.Time `json:"createdAt" xorm:"'created_at' created"`
+	UpdatedAt time.Time `json:"-" xorm:"'updated_at' updated"`
+	DeletedAt time.Time `json:"-" xorm:"deleted"`
 }
 
 type AssetUser struct {
-	ID      int `xorm:"'id' pk autoincr"`
-	AssetID int `xorm:"'asset_id' notnull unique(asset_user)"`
-	UserID  int `xorm:"'user_id' notnull unique(asset_user)"`
+	ID        int       `xorm:"'id' pk autoincr"`
+	AssetID   int       `xorm:"'asset_id' notnull unique(asset_user)"`
+	UserID    int       `xorm:"'user_id' notnull unique(asset_user)"`
+	CreatedAt time.Time `json:"-" xorm:"'created_at' created"`
 }
 
 type AssetRule struct {
-	ID      int `xorm:"'id' pk autoincr"`
-	AssetID int `xorm:"'asset_id' notnull unique(asset_rule)"`
-	RuleID  int `xorm:"'rule_id' notnull unique(asset_rule)"`
+	ID        int       `xorm:"'id' pk autoincr"`
+	AssetID   int       `xorm:"'asset_id' notnull unique(asset_rule)"`
+	RuleID    int       `xorm:"'rule_id' notnull unique(asset_rule)"`
+	CreatedAt time.Time `json:"-" xorm:"'created_at' created"`
 }

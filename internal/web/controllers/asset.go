@@ -102,27 +102,49 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 	response(ctx, 201, map[string]int{"assetID": asset.ID})
 }
 
-func (ctrl *Asset) FindAsset(ctx *gin.Context) {
-	// pageStr := ctx.Query("page")
-	// pageSizeStr := ctx.Query("pageSize")
-	// var page, pageSize int
-	// if pageStr != "" && pageSizeStr != "" {
-	// 	page, err := strconv.Atoi(pageStr)
-	// 	if err != nil || page <= 0 {
-	// 		response(ctx, 40002, nil)
-	// 		return
-	// 	}
-	// 	if pageSize > 100 {
-	// 		response(ctx, 40003, nil)
-	// 		return
-	// 	}
-	// 	pageSize, err := strconv.Atoi(pageSizeStr)
-	// 	if err != nil || pageSize <= 0 {
-	// 		response(ctx, 40002, nil)
-	// 		return
-	// 	}
-	// } else {
-	// 	page = 1
-	// 	pageSize = 10
-	// }
+func (ctrl *Asset) SelectAsset(ctx *gin.Context) {
+	// 数据校验
+	form, err := forms.NewAssetSelect(ctx)
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	isValid, errorsMap, err := forms.Verify(form)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !isValid {
+		response(ctx, 40002, errorsMap)
+		return
+	}
+	page := form.Page
+	pageSize := form.PageSize
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID := claims["userID"].(int)
+	assets, err := ctrl.svc.QueryAssetsWithConditions(userID, form.Conditions)
+	if err != nil {
+		response(ctx, 500, nil)
+		return
+	}
+	// 分页处理
+	data := make(map[string]interface{})
+	start := (page - 1) * pageSize
+	end := start + pageSize
+	pages := (len(assets) + pageSize - 1) / pageSize
+	if pages == 0 {
+		pages = 1
+	}
+	data["pages"] = pages
+	data["total"] = len(assets)
+	if start >= len(assets) {
+		// 响应最后一页
+		start = (pages - 1) * pageSize
+		end = len(assets)
+	} else if end > len(assets) {
+		end = len(assets)
+	}
+	data["assets"] = assets[start:end]
+	response(ctx, 200, data)
 }
