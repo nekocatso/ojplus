@@ -52,6 +52,49 @@ func (form *AssetCreate) check() map[string]string {
 	return result
 }
 
+type AssetUpdate struct {
+	Name string `validate:"required,max=24"`
+	// Type    string `validate:"required,max=12"`
+	// Address string `validate:"required,max=128"`
+	Note   string `validate:"required,max=128"`
+	Enable bool   `validate:"required"`
+	Users  []int  `validate:"required"`
+	Rules  []int  `validate:"required"`
+	Model  *models.Asset
+}
+
+func NewAssetUpdate(ctx *gin.Context) (*AssetUpdate, error) {
+	var form *AssetUpdate
+	err := ctx.ShouldBind(&form)
+	if err != nil {
+		return nil, err
+	}
+	var state int
+	if form.Enable {
+		state = 3
+	} else {
+		state = -1
+	}
+	form.Model = &models.Asset{
+		Name: form.Name,
+		// Address: form.Address,
+		State: state,
+		// Type:    form.Type,
+		Note: form.Note,
+	}
+	return form, nil
+}
+
+func (form *AssetUpdate) check() map[string]string {
+	result := make(map[string]string)
+	if form.Enable && len(form.Rules) == 0 {
+		result["state"] = "未绑定规则时无法启用监测"
+	}
+	// checkAddress(result, form.Type, form.Address)
+	// checkType(result, form.Type)
+	return result
+}
+
 func checkType(result map[string]string, t string) {
 	if t != "ip" && t != "domain" {
 		result["type"] = "非可选的类型(ip, domain)"

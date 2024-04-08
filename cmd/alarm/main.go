@@ -77,6 +77,8 @@ func main() {
 		group.POST("/login", AuthCtrl.Login)
 		group.POST("/token", AuthCtrl.Refresh)
 
+		group.GET("/assets", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssets)
+		group.GET("/assets/id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetIDs)
 		group.POST("/asset", AuthCtrl.LoginMiddleware, AssetCtrl.CreateAsset)
 		group.POST("/assets/query", AuthCtrl.LoginMiddleware, AssetCtrl.SelectAsset)
 	}

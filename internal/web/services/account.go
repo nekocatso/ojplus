@@ -80,18 +80,11 @@ func (svc *Account) getUser(user *models.User) (bool, error) {
 	}
 	return svc.db.Engine.Cols("id", "username", "email", "phone").Get(user)
 }
+
 func (svc *Account) GetUserByID(id int) (*models.UserInfo, error) {
-	user := new(models.User)
-	user.ID = id
-	has, err := svc.getUser(user)
-	if err != nil {
-		return nil, err
-	}
-	if !has {
-		return nil, nil
-	}
-	return user.GetInfo(), nil
+	return GetUserByID(svc.db.Engine, id)
 }
+
 func (svc *Account) AllUser() ([]models.UserInfo, error) {
 	var users []models.User
 	err := svc.db.Engine.Find(&users)

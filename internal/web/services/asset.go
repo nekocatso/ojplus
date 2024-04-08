@@ -74,6 +74,7 @@ func (svc *Asset) BindUsers(assetID int, userIDs []int) error {
 	}
 	return err
 }
+
 func (svc *Asset) BindRules(assetID int, ruleIDs []int) error {
 	session := svc.db.Engine.NewSession()
 	defer session.Close()
@@ -180,7 +181,7 @@ func (svc *Asset) IsAssetExist(asset *models.Asset) (bool, string, error) {
 	return false, "", nil
 }
 
-func (svc *Asset) QueryAssetsWithConditions(userID int, conditions map[string]interface{}) ([]models.Asset, error) {
+func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]models.Asset, error) {
 	assets := make([]models.Asset, 0)
 	// 构建查询条件
 	queryBuilder := svc.db.Engine.Join("INNER", "asset_user", "asset.id = asset_user.asset_id").Where("asset_user.user_id = ?", userID)
@@ -206,10 +207,20 @@ func (svc *Asset) QueryAssetsWithConditions(userID int, conditions map[string]in
 			queryBuilder = queryBuilder.And("state = ?", value)
 		}
 	}
-
 	err := queryBuilder.Find(&assets)
 	if err != nil {
 		return nil, err
 	}
+	for i := range assets {
+		assets[i].Creator, err = GetUserByID(svc.db.Engine, assets[i].CreatorID)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return assets, nil
+}
+
+func (svc *Account) UpdateAsset(id int, asset *models.Asset) error {
+	_, err := svc.db.Engine.ID(id).Update(asset)
+	return err
 }

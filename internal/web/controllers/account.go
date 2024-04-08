@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-sql-driver/mysql"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type Account struct {
@@ -59,16 +60,8 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 }
 
 func (ctrl *Account) UpdateUser(ctx *gin.Context) {
-	// 获取Param参数
-	userID, err := strconv.Atoi(ctx.Param("id"))
-	if err != nil {
-		response(ctx, 40001, nil)
-		return
-	}
-	if userID == 0 {
-		response(ctx, 40002, nil)
-		return
-	}
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID := claims["userID"].(int)
 	// 表单校验
 	form, err := forms.NewUserUpdate(ctx)
 	if err != nil {
