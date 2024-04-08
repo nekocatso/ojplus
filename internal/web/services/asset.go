@@ -188,7 +188,7 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 	for key, value := range conditions {
 		switch key {
 		case "name":
-			queryBuilder = queryBuilder.And("name = ?", value)
+			queryBuilder = queryBuilder.And("name LIKE ?", "%"+value.(string)+"%")
 		case "type":
 			queryBuilder = queryBuilder.And("type = ?", value)
 		case "creatorID":
