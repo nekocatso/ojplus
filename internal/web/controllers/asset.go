@@ -101,3 +101,28 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 	}
 	response(ctx, 201, map[string]int{"assetID": asset.ID})
 }
+
+func (ctrl *Asset) FindAsset(ctx *gin.Context) {
+	// pageStr := ctx.Query("page")
+	// pageSizeStr := ctx.Query("pageSize")
+	// var page, pageSize int
+	// if pageStr != "" && pageSizeStr != "" {
+	// 	page, err := strconv.Atoi(pageStr)
+	// 	if err != nil || page <= 0 {
+	// 		response(ctx, 40002, nil)
+	// 		return
+	// 	}
+	// 	if pageSize > 100 {
+	// 		response(ctx, 40003, nil)
+	// 		return
+	// 	}
+	// 	pageSize, err := strconv.Atoi(pageSizeStr)
+	// 	if err != nil || pageSize <= 0 {
+	// 		response(ctx, 40002, nil)
+	// 		return
+	// 	}
+	// } else {
+	// 	page = 1
+	// 	pageSize = 10
+	// }
+}

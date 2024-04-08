@@ -13,7 +13,6 @@ type Asset struct {
 	CreatedAt time.Time `xorm:"'created_at' created"`
 	UpdatedAt time.Time `xorm:"'updated_at' updated"`
 	DeletedAt time.Time `xorm:"deleted"`
-	Version   int       `xorm:"version"`
 }
 
 type AssetUser struct {

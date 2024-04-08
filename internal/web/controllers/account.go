@@ -108,23 +108,25 @@ func (ctrl *Account) UpdateUserByID(ctx *gin.Context) {
 func (ctrl *Account) FindUsers(ctx *gin.Context) {
 	pageStr := ctx.Query("page")
 	pageSizeStr := ctx.Query("pageSize")
-	if pageStr == "" || pageSizeStr == "" {
-		response(ctx, 40001, nil)
-		return
-	}
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page <= 0 {
-		response(ctx, 40002, nil)
-		return
-	}
-	pageSize, err := strconv.Atoi(pageSizeStr)
-	if err != nil || pageSize <= 0 {
-		response(ctx, 40002, nil)
-		return
-	}
-	if pageSize > 50 {
-		response(ctx, 40003, nil)
-		return
+	var page, pageSize int
+	if pageStr != "" && pageSizeStr != "" {
+		page, err := strconv.Atoi(pageStr)
+		if err != nil || page <= 0 {
+			response(ctx, 40002, nil)
+			return
+		}
+		if pageSize > 100 {
+			response(ctx, 40003, nil)
+			return
+		}
+		pageSize, err := strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize <= 0 {
+			response(ctx, 40002, nil)
+			return
+		}
+	} else {
+		page = 1
+		pageSize = 10
 	}
 	users, err := ctrl.svc.AllUser()
 	if err != nil {
