@@ -53,8 +53,8 @@ func (form *AssetCreate) check() map[string]string {
 }
 
 func checkType(result map[string]string, t string) {
-	if t != "ip" && t != "dns" {
-		result["type"] = "非可选的类型(ip, dns)"
+	if t != "ip" && t != "domain" {
+		result["type"] = "非可选的类型(ip, domain)"
 	}
 }
 func checkAddress(result map[string]string, typeStr, address string) {
@@ -65,11 +65,11 @@ func checkAddress(result map[string]string, typeStr, address string) {
 			result["address"] = "IP地址格式不正确"
 		}
 	}
-	if strings.EqualFold(typeStr, "dns") {
+	if strings.EqualFold(typeStr, "domain") {
 		reg, _ := regexp2.Compile(`^\.([a-zA-Z]+)$`, 0)
 		matched, _ := reg.FindStringMatch(address)
 		if matched != nil {
-			result["address"] = "DNS地址格式不正确"
+			result["address"] = "domain地址格式不正确"
 		}
 	}
 }

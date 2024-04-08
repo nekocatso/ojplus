@@ -102,6 +102,10 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 	response(ctx, 201, map[string]int{"assetID": asset.ID})
 }
 
+func (ctrl *Asset) UpdateAsset(ctx *gin.Context) {
+
+}
+
 func (ctrl *Asset) SelectAsset(ctx *gin.Context) {
 	// 数据校验
 	form, err := forms.NewAssetSelect(ctx)
