@@ -14,7 +14,7 @@ type Login struct {
 
 func NewLogin(ctx *gin.Context) (*Login, error) {
 	var form *Login
-	err := ctx.BindJSON(&form)
+	err := ctx.ShouldBind(&form)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ type Refresh struct {
 
 func NewRefresh(ctx *gin.Context) (*Refresh, error) {
 	var form *Refresh
-	err := ctx.BindJSON(&form)
+	err := ctx.ShouldBind(&form)
 	if err != nil {
 		return nil, err
 	}

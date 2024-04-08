@@ -21,6 +21,14 @@ func NewDatabase(cfg *config.Mysql) (*Database, error) {
 	err = engine.Sync(
 		new(User),
 		new(Token),
+		new(Asset),
+		new(AssetRule),
+		new(AssetUser),
+		new(Rule),
+		new(TcpInfo),
+		new(PingInfo),
+		new(AlarmTemplate),
+		new(AlarmLog),
 	)
 	if err != nil {
 		return nil, err

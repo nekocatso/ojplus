@@ -72,6 +72,7 @@ var responseStatus = map[int]string{
 	// Other Status
 	40001: "请求格式错误",
 	40002: "请求参数非法",
+	40003: "请求超出限制",
 	40901: "唯一性约束数据已存在",
 }
 
@@ -80,13 +81,7 @@ func response(ctx *gin.Context, code int, data interface{}) {
 }
 
 func responseWithMessage(ctx *gin.Context, message string, code int, data interface{}) {
-	statusCode := code
-	if statusCode >= 999 {
-		statusCode = statusCode / 100
-	} else if _, ok := responseStatus[statusCode]; !ok {
-		statusCode = 200
-	}
-	ctx.JSON(statusCode, gin.H{
+	ctx.JSON(200, gin.H{
 		"message": message,
 		"code":    code,
 		"data":    data,
