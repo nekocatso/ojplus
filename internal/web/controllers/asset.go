@@ -205,6 +205,7 @@ func (ctrl *Asset) SelectAsset(ctx *gin.Context) {
 	userID := claims["userID"].(int)
 	assets, err := ctrl.svc.FindAssets(userID, form.Conditions)
 	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}

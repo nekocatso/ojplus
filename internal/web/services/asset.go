@@ -4,6 +4,7 @@ import (
 	"Alarm/internal/web/models"
 	"errors"
 	"fmt"
+	"time"
 )
 
 type Asset struct {
@@ -193,10 +194,14 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 			queryBuilder = queryBuilder.And("type = ?", value)
 		case "creatorID":
 			queryBuilder = queryBuilder.And("creator_id = ?", value)
+		case "address":
+			queryBuilder = queryBuilder.And("address LIKE ?", "%"+value.(string)+"%")
 		case "createTimeBegin":
-			queryBuilder = queryBuilder.And("created_at >= ?", value)
+			tm := time.Unix(int64(value.(int)), 0).Format("2006-01-02 15:04:05")
+			queryBuilder = queryBuilder.And("asset.created_at >= ?", tm)
 		case "createTimeEnd":
-			queryBuilder = queryBuilder.And("created_at <= ?", value)
+			tm := time.Unix(int64(value.(int)), 0).Format("2006-01-02 15:04:05")
+			queryBuilder = queryBuilder.And("asset.created_at <= ?", tm)
 		case "enable":
 			if value.(int) > 0 {
 				queryBuilder = queryBuilder.And("state > 0")

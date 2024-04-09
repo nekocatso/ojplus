@@ -10,14 +10,14 @@ import (
 )
 
 type AssetCreate struct {
-	Name    string `validate:"required,max=24"`
-	Type    string `validate:"required,max=12"`
-	Address string `validate:"required,max=128"`
-	Note    string `validate:"omitempty,max=128"`
-	Enable  bool   `validate:"omitempty"`
-	Users   []int  `validate:"omitempty"`
-	Rules   []int  `validate:"omitempty"`
-	Model   *models.Asset
+	Name    string        `validate:"required,max=24"`
+	Type    string        `validate:"required,max=12"`
+	Address string        `validate:"required,max=128"`
+	Note    string        `validate:"omitempty,max=128"`
+	Enable  bool          `validate:"omitempty"`
+	Users   []int         `validate:"omitempty"`
+	Rules   []int         `validate:"omitempty"`
+	Model   *models.Asset `validate:"-"`
 }
 
 func NewAssetCreate(ctx *gin.Context) (*AssetCreate, error) {
@@ -56,11 +56,11 @@ type AssetUpdate struct {
 	Name string `validate:"required,max=24"`
 	// Type    string `validate:"required,max=12"`
 	// Address string `validate:"required,max=128"`
-	Note   string `validate:"required,max=128"`
-	Enable bool   `validate:"required"`
-	Users  []int  `validate:"required"`
-	Rules  []int  `validate:"required"`
-	Model  *models.Asset
+	Note   string        `validate:"required,max=128"`
+	Enable bool          `validate:"required"`
+	Users  []int         `validate:"required"`
+	Rules  []int         `validate:"required"`
+	Model  *models.Asset `validate:"-"`
 }
 
 func NewAssetUpdate(ctx *gin.Context) (*AssetUpdate, error) {
@@ -121,14 +121,15 @@ type AssetSelect struct {
 	Page       int `validate:"required,gt=0"`
 	PageSize   int `validate:"required,gt=0,lte=100"`
 	Query      *AssetConditions
-	Model      *models.Asset
-	Conditions map[string]interface{}
+	Model      *models.Asset          `validate:"-"`
+	Conditions map[string]interface{} `validate:"-"`
 }
 
 type AssetConditions struct {
 	Name            string `validate:"omitempty"`
 	Type            string `validate:"omitempty"`
 	CreatorID       int    `validate:"omitempty,gt=0"`
+	Address         string `validate:"omitempty,max=128"`
 	State           int    `validate:"omitempty,gte=-1,lte=3"`
 	Enable          int    `validate:"omitempty"`
 	CreateTimeBegin int    `validate:"required_with=CreateTimeEnd"`
@@ -158,6 +159,7 @@ func NewAssetSelect(ctx *gin.Context) (*AssetSelect, error) {
 		Name:      form.Query.Name,
 		State:     state,
 		Type:      form.Query.Type,
+		Address:   form.Query.Address,
 		CreatorID: form.Query.CreatorID,
 	}
 	form.Conditions = make(map[string]interface{})
@@ -166,6 +168,9 @@ func NewAssetSelect(ctx *gin.Context) (*AssetSelect, error) {
 	}
 	if form.Query.Type != "" {
 		form.Conditions["type"] = form.Query.Type
+	}
+	if form.Query.Address != "" {
+		form.Conditions["address"] = form.Query.Address
 	}
 	if form.Query.CreatorID != 0 {
 		form.Conditions["creatorID"] = form.Query.CreatorID
@@ -190,5 +195,6 @@ func (form *AssetSelect) check() map[string]string {
 	if form.Query.Enable*form.Query.State < 0 {
 		result["state"] = "state与enable相冲突"
 	}
+	checkAddress(result, form.Query.Type, form.Query.Address)
 	return result
 }

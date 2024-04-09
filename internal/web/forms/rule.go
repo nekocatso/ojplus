@@ -1,17 +1,23 @@
 package forms
 
-import "github.com/gin-gonic/gin"
+import (
+	"Alarm/internal/web/models"
+
+	"github.com/gin-gonic/gin"
+)
 
 type RulePingCreate struct {
-	Name         string `validate:"required,max=24"`
-	Type         string `validate:"required,max=12"`
-	AlarmID      int    `validate:"required"`
-	Overtime     int    `validate:"required"`
-	DeclineLimit int    `validate:"required"`
-	RecoverLimit int    `validate:"required"`
-	LatencyLimit int    `validate:"required"`
-	LostLimit    int    `validate:"required"`
-	Mode         int    `validate:"required"`
+	Name         string           `validate:"required,max=24"`
+	Type         string           `validate:"required,max=12"`
+	AlarmID      int              `validate:"required"`
+	Overtime     int              `validate:"required"`
+	DeclineLimit int              `validate:"required"`
+	RecoverLimit int              `validate:"required"`
+	LatencyLimit int              `validate:"required"`
+	LostLimit    int              `validate:"required"`
+	Mode         int              `validate:"required"`
+	RuleInfo     *models.Rule     `validate:"-"`
+	PingInfo     *models.PingInfo `validate:"-"`
 }
 
 func NewRuleCreate(ctx *gin.Context) (*RulePingCreate, error) {

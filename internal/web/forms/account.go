@@ -8,12 +8,12 @@ import (
 )
 
 type UserCreate struct {
-	Username string `validate:"required,min=3,max=32"`
-	Password string `validate:"required,min=6,max=128"`
-	Name     string `validate:"required,max=24"`
-	Email    string `validate:"omitempty,email"`
-	Phone    string `validate:"omitempty,number,min=6,max=32"`
-	Model    *models.User
+	Username string       `validate:"required,min=3,max=32"`
+	Password string       `validate:"required,min=6,max=128"`
+	Name     string       `validate:"required,max=24"`
+	Email    string       `validate:"omitempty,email"`
+	Phone    string       `validate:"omitempty,number,min=6,max=32"`
+	Model    *models.User `validate:"-"`
 }
 
 func NewUserCreate(ctx *gin.Context) (*UserCreate, error) {
@@ -41,10 +41,10 @@ func (form *UserCreate) check() map[string]string {
 }
 
 type UserUpdate struct {
-	Email    string `validate:"omitempty,email"`
-	Phone    string `validate:"omitempty,number,min=6,max=32"`
-	Password string `validate:"omitempty,min=6,max=128"`
-	Model    *models.User
+	Email    string       `validate:"omitempty,email"`
+	Phone    string       `validate:"omitempty,number,min=6,max=32"`
+	Password string       `validate:"omitempty,min=6,max=128"`
+	Model    *models.User `validate:"-"`
 }
 
 func NewUserUpdate(ctx *gin.Context) (*UserUpdate, error) {
