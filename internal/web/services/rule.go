@@ -3,6 +3,7 @@ package services
 import (
 	"Alarm/internal/web/models"
 	"errors"
+	"fmt"
 )
 
 type Rule struct {
@@ -19,8 +20,16 @@ func NewRule(cfg map[string]interface{}) *Rule {
 	}
 }
 
-func (svc *Rule) CreatePingRule(rule *models.Rule, pingInfo *models.PingInfo) error {
+func (svc *Rule) CreateRule(rule *models.Rule) error {
 	_, err := svc.db.Engine.Insert(rule)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (svc *Rule) CreatePingRule(rule *models.Rule, pingInfo *models.PingInfo) error {
+	err := svc.CreateRule(rule)
 	if err != nil {
 		return err
 	}
@@ -38,8 +47,9 @@ func (svc *Rule) CreatePingRule(rule *models.Rule, pingInfo *models.PingInfo) er
 	}
 	return err
 }
+
 func (svc *Rule) CreateTCPRule(rule *models.Rule, tcpInfo *models.TCPInfo) error {
-	_, err := svc.db.Engine.Insert(rule)
+	err := svc.CreateRule(rule)
 	if err != nil {
 		return err
 	}
@@ -60,4 +70,49 @@ func (svc *Rule) CreateTCPRule(rule *models.Rule, tcpInfo *models.TCPInfo) error
 
 func (svc *Rule) SetRule(rule *models.Rule) (bool, error) {
 	return svc.db.Engine.Get(rule)
+}
+
+func (svc *Rule) BindAssets(ruleID int, assetIDs []int) error {
+	session := svc.db.Engine.NewSession()
+	defer session.Close()
+	err := session.Begin()
+	if err != nil {
+		return err
+	}
+	// 解除已有关联
+	_, err = session.Where("rule_id = ?", ruleID).Delete(&models.AssetRule{})
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	// 关联新的资产
+	for _, assetID := range assetIDs {
+		asset := &models.Asset{ID: assetID}
+		exists, err := session.Exist(asset)
+		if err != nil {
+			session.Rollback()
+			return err
+		}
+		if !exists {
+			session.Rollback()
+			return fmt.Errorf("asset with ID %d does not exist", assetID)
+		}
+
+		assetRule := &models.AssetRule{
+			AssetID: assetID,
+			RuleID:  ruleID,
+		}
+		_, err = session.Insert(assetRule)
+		if err != nil {
+			session.Rollback()
+			return err
+		}
+	}
+	// 提交事务
+	err = session.Commit()
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	return err
 }

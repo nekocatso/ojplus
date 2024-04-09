@@ -10,6 +10,7 @@ type Rule struct {
 	Interval     int    `xorm:"notnull"`
 	DeclineLimit int    `xorm:"notnull"`
 	RecoverLimit int    `xorm:"notnull"`
+	Note         string
 }
 
 type PingInfo struct {

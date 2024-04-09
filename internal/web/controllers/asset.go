@@ -73,15 +73,8 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 	}
 	if form.Users != nil {
 		userIDs := append(form.Users, asset.CreatorID)
-		err = ctrl.svc.BindUsers(asset.ID, userIDs)
-		if merr, ok := err.(*mysql.MySQLError); ok {
-			if merr.Number == 1062 {
-				response(ctx, 40901, nil)
-				return
-			}
-		}
-		if err != nil || asset.ID == 0 {
-			log.Println(err)
+		err := ctrl.svc.BindUsers(asset.ID, userIDs)
+		if err != nil {
 			response(ctx, 400, nil)
 			return
 		}

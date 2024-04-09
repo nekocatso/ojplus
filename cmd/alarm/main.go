@@ -83,7 +83,7 @@ func main() {
 		group.POST("/asset", AuthCtrl.LoginMiddleware, AssetCtrl.CreateAsset)
 		group.POST("/assets/query", AuthCtrl.LoginMiddleware, AssetCtrl.SelectAsset)
 
-		group.POST("/rule/ping", AuthCtrl.LoginMiddleware, RuleCtrl.CreateRule)
+		group.POST("/rule", AuthCtrl.LoginMiddleware, RuleCtrl.CreateRule)
 	}
 	engine.Run(globalConfig.Gin.Port)
 }
