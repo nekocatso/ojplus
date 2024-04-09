@@ -1,5 +1,12 @@
-[module1]
-item = "example"
+[gin]
+port = ":8080"
+# Mysql
+mysql.dsn = "zzh:123.com@tcp(127.0.0.1:3306)/alarm?charset=utf8"
+# Redis
+redis.addr = "127.0.0.1:6379"
+redis.password = ""
+redis.db = 0
 
-[module2]
-item = 123456
+token.privateKeyPath = "."
+token.accessValidity = 3600   # 1小时
+token.refreshValidity = 172800 # 2天
