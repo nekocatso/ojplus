@@ -29,7 +29,6 @@ func (ctrl *Auth) LoginMiddleware(ctx *gin.Context) {
 	claims, err := ctrl.svc.ParseToken(ctrl.cfg["publicKey"], token)
 	if err != nil || claims == nil {
 		response(ctx, 401, nil)
-		log.Println(err)
 		ctx.Abort()
 		return
 	}
@@ -130,13 +129,11 @@ func (ctrl *Auth) Refresh(ctx *gin.Context) {
 	claims, err := ctrl.svc.ParseToken(ctrl.cfg["publicKey"], form.RefreshToken)
 	if err != nil || claims == nil {
 		response(ctx, 401, nil)
-		log.Println(err)
 		ctx.Abort()
 		return
 	}
 	if claims["type"].(string) != "refresh" {
 		response(ctx, 401, nil)
-		log.Println("not refresh")
 		ctx.Abort()
 		return
 	}

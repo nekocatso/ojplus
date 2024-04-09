@@ -1,25 +1,31 @@
 package models
 
 type Rule struct {
-	ID          int    `xorm:"'id' pk autoincr"`
-	Name        string `xorm:"notnull"`
-	CreatorID   int    `xorm:"notnull"`
-	AlarmID     int    `xorm:"notnull"`
-	Overtime    int    `xorm:"notnull"`
-	Interval    int    `xorm:"notnull"`
-	WrongLimit  int    `xorm:"notnull"`
-	HealthLimit int    `xorm:"notnull"`
+	ID           int    `xorm:"'id' pk autoincr"`
+	Name         string `xorm:"notnull"`
+	Type         string `xorm:"notnull"`
+	CreatorID    int    `xorm:"'creator_id' notnull"`
+	AlarmID      int    `xorm:"'alarm_id' notnull"`
+	Overtime     int    `xorm:"notnull"`
+	Interval     int    `xorm:"notnull"`
+	DeclineLimit int    `xorm:"notnull"`
+	RecoverLimit int    `xorm:"notnull"`
+	Note         string
 }
 
 type PingInfo struct {
-	ID           int `xorm:"'id' pk autoincr"`
+	ID           int `xorm:"'id' pk"`
 	Mode         int `xorm:"notnull"`
 	LatencyLimit int `xorm:"notnull"`
 	LostLimit    int `xorm:"notnull"`
 }
 
-type TcpInfo struct {
-	ID           int    `xorm:"'id' pk autoincr"`
+type TCPInfo struct {
+	ID           int    `xorm:"'id' pk"`
 	EnablePorts  string `xorm:"notnull"`
 	DisablePorts string `xorm:"notnull"`
+}
+
+func (t *TCPInfo) TableName() string {
+	return "tcp_info"
 }

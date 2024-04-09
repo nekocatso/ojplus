@@ -7,9 +7,9 @@ import (
 )
 
 type Login struct {
-	Username string `validate:"required,max=32"`
-	Password string `validate:"required,max=32"`
-	Model    *models.User
+	Username string       `validate:"required,max=32"`
+	Password string       `validate:"required,max=32"`
+	Model    *models.User `validate:"-"`
 }
 
 func NewLogin(ctx *gin.Context) (*Login, error) {

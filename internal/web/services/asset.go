@@ -4,6 +4,7 @@ import (
 	"Alarm/internal/web/models"
 	"errors"
 	"fmt"
+	"time"
 )
 
 type Asset struct {
@@ -74,6 +75,7 @@ func (svc *Asset) BindUsers(assetID int, userIDs []int) error {
 	}
 	return err
 }
+
 func (svc *Asset) BindRules(assetID int, ruleIDs []int) error {
 	session := svc.db.Engine.NewSession()
 	defer session.Close()
@@ -180,37 +182,50 @@ func (svc *Asset) IsAssetExist(asset *models.Asset) (bool, string, error) {
 	return false, "", nil
 }
 
-func (svc *Asset) QueryAssetsWithConditions(conditions map[string]interface{}) ([]Asset, error) {
-	var assets []Asset
-
+func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]models.Asset, error) {
+	assets := make([]models.Asset, 0)
 	// 构建查询条件
-	queryBuilder := svc.db.Engine.Cols("id", "name", "type", "address", "note", "state", "creator_id")
+	queryBuilder := svc.db.Engine.Join("INNER", "asset_user", "asset.id = asset_user.asset_id").Where("asset_user.user_id = ?", userID)
 	for key, value := range conditions {
 		switch key {
 		case "name":
-			queryBuilder = queryBuilder.And("name = ?", value)
+			queryBuilder = queryBuilder.And("name LIKE ?", "%"+value.(string)+"%")
 		case "type":
 			queryBuilder = queryBuilder.And("type = ?", value)
 		case "creatorID":
 			queryBuilder = queryBuilder.And("creator_id = ?", value)
+		case "address":
+			queryBuilder = queryBuilder.And("address LIKE ?", "%"+value.(string)+"%")
 		case "createTimeBegin":
-			queryBuilder = queryBuilder.And("created_at >= ?", value)
+			tm := time.Unix(int64(value.(int)), 0).Format("2006-01-02 15:04:05")
+			queryBuilder = queryBuilder.And("asset.created_at >= ?", tm)
 		case "createTimeEnd":
-			queryBuilder = queryBuilder.And("created_at <= ?", value)
+			tm := time.Unix(int64(value.(int)), 0).Format("2006-01-02 15:04:05")
+			queryBuilder = queryBuilder.And("asset.created_at <= ?", tm)
 		case "enable":
-			enable := value.(bool)
-			if enable {
+			if value.(int) > 0 {
 				queryBuilder = queryBuilder.And("state > 0")
 			} else {
 				queryBuilder = queryBuilder.And("state = -1")
 			}
+		case "state":
+			queryBuilder = queryBuilder.And("state = ?", value)
 		}
 	}
-
 	err := queryBuilder.Find(&assets)
 	if err != nil {
 		return nil, err
 	}
-
+	for i := range assets {
+		assets[i].Creator, err = GetUserByID(svc.db.Engine, assets[i].CreatorID)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return assets, nil
+}
+
+func (svc *Account) UpdateAsset(id int, asset *models.Asset) error {
+	_, err := svc.db.Engine.ID(id).Update(asset)
+	return err
 }

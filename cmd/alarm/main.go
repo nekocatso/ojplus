@@ -63,21 +63,27 @@ func main() {
 	AccountCtrl := controllers.NewAccount(ctrlConfig)
 	AuthCtrl := controllers.NewAuth(authConfig)
 	AssetCtrl := controllers.NewAsset(ctrlConfig)
+	RuleCtrl := controllers.NewRule(ctrlConfig)
 
 	// --Router Init
 	group := engine.Group("")
 	{
 		group.POST("/register", AccountCtrl.CreateUser)
-		group.GET("/users", AccountCtrl.FindUsers)
-		group.GET("/users/:id", AccountCtrl.GetUserByID)
-		group.GET("/assets/:assetID/users", AccountCtrl.GetUsersByAsset)
-		group.PATCH("/users/:id", AccountCtrl.UpdateUserByID)
+		group.GET("/users", AuthCtrl.LoginMiddleware, AccountCtrl.FindUsers)
+		group.GET("/users/:id", AuthCtrl.LoginMiddleware, AccountCtrl.GetUserByID)
+		group.GET("/assets/:assetID/users", AuthCtrl.LoginMiddleware, AccountCtrl.GetUsersByAsset)
+		group.PATCH("/users/:id", AuthCtrl.LoginMiddleware, AccountCtrl.UpdateUser)
 
 		group.GET("/authtest", AuthCtrl.LoginMiddleware, AuthCtrl.Test)
 		group.POST("/login", AuthCtrl.Login)
 		group.POST("/token", AuthCtrl.Refresh)
 
+		group.GET("/assets", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssets)
+		group.GET("/assets/id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetIDs)
 		group.POST("/asset", AuthCtrl.LoginMiddleware, AssetCtrl.CreateAsset)
+		group.POST("/assets/query", AuthCtrl.LoginMiddleware, AssetCtrl.SelectAsset)
+
+		group.POST("/rule", AuthCtrl.LoginMiddleware, RuleCtrl.CreateRule)
 	}
 	engine.Run(globalConfig.Gin.Port)
 }
