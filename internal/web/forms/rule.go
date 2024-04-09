@@ -50,6 +50,7 @@ func NewRuleCreate(ctx *gin.Context) (*RuleCreate, error) {
 		DisablePorts: form.DisablePorts,
 	}
 	return form, nil
+
 }
 
 func (form *RuleCreate) check() map[string]string {
