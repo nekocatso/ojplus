@@ -1,34 +1,26 @@
 package rule
 
 import (
-	"Alarm/internal/pkg/Cache"
 	"Alarm/internal/pkg/mail"
+	"Alarm/internal/web/models"
+	"time"
 )
 
-type rule interface{
-	Scan()
+type Rule interface {
+	State() error
 }
-type Ping struct{
-	Rcp *Cache.RedisClientPool
-	param map[string]string
+type state struct {
+	nor            int
+	abn            int
+	status         int
+	reason         string
+	correlation_id int
+	time           time.Time
+}
+type tools struct {
+	Rcp  *models.Cache
 	mail *mail.MailBox
-	times int 
-	status bool
-
-}
-type Tcp struct{
-	Rcp *Cache.RedisClientPool
-	param map[string]string
-	mail *mail.MailBox
-	times int 
-	status bool
-
-}
-func New(param map [string]string,mail *mail.MailBox,Rcp *Cache.RedisClientPool) *Ping{
-	return &Ping{param:param,mail:mail,Rcp: Rcp,times:0,status:false}
-}
-func (p *Ping)Scan(){
-	conn:=p.Rcp.GetConn()
-	conn.Do("")
+	db   *models.Database
 }
 
+//var AlarmCodeStatus = map[int]string{1: "异常触发", 2: "异常持续", 3: "异常结束", 4: "告警中止"}

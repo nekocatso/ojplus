@@ -7,8 +7,6 @@ import (
 
 func TestSendMail(t *testing.T) {
 	type args struct {
-		from *MailBox
-
 		subject string
 		to      []string
 		Cc      []string
@@ -21,14 +19,23 @@ func TestSendMail(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
-	}{{name: "success", args: args{from: mb, subject: "sendmailtestsuccess",
-		to: []string{"1648806490@qq.com"}, Cc: []string{"yangquanworkmail@163.com"},
-		Bcc: []string{"yangquan@ouryun.com.cn"}, message: "this is mail box send mail test ",
+	}{{name: "success", args: args{subject: "【告警】xx资产-【规则】-异常触发",
+		to: []string{"1648806490@qq.com"}, Cc: []string{},
+		Bcc: []string{}, message: `告警类型：PING检测/TCP端口探测<br>
+		告警节点：异常触发<br>
+		告警资产：资产1<br>
+		资产地址：192.168.1.1<br>
+		检测规则：规则1<br>
+		告警内容：
+	  	若为PING检测：<br>
+		&nbsp&nbsp&nbsp&nbsp响应时间大于等于X ms（附该次响应时间），丢包率大于等于X %（x+1%）<br>
+		告警时间：2024-03-18  09:30:30<br>
+		该资产在此规则监控下触发异常，请尽快处理！`,
 		annex: []string{ /* "/home/yq/go2-1/internal/pkg/mail/picture.png" */ }}}} // TODO: Add test cases.
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := SendMail(tt.args.from, tt.args.subject, tt.args.to, tt.args.Cc, tt.args.Bcc, tt.args.message, tt.args.annex); (err != nil) != tt.wantErr {
+			if err := mb.SendMail(tt.args.subject, tt.args.to, tt.args.Cc, tt.args.Bcc, tt.args.message, tt.args.annex); (err != nil) != tt.wantErr {
 				t.Errorf("SendMail() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

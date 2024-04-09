@@ -21,7 +21,7 @@ type MaillPool struct {
 func NewMailBox(name string, password string, host string, port int) *MailBox {
 	return &MailBox{name: name, password: password, host: host, port: port}
 }
-func SendMail(from *MailBox, subject string, to []string, Cc []string, Bcc []string, message string, annex []string) error {
+func (from *MailBox) SendMail(subject string, to []string, Cc []string, Bcc []string, message string, annex []string) error {
 	m := gomail.NewMessage()
 	m.SetHeader("From", from.name)
 	m.SetHeader("Subject", subject)
@@ -55,7 +55,7 @@ func (m MaillPool) Mail(assets string, message string, wait bool) {
 		m.mailmap[assets] = m.mailmap[assets] + "<br/>" + message
 
 	} else {
-		err := SendMail(m.mailbox, "this is a Alarm Reminder", []string{"1648806490@qq.com"}, nil, nil, m.mailmap[assets], nil)
+		err := m.mailbox.SendMail( "this is a Alarm Reminder", []string{"1648806490@qq.com"}, nil, nil, m.mailmap[assets], nil)
 		if err != nil {
 			fmt.Println(err)
 		}

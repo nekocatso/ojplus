@@ -2,13 +2,12 @@ package listener
 
 import (
 	"Alarm/internal/pkg/messagequeue"
-	"Alarm/internal/pkg/Cache"
+	"Alarm/internal/pkg/rule"
+	"Alarm/internal/web/models"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
-	"math/rand"
-	"strings"
+	"strconv"
 
 	"github.com/streadway/amqp"
 )
@@ -21,17 +20,18 @@ type Listener struct {
 	Messages   chan []byte
 	id         int
 	kind       string
-	Rcp        *Cache.RedisClientPool
+	Rcp        *models.Cache
+	Rule       map[int]rule.Rule
 }
 
-func NewListener(url string, kind string, rcp *Cache.RedisClientPool) (*Listener, error) {
+func NewListener(url string, kind string, rcp *models.Cache, id int, Rule map[int]rule.Rule) (*Listener, error) {
 	var L Listener
 	var err error
 	L.Connection, err = messagequeue.NewConnection(url)
 	if err != nil {
 		return &Listener{}, err
 	}
-	L.Queue, err = L.Connection.MessageQueueDeclare("hello", false, false, false, false, nil)
+	L.Queue, err = L.Connection.MessageQueueDeclare("queue2", false, false, false, false, nil)
 	if err != nil {
 		return &Listener{}, err
 	}
@@ -41,11 +41,12 @@ func NewListener(url string, kind string, rcp *Cache.RedisClientPool) (*Listener
 	L.Messages = make(chan []byte)
 	L.kind = kind
 	L.Rcp = rcp
-	L.id = rand.Int()
+	L.id = id
+	L.Rule = Rule
 	return &L, err
 }
 func (L Listener) Close() error {
-	L.Control <- true
+
 	if L.Queue == nil {
 		return errors.New("L.Queue is nil")
 	}
@@ -65,7 +66,7 @@ func (L Listener) Stop() (err error) {
 	L.Control <- true
 	return
 }
-func (L Listener) Listening(f func([]byte)) (err error) {
+func (L Listener) Listening() (err error) {
 
 	messages, err := L.Queue.GetMessage()
 	if err != nil {
@@ -92,27 +93,11 @@ func (L Listener) Listening(f func([]byte)) (err error) {
 
 func (L Listener) deal(body []byte) {
 
-	switch L.kind {
-	case "respone":
-		fmt.Println(L.id)
-		log.Println(string(body))
-		var res Response
-		json.Unmarshal(body, &res)
-		ts := strings.Split(res.Target, ",")
-		for _, t := range ts {
-			res.Target = t
-			j, err := json.Marshal(res)
-			if err != nil {
-				fmt.Println(err)
-			}
-			conn := L.Rcp.GetConn()
-			conn.Do("RPUSH", res.Target, string(j))
-			conn.Close()
-		}
-	case "runresult":
-		conn := L.Rcp.GetConn()
-		conn.Do("RPUSH", "RunResult", string(body))
-		conn.Close()
-	}
+	var res map[string]interface{}
+	json.Unmarshal(body, &res)
 
+	L.Rcp.Client.Set(res["correlation_id"].(string), body, 0)
+	id, _ := strconv.Atoi(res["correlation_id"].(string))
+	log.Println(L.Rule)
+	L.Rule[id].State()
 }
