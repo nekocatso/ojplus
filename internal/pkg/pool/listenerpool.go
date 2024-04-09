@@ -86,7 +86,7 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 				}
 			}
 			//获取tcp规则
-			t := models.TcpInfo{}
+			t := models.TCPInfo{}
 			flag, err = lp.db.Engine.Where("id = ?", j.RuleID).Get(&t)
 			log.Println(j.RuleID, "tcp ", flag)
 
@@ -176,7 +176,7 @@ func (p *ListenerPool) AddTCP(id int) error {
 	if _, err := p.db.Engine.Where("id = ?", ar.RuleID).Get(&r); err != nil {
 		return err
 	}
-	t := models.TcpInfo{}
+	t := models.TCPInfo{}
 	if _, err := p.db.Engine.Where("id = ?", ar.RuleID).Get(&t); err != nil {
 		return err
 	}

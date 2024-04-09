@@ -13,7 +13,7 @@ type Auth struct {
 	cfg map[string]interface{}
 }
 
-func NewAuthController(cfg map[string]interface{}) *Auth {
+func NewAuth(cfg map[string]interface{}) *Auth {
 	svc := services.NewAuth(cfg)
 	return &Auth{svc: svc, cfg: cfg}
 }
@@ -21,22 +21,24 @@ func NewAuthController(cfg map[string]interface{}) *Auth {
 func (ctrl *Auth) LoginMiddleware(ctx *gin.Context) {
 	token := ctx.GetHeader("Authorization")
 	if token == "" {
-		response(ctx, 203, nil)
+		response(ctx, 401, nil)
 		ctx.Abort()
 		return
 	}
 
 	claims, err := ctrl.svc.ParseToken(ctrl.cfg["publicKey"], token)
 	if err != nil || claims == nil {
-		response(ctx, 203, nil)
-		log.Println(err)
+		response(ctx, 401, nil)
 		ctx.Abort()
 		return
 	}
 	if claims["type"].(string) != "access" {
-		response(ctx, 203, nil)
+		response(ctx, 401, nil)
 		ctx.Abort()
 		return
+	}
+	if _, ok := claims["userID"]; ok {
+		claims["userID"] = int(claims["userID"].(float64))
 	}
 	ctx.Set("claims", claims)
 	ctx.Next()
@@ -67,7 +69,7 @@ func (ctrl *Auth) Login(ctx *gin.Context) {
 		return
 	}
 	if !pass {
-		response(ctx, 203, nil)
+		response(ctx, 401, nil)
 		return
 	}
 	//获取用户信息
@@ -89,7 +91,7 @@ func (ctrl *Auth) Login(ctx *gin.Context) {
 		return
 	}
 	refreshClaims := map[string]interface{}{
-		"userID": user.ID,
+		"userID": int(user.ID),
 		"type":   "refresh",
 	}
 	refreshToken, err := ctrl.svc.GenerateToken(ctrl.cfg["privateKey"], ctrl.cfg["refreshTokenValidity"].(int), refreshClaims)
@@ -126,14 +128,12 @@ func (ctrl *Auth) Refresh(ctx *gin.Context) {
 	//解析刷新令牌
 	claims, err := ctrl.svc.ParseToken(ctrl.cfg["publicKey"], form.RefreshToken)
 	if err != nil || claims == nil {
-		response(ctx, 203, nil)
-		log.Println(err)
+		response(ctx, 401, nil)
 		ctx.Abort()
 		return
 	}
 	if claims["type"].(string) != "refresh" {
-		response(ctx, 203, nil)
-		log.Println("not refresh")
+		response(ctx, 401, nil)
 		ctx.Abort()
 		return
 	}

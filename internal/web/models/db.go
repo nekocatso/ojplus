@@ -25,7 +25,7 @@ func NewDatabase(cfg *config.Mysql) (*Database, error) {
 		new(AssetRule),
 		new(AssetUser),
 		new(Rule),
-		new(TcpInfo),
+		new(TCPInfo),
 		new(PingInfo),
 		new(AlarmTemplate),
 		new(AlarmLog),

@@ -8,17 +8,17 @@ import (
 )
 
 type UserCreate struct {
-	Username string `validate:"required,min=3,max=32"`
-	Password string `validate:"required,min=6,max=128"`
-	Name     string `validate:"required,max=24"`
-	Email    string `validate:"omitempty,email"`
-	Phone    string `validate:"omitempty,number,min=6,max=32"`
-	Model    *models.User
+	Username string       `validate:"required,min=3,max=32"`
+	Password string       `validate:"required,min=6,max=128"`
+	Name     string       `validate:"required,max=24"`
+	Email    string       `validate:"omitempty,email"`
+	Phone    string       `validate:"omitempty,number,min=6,max=32"`
+	Model    *models.User `validate:"-"`
 }
 
 func NewUserCreate(ctx *gin.Context) (*UserCreate, error) {
 	var form *UserCreate
-	err := ctx.BindJSON(&form)
+	err := ctx.ShouldBind(&form)
 	if err != nil {
 		return nil, err
 	}
@@ -33,6 +33,35 @@ func NewUserCreate(ctx *gin.Context) (*UserCreate, error) {
 }
 
 func (form *UserCreate) check() map[string]string {
+	result := make(map[string]string)
+	if form.Phone != "" && !checkPhone(form.Phone) {
+		result["phone"] = "电话号码格式错误"
+	}
+	return result
+}
+
+type UserUpdate struct {
+	Email    string       `validate:"omitempty,email"`
+	Phone    string       `validate:"omitempty,number,min=6,max=32"`
+	Password string       `validate:"omitempty,min=6,max=128"`
+	Model    *models.User `validate:"-"`
+}
+
+func NewUserUpdate(ctx *gin.Context) (*UserUpdate, error) {
+	var form *UserUpdate
+	err := ctx.ShouldBind(&form)
+	if err != nil {
+		return nil, err
+	}
+	form.Model = &models.User{
+		Password: form.Password,
+		Email:    form.Email,
+		Phone:    form.Phone,
+	}
+	return form, nil
+}
+
+func (form *UserUpdate) check() map[string]string {
 	result := make(map[string]string)
 	if form.Phone != "" && !checkPhone(form.Phone) {
 		result["phone"] = "电话号码格式错误"

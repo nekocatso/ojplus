@@ -92,12 +92,12 @@ func (L Listener) Listening() (err error) {
 }
 
 func (L Listener) deal(body []byte) {
-
+	log.Println(string(body))
 	var res map[string]interface{}
 	json.Unmarshal(body, &res)
 
 	L.Rcp.Client.Set(res["correlation_id"].(string), body, 0)
 	id, _ := strconv.Atoi(res["correlation_id"].(string))
-	log.Println(L.Rule)
+
 	L.Rule[id].State()
 }

@@ -44,8 +44,8 @@ func NewPing(id int, Rcp *models.Cache, mail *mail.MailBox, db *models.Database)
 	var r models.Rule
 	p.tools.db.Engine.Where("id=?", p.rule_id).Get(&r)
 	p.rule = r.Name
-	p.wrong_limit = r.WrongLimit
-	p.health_limit = r.HealthLimit
+	p.wrong_limit = r.DeclineLimit
+	p.health_limit = r.RecoverLimit
 	p.alarm_id = r.AlarmID
 
 	var pi models.PingInfo
@@ -240,7 +240,7 @@ func (p *Ping) Save() {
 		RuleID:    p.rule_id,
 		State:     alarmstate,
 		Mails:     m,
-		Message:   []string{p.state.reason},
+		Messages:   []string{p.state.reason},
 		CreatedAt: p.state.time,
 	})
 	if err != nil {
