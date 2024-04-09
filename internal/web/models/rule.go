@@ -18,8 +18,12 @@ type PingInfo struct {
 	LostLimit    int `xorm:"notnull"`
 }
 
-type TcpInfo struct {
+type TCPInfo struct {
 	ID           int    `xorm:"'id' pk"`
 	EnablePorts  string `xorm:"notnull"`
 	DisablePorts string `xorm:"notnull"`
+}
+
+func (t *TCPInfo) TableName() string {
+	return "tcp_info"
 }
