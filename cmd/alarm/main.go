@@ -63,6 +63,7 @@ func main() {
 	AccountCtrl := controllers.NewAccount(ctrlConfig)
 	AuthCtrl := controllers.NewAuth(authConfig)
 	AssetCtrl := controllers.NewAsset(ctrlConfig)
+	RuleCtrl := controllers.NewRule(ctrlConfig)
 
 	// --Router Init
 	group := engine.Group("")
@@ -81,6 +82,8 @@ func main() {
 		group.GET("/assets/id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetIDs)
 		group.POST("/asset", AuthCtrl.LoginMiddleware, AssetCtrl.CreateAsset)
 		group.POST("/assets/query", AuthCtrl.LoginMiddleware, AssetCtrl.SelectAsset)
+
+		group.POST("/rule/ping", AuthCtrl.LoginMiddleware, RuleCtrl.CreateRule)
 	}
 	engine.Run(globalConfig.Gin.Port)
 }

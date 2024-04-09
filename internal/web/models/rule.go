@@ -1,14 +1,15 @@
 package models
 
 type Rule struct {
-	ID          int    `xorm:"'id' pk autoincr"`
-	Name        string `xorm:"notnull"`
-	CreatorID   int    `xorm:"'creator_id' notnull"`
-	AlarmID     int    `xorm:"'alarm_id' notnull"`
-	Overtime    int    `xorm:"notnull"`
-	Interval    int    `xorm:"notnull"`
-	WrongLimit  int    `xorm:"notnull"`
-	HealthLimit int    `xorm:"notnull"`
+	ID           int    `xorm:"'id' pk autoincr"`
+	Name         string `xorm:"notnull"`
+	Type         string `xorm:"notnull"`
+	CreatorID    int    `xorm:"'creator_id' notnull"`
+	AlarmID      int    `xorm:"'alarm_id' notnull"`
+	Overtime     int    `xorm:"notnull"`
+	Interval     int    `xorm:"notnull"`
+	DeclineLimit int    `xorm:"notnull"`
+	RecoverLimit int    `xorm:"notnull"`
 }
 
 type PingInfo struct {
