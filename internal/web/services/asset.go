@@ -182,6 +182,14 @@ func (svc *Asset) IsAssetExist(asset *models.Asset) (bool, string, error) {
 	return false, "", nil
 }
 
+func (svc *Asset) IsAssetExistByID(assetID int) (bool, error) {
+	has, err := svc.db.Engine.ID(assetID).Exist(&models.Asset{})
+	if err != nil {
+		return has, err
+	}
+	return has, nil
+}
+
 func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]models.Asset, error) {
 	assets := make([]models.Asset, 0)
 	// 构建查询条件
@@ -221,11 +229,28 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 		if err != nil {
 			return nil, err
 		}
+		assets[i].RuleNames, err = svc.GetRuleNames(assets[i].ID)
+		if err != nil {
+			fmt.Println(assets[i].ID)
+			return nil, err
+		}
 	}
 	return assets, nil
 }
 
-func (svc *Account) UpdateAsset(id int, asset *models.Asset) error {
-	_, err := svc.db.Engine.ID(id).Update(asset)
-	return err
+func (svc *Asset) IsAccessAsset(assetID int, userID int) (bool, error) {
+	has, err := svc.db.Engine.Where("asset_id = ? AND user_id = ?", assetID, userID).Exist(&models.AssetUser{})
+	if err != nil {
+		return false, err
+	}
+	return has, nil
+}
+
+func (svc *Asset) GetRuleNames(assetID int) ([]string, error) {
+	rules := []string{}
+	err := svc.db.Engine.Table("rule").Join("INNER", "asset_rule", "rule.id = asset_rule.rule_id").Cols("rule.name").Where("asset_rule.asset_id = ?", assetID).Find(&rules)
+	if err != nil {
+		return nil, err
+	}
+	return rules, nil
 }

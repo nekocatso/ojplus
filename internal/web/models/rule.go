@@ -3,19 +3,23 @@ package models
 import "time"
 
 type Rule struct {
-	ID           int    `xorm:"'id' pk autoincr"`
-	Name         string `xorm:"notnull"`
-	Type         string `xorm:"notnull"`
-	CreatorID    int    `xorm:"'creator_id' notnull"`
-	AlarmID      int    `xorm:"'alarm_id' notnull"`
-	Overtime     int    `xorm:"notnull"`
-	Interval     int    `xorm:"notnull"`
-	DeclineLimit int    `xorm:"notnull"`
-	RecoverLimit int    `xorm:"notnull"`
-	Note         string
-	CreateAt     time.Time `json:"-" xorm:"'created_at' created"`
-	UpdateAt     time.Time `json:"-" xorm:"'updated_at' updated"`
-	DeleteAt     time.Time `json:"-" xorm:"deleted"`
+	ID           int         `json:"id" xorm:"'id' pk autoincr"`
+	Name         string      `json:"name" xorm:"notnull  unique(name_creator)"`
+	Type         string      `json:"type" xorm:"notnull"`
+	CreatorID    int         `json:"-" xorm:"'creator_id' notnull unique(name_creator)"`
+	AlarmID      int         `json:"alarmID" xorm:"'alarm_id' notnull"`
+	Overtime     int         `json:"overtime" xorm:"notnull"`
+	Interval     int         `json:"interval" xorm:"notnull"`
+	DeclineLimit int         `json:"declineLimit" xorm:"notnull"`
+	RecoverLimit int         `json:"recoverLimit" xorm:"notnull"`
+	Note         *string     `json:"note" xorm:"null"`
+	CreateAt     time.Time   `json:"createAt" xorm:"'created_at' created"`
+	UpdateAt     time.Time   `json:"-" xorm:"'updated_at' updated"`
+	DeleteAt     time.Time   `json:"-" xorm:"deleted"`
+	Creator      *UserInfo   `json:"creator" xorm:"-"`
+	AssetNames   []string    `json:"assetNames" xorm:"-"`
+	AssetsCount  int         `json:"assetsCount" xorm:"-"`
+	Info         interface{} `json:"info" xorm:"-"`
 }
 
 type PingInfo struct {

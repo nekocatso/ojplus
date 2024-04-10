@@ -13,7 +13,7 @@ type AssetCreate struct {
 	Name    string        `validate:"required,max=24"`
 	Type    string        `validate:"required,max=12"`
 	Address string        `validate:"required,max=128"`
-	Note    string        `validate:"omitempty,max=128"`
+	Note    *string       `validate:"omitempty,max=128"`
 	Enable  bool          `validate:"omitempty"`
 	Users   []int         `validate:"omitempty"`
 	Rules   []int         `validate:"omitempty"`
@@ -56,7 +56,7 @@ type AssetUpdate struct {
 	Name string `validate:"required,max=24"`
 	// Type    string `validate:"required,max=12"`
 	// Address string `validate:"required,max=128"`
-	Note   string        `validate:"required,max=128"`
+	Note   *string       `validate:"required,max=128"`
 	Enable bool          `validate:"required"`
 	Users  []int         `validate:"required"`
 	Rules  []int         `validate:"required"`
@@ -142,10 +142,10 @@ func NewAssetSelect(ctx *gin.Context) (*AssetSelect, error) {
 	if err != nil {
 		return nil, err
 	}
-	var state int
 	if form.Query == nil {
 		form.Query = &AssetConditions{}
 	}
+	var state int
 	if form.Query.State != 0 {
 		if form.Query.Enable > 0 {
 			state = 3

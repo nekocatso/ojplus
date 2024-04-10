@@ -98,6 +98,21 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 
 func (ctrl *Asset) UpdateAsset(ctx *gin.Context) {
 	// 数据校验
+	assetID, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	has, err := ctrl.svc.IsAssetExistByID(assetID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !has {
+		response(ctx, 404, nil)
+		return
+	}
 	form, err := forms.NewAssetUpdate(ctx)
 	if err != nil {
 		response(ctx, 40001, nil)
@@ -114,6 +129,19 @@ func (ctrl *Asset) UpdateAsset(ctx *gin.Context) {
 		return
 	}
 	asset := form.Model
+	// 权限校验
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID := claims["userID"].(int)
+	access, err := ctrl.svc.IsAccessAsset(asset.ID, userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !access {
+		response(ctx, 404, nil)
+		return
+	}
 	// 更新数据
 	err = ctrl.svc.UpdateAsset(asset)
 	if err != nil {
@@ -175,7 +203,46 @@ func (ctrl *Asset) GetAssets(ctx *gin.Context) {
 	response(ctx, 200, data)
 }
 
-func (ctrl *Asset) SelectAsset(ctx *gin.Context) {
+func (ctrl *Asset) GetAssetByID(ctx *gin.Context) {
+	// 数据校验
+	assetID, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	has, err := ctrl.svc.IsAssetExistByID(assetID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !has {
+		response(ctx, 404, nil)
+		return
+	}
+	// 权限校验
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID := claims["userID"].(int)
+	access, err := ctrl.svc.IsAccessAsset(assetID, userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !access {
+		response(ctx, 404, nil)
+		return
+	}
+	// 获取资产信息
+	asset, err := ctrl.svc.GetAssetByID(assetID)
+	if err != nil {
+		response(ctx, 500, nil)
+		return
+	}
+	response(ctx, 200, asset)
+}
+
+func (ctrl *Asset) SelectAssets(ctx *gin.Context) {
 	// 数据校验
 	form, err := forms.NewAssetSelect(ctx)
 	if err != nil {
