@@ -27,10 +27,10 @@ type ListenerPool struct {
 	cSendQ          *messagequeue.MessageQueue //用于和cpp端发送控制信息的mq的queue
 	cGetQ           *messagequeue.MessageQueue //用于和cpp端接收控制信息执行结果的mq的queue
 	cGetch          <-chan amqp.Delivery
-	mail            *mail.MailBox
+	mail            *mail.MailPool
 }
 
-func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *mail.MailBox) (*ListenerPool, error) {
+func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *mail.MailPool) (*ListenerPool, error) {
 	var err error
 	lp := &ListenerPool{MaxListener: 2, NumListener: 0, ListenerList: []*listener.Listener{},
 		RedisClientPool: RedisClientPool, db: db, mail: mail}
@@ -41,6 +41,9 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 	}
 
 	lp.cGetQ, err = lp.cConn.MessageQueueDeclare("queue3", false, false, false, false, nil)
+	if err != nil {
+		return nil, err
+	}
 	lp.cGetch, err = lp.cGetQ.GetMessage()
 
 	if err != nil {
@@ -68,7 +71,7 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 		if err != nil {
 			return nil, err
 		}
-		log.Println(i.ID, ar)
+		//log.Println(i.ID, ar)
 		for _, j := range ar {
 
 			//获取ping规则
@@ -136,7 +139,7 @@ func (p *ListenerPool) AddPing(id int) error {
 		Correlation_id: fmt.Sprintf("%d", id),
 		Timestamp:      fmt.Sprintf("%d", time.Now().Unix()),
 		Control:        "continuous",
-		Config:         []any{"ping", r.Interval, 1, r.Overtime},
+		Config:         []any{"ping", r.Overtime, 1, r.Interval},
 	})
 	if err != nil {
 		return err
@@ -200,7 +203,7 @@ func (p *ListenerPool) AddTCP(id int) error {
 		Correlation_id: fmt.Sprintf("%d", id),
 		Timestamp:      fmt.Sprintf("%d", time.Now().Unix()),
 		Control:        "continuous",
-		Config:         []any{"telnet", r.Interval, 1, r.Overtime},
+		Config:         []any{"telnet", r.Overtime, 1, r.Interval},
 	})
 	fmt.Println(string(m))
 	if err != nil {
@@ -208,9 +211,6 @@ func (p *ListenerPool) AddTCP(id int) error {
 	}
 	p.cSendQ.SendMessage(m)
 
-	if err != nil {
-		return err
-	}
 	for {
 		select {
 		case c := <-p.cGetch:
@@ -231,6 +231,7 @@ func (p *ListenerPool) AddTCP(id int) error {
 
 }
 func (p *ListenerPool) DelPing(id int) error {
+
 	m, err := json.Marshal(listener.Request{
 		Type:           "request",
 		Action:         "stop_ping",
@@ -242,15 +243,13 @@ func (p *ListenerPool) DelPing(id int) error {
 	}
 	p.cSendQ.SendMessage(m)
 
-	if err != nil {
-		return err
-	}
 	c := <-p.cGetch
 	res := listener.RunResult{}
 	if err := json.Unmarshal(c.Body, &res); err != nil {
 		return err
 	}
 	if res.Status == "success" && res.Corrlation_id == fmt.Sprintf("%d", id) {
+		p.Rule[id].Update()
 		delete(p.Rule, id)
 		return nil
 	} else {
@@ -269,15 +268,13 @@ func (p *ListenerPool) DelTCP(id int) error {
 	}
 	p.cSendQ.SendMessage(m)
 
-	if err != nil {
-		return err
-	}
 	c := <-p.cGetch
 	res := listener.RunResult{}
 	if err := json.Unmarshal(c.Body, &res); err != nil {
 		return err
 	}
 	if res.Status == "success" && res.Corrlation_id == fmt.Sprintf("%d", id) {
+		p.Rule[id].Update()
 		delete(p.Rule, id)
 		return nil
 	} else {
@@ -285,31 +282,42 @@ func (p *ListenerPool) DelTCP(id int) error {
 	}
 }
 func (p *ListenerPool) UpdatePing(id int) error {
+	p.Rule[id].Update()
 	return p.AddPing(id)
 }
 func (p *ListenerPool) UpdateTCP(id int) error {
+	p.Rule[id].Update()
 	return p.AddTCP(id)
 }
 func (p *ListenerPool) Close() {
 	m, err := json.Marshal(listener.Request{
 		Type:           "request",
 		Action:         "stop_all",
+		Target:         []string{},
 		Correlation_id: fmt.Sprintf("%d", 0),
 		Timestamp:      fmt.Sprintf("%d", time.Now().Unix()),
+		Config:         []any{},
+		Control:        "continuous",
 	})
+	log.Println(string(m))
 	if err != nil {
 		log.Println(err)
 	}
 	p.cSendQ.SendMessage(m)
 
-	if err != nil {
-		log.Println(err)
-	}
 	c := <-p.cGetch
+
 	res := listener.RunResult{}
 	if err := json.Unmarshal(c.Body, &res); err != nil {
 		log.Println(err)
 	}
+	fmt.Println(res)
+	if res.Status == "success" {
+		log.Println("cpp stop all success")
+	} else {
+		log.Println("cpp stop all lose")
+	}
+
 	p.cGetQ.Close()
 	p.cSendQ.Close()
 	p.cConn.Close()

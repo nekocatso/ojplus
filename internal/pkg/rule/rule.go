@@ -7,19 +7,20 @@ import (
 )
 
 type Rule interface {
-	State() error
+	Scan() error
+	Update()
 }
-type state struct {
+type State struct {
 	nor            int
 	abn            int
-	status         int
+	Status         int
 	reason         string
 	correlation_id int
 	time           time.Time
 }
 type tools struct {
 	Rcp  *models.Cache
-	mail *mail.MailBox
+	mail *mail.MailPool
 	db   *models.Database
 }
 

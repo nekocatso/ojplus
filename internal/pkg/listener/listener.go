@@ -99,5 +99,10 @@ func (L Listener) deal(body []byte) {
 	L.Rcp.Client.Set(res["correlation_id"].(string), body, 0)
 	id, _ := strconv.Atoi(res["correlation_id"].(string))
 
-	L.Rule[id].State()
+	if L.Rule[id] != nil {
+		// log.Println(string(body))
+		L.Rule[id].Scan()
+	} else {
+		log.Println("rule is nil")
+	}
 }
