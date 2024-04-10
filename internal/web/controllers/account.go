@@ -168,19 +168,18 @@ func (ctrl *Account) GetUserByID(ctx *gin.Context) {
 	response(ctx, 200, userInfo)
 }
 
-func (ctrl *Account) GetUsersByAsset(ctx *gin.Context) {
-	assetID := ctx.Param("assetID")
-	assetIDInt, err := strconv.Atoi(assetID)
+func (ctrl *Account) GetUserIDsByAssetID(ctx *gin.Context) {
+	assetID, err := strconv.Atoi(ctx.Param("assetID"))
 	if err != nil {
 		response(ctx, 40001, nil)
 		return
 	}
-	if assetIDInt <= 0 {
+	if assetID <= 0 {
 		response(ctx, 40002, nil)
 		return
 	}
 	var users []int
-	users, err = ctrl.svc.GetUserIDsByAssetID(assetIDInt)
+	users, err = ctrl.svc.GetUserIDsByAssetID(assetID)
 	if err != nil {
 		response(ctx, 500, nil)
 		log.Println(err)

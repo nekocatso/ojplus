@@ -131,16 +131,10 @@ func (svc *Account) IsUserIDExist(userID int) (bool, error) {
 }
 
 func (svc *Account) GetUserIDsByAssetID(assetID int) ([]int, error) {
-	var assetUsers []models.AssetUser
-	err := svc.db.Engine.Where("asset_id = ?", assetID).Find(&assetUsers)
+	var userIDs []int
+	err := svc.db.Engine.Table("asset_user").Cols("user_id").Where("asset_id =?", assetID).Find(&userIDs)
 	if err != nil {
 		return nil, err
 	}
-
-	userIDs := []int{}
-	for _, assetUser := range assetUsers {
-		userIDs = append(userIDs, assetUser.UserID)
-	}
-
 	return userIDs, nil
 }
