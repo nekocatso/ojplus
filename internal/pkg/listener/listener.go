@@ -100,6 +100,6 @@ func (L Listener) deal(body []byte) {
 	id, _ := strconv.Atoi(res["correlation_id"].(string))
 
 	if L.Rule[id] != nil {
-		L.Rule[id].State()
+		L.Rule[id].Scan()
 	}
 }

@@ -7,7 +7,8 @@ import (
 )
 
 type Rule interface {
-	State() error
+	Scan() error
+	Update()
 }
 type State struct {
 	nor            int

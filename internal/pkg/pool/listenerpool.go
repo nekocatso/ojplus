@@ -211,9 +211,6 @@ func (p *ListenerPool) AddTCP(id int) error {
 	}
 	p.cSendQ.SendMessage(m)
 
-	if err != nil {
-		return err
-	}
 	for {
 		select {
 		case c := <-p.cGetch:
@@ -234,6 +231,7 @@ func (p *ListenerPool) AddTCP(id int) error {
 
 }
 func (p *ListenerPool) DelPing(id int) error {
+
 	m, err := json.Marshal(listener.Request{
 		Type:           "request",
 		Action:         "stop_ping",
@@ -245,15 +243,13 @@ func (p *ListenerPool) DelPing(id int) error {
 	}
 	p.cSendQ.SendMessage(m)
 
-	if err != nil {
-		return err
-	}
 	c := <-p.cGetch
 	res := listener.RunResult{}
 	if err := json.Unmarshal(c.Body, &res); err != nil {
 		return err
 	}
 	if res.Status == "success" && res.Corrlation_id == fmt.Sprintf("%d", id) {
+		p.Rule[id].Update()
 		delete(p.Rule, id)
 		return nil
 	} else {
@@ -272,15 +268,13 @@ func (p *ListenerPool) DelTCP(id int) error {
 	}
 	p.cSendQ.SendMessage(m)
 
-	if err != nil {
-		return err
-	}
 	c := <-p.cGetch
 	res := listener.RunResult{}
 	if err := json.Unmarshal(c.Body, &res); err != nil {
 		return err
 	}
 	if res.Status == "success" && res.Corrlation_id == fmt.Sprintf("%d", id) {
+		p.Rule[id].Update()
 		delete(p.Rule, id)
 		return nil
 	} else {
@@ -288,9 +282,11 @@ func (p *ListenerPool) DelTCP(id int) error {
 	}
 }
 func (p *ListenerPool) UpdatePing(id int) error {
+	p.Rule[id].Update()
 	return p.AddPing(id)
 }
 func (p *ListenerPool) UpdateTCP(id int) error {
+	p.Rule[id].Update()
 	return p.AddTCP(id)
 }
 func (p *ListenerPool) Close() {
@@ -309,20 +305,17 @@ func (p *ListenerPool) Close() {
 	}
 	p.cSendQ.SendMessage(m)
 
-	select {
-	case c := <-p.cGetch:
+	c := <-p.cGetch
 
-		res := listener.RunResult{}
-		if err := json.Unmarshal(c.Body, &res); err != nil {
-			log.Println(err)
-		}
-		fmt.Println(res)
-		if res.Status == "success" {
-			log.Println("cpp stop all success")
-		} else {
-			log.Println("cpp stop all lose")
-		}
-
+	res := listener.RunResult{}
+	if err := json.Unmarshal(c.Body, &res); err != nil {
+		log.Println(err)
+	}
+	fmt.Println(res)
+	if res.Status == "success" {
+		log.Println("cpp stop all success")
+	} else {
+		log.Println("cpp stop all lose")
 	}
 
 	p.cGetQ.Close()

@@ -1,8 +1,6 @@
 package mail
 
 import (
-	"fmt"
-
 	"gopkg.in/gomail.v2"
 )
 
@@ -50,20 +48,7 @@ func (from *MailBox) SendMail(subject string, to []string, Cc []string, Bcc []st
 	}
 	return nil
 }
-func (m MaillPool) Mail(assets string, message string, wait bool) {
-	if wait == true {
-		m.mailmap[assets] = m.mailmap[assets] + "<br/>" + message
 
-	} else {
-		err := m.mailbox.SendMail( "this is a Alarm Reminder", []string{"1648806490@qq.com"}, nil, nil, m.mailmap[assets], nil)
-		if err != nil {
-			fmt.Println(err)
-		}
-		m.mailmap[assets] = ""
-
-	}
-
-}
 func NewMailPool(name string, password string, host string, port int) MaillPool {
 
 	return MaillPool{mailbox: NewMailBox(name, password, host, port), mailmap: map[string]string{}}
