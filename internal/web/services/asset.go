@@ -182,6 +182,14 @@ func (svc *Asset) IsAssetExist(asset *models.Asset) (bool, string, error) {
 	return false, "", nil
 }
 
+func (svc *Asset) IsAssetExistByID(assetID int) (bool, error) {
+	has, err := svc.db.Engine.ID(assetID).Exist(&models.Asset{})
+	if err != nil {
+		return has, err
+	}
+	return has, nil
+}
+
 func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]models.Asset, error) {
 	assets := make([]models.Asset, 0)
 	// 构建查询条件
@@ -225,7 +233,10 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 	return assets, nil
 }
 
-func (svc *Account) UpdateAsset(id int, asset *models.Asset) error {
-	_, err := svc.db.Engine.ID(id).Update(asset)
-	return err
+func (svc *Asset) IsAccessAsset(assetID int, userID int) (bool, error) {
+	has, err := svc.db.Engine.Where("asset_id = ? AND user_id = ?", assetID, userID).Exist(&models.AssetUser{})
+	if err != nil {
+		return false, err
+	}
+	return has, nil
 }

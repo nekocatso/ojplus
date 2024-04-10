@@ -14,6 +14,8 @@ type Asset struct {
 	UpdatedAt time.Time `json:"-" xorm:"'updated_at' updated"`
 	DeletedAt time.Time `json:"-" xorm:"deleted"`
 	Creator   *UserInfo `json:"creator" xorm:"-"`
+	Rules     []int     `json:"rules" xorm:"-"`
+	RuleCount int       `json:"ruleCount" xorm:"-"`
 }
 
 type AssetUser struct {
