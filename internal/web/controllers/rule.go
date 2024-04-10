@@ -43,6 +43,18 @@ func (ctrl *Rule) CreateRule(ctx *gin.Context) {
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID := claims["userID"].(int)
 	rule.CreatorID = userID
+	// 权限校验
+	for _, asset := range ruleForm.Assets {
+		access, err := ctrl.svc.IsAccessAsset(asset, userID)
+		if err != nil {
+			response(ctx, 500, nil)
+			return
+		}
+		if !access {
+			response(ctx, 404, nil)
+			return
+		}
+	}
 	// 创建规则
 	if rule.Type == "ping" {
 		err = ctrl.svc.CreatePingRule(rule, ruleForm.PingInfo)
@@ -62,8 +74,9 @@ func (ctrl *Rule) CreateRule(ctx *gin.Context) {
 		return
 	}
 	if ruleForm.Assets != nil {
-		err := ctrl.svc.BindAssets(rule.ID, ruleForm.Assets)
+		err := ctrl.svc.BindAssets(rule.ID, ruleForm.Assets, userID)
 		if err != nil {
+			log.Println(err)
 			response(ctx, 400, nil)
 			return
 		}
@@ -74,7 +87,7 @@ func (ctrl *Rule) CreateRule(ctx *gin.Context) {
 func (ctrl *Rule) GetRules(ctx *gin.Context) {
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID := claims["userID"].(int)
-	rules, err := ctrl.svc.FindRules(userID)
+	rules, err := ctrl.svc.FindRules(userID, nil)
 	if err != nil {
 		log.Println(err)
 		response(ctx, 500, nil)
@@ -83,6 +96,53 @@ func (ctrl *Rule) GetRules(ctx *gin.Context) {
 	response(ctx, 200, rules)
 }
 
+func (ctrl *Rule) SelectRules(ctx *gin.Context) {
+	// 数据校验
+	form, err := forms.NewRuleSelect(ctx)
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	isValid, errorsMap, err := forms.Verify(form)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !isValid {
+		response(ctx, 40002, errorsMap)
+		return
+	}
+	page := form.Page
+	pageSize := form.PageSize
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID := claims["userID"].(int)
+	rules, err := ctrl.svc.FindRules(userID, form.Conditions)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	// 分页处理
+	data := make(map[string]interface{})
+	start := (page - 1) * pageSize
+	end := start + pageSize
+	pages := (len(rules) + pageSize - 1) / pageSize
+	if pages == 0 {
+		pages = 1
+	}
+	data["pages"] = pages
+	data["total"] = len(rules)
+	if start >= len(rules) {
+		// 响应最后一页
+		start = (pages - 1) * pageSize
+		end = len(rules)
+	} else if end > len(rules) {
+		end = len(rules)
+	}
+	data["rules"] = rules[start:end]
+	response(ctx, 200, data)
+}
 func (ctrl *Rule) GetRuleIDsByAssetID(ctx *gin.Context) {
 	// 数据校验
 	assetID, err := strconv.Atoi(ctx.Param("assetID"))

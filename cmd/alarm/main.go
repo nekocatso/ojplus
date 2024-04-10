@@ -81,7 +81,7 @@ func main() {
 		group.GET("/asset/:id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetByID)
 		group.GET("/assets/id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetIDs)
 		group.POST("/asset", AuthCtrl.LoginMiddleware, AssetCtrl.CreateAsset)
-		group.POST("/assets/query", AuthCtrl.LoginMiddleware, AssetCtrl.SelectAsset)
+		group.POST("/assets/query", AuthCtrl.LoginMiddleware, AssetCtrl.SelectAssets)
 		// group.GET("/assets/:assetID/:target", AuthCtrl.LoginMiddleware, AccountCtrl.GetUsersByAsset)
 		group.GET("/assets/:assetID/:target", AuthCtrl.LoginMiddleware, func(ctx *gin.Context) {
 			if ctx.Param("target") == "users" {
@@ -91,8 +91,9 @@ func main() {
 			}
 		})
 
-		group.POST("/rule", AuthCtrl.LoginMiddleware, RuleCtrl.CreateRule)
 		group.GET("/rules", AuthCtrl.LoginMiddleware, RuleCtrl.GetRules)
+		group.POST("/rule", AuthCtrl.LoginMiddleware, RuleCtrl.CreateRule)
+		group.POST("/rules/query", AuthCtrl.LoginMiddleware, RuleCtrl.SelectRules)
 	}
 	engine.Run(globalConfig.Gin.Port)
 }

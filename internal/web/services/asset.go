@@ -229,6 +229,11 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 		if err != nil {
 			return nil, err
 		}
+		assets[i].RuleNames, err = svc.GetRuleNames(assets[i].ID)
+		if err != nil {
+			fmt.Println(assets[i].ID)
+			return nil, err
+		}
 	}
 	return assets, nil
 }
@@ -239,4 +244,13 @@ func (svc *Asset) IsAccessAsset(assetID int, userID int) (bool, error) {
 		return false, err
 	}
 	return has, nil
+}
+
+func (svc *Asset) GetRuleNames(assetID int) ([]string, error) {
+	rules := []string{}
+	err := svc.db.Engine.Table("rule").Join("INNER", "asset_rule", "rule.id = asset_rule.rule_id").Cols("rule.name").Where("asset_rule.asset_id = ?", assetID).Find(&rules)
+	if err != nil {
+		return nil, err
+	}
+	return rules, nil
 }

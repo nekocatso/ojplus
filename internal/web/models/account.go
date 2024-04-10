@@ -14,6 +14,7 @@ type User struct {
 	CreatedAt time.Time `xorm:"created"`
 	UpdatedAt time.Time `xorm:"updated"`
 	DeletedAt time.Time `xorm:"deleted"`
+	Note      *string   `xorm:"null"`
 }
 
 func (u *User) GetInfo() *UserInfo {

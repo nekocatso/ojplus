@@ -6,16 +6,15 @@ type Asset struct {
 	ID        int       `json:"id" xorm:"'id' pk autoincr"`
 	Name      string    `json:"name" xorm:"notnull unique(name_creator)"`
 	Type      string    `json:"type" xorm:"notnull"`
-	Address   string    `json:"address" xorm:"'address' notnull unique"`
-	Note      string    `json:"note" xorm:"'note'"`
+	Address   string    `json:"address" xorm:"notnull unique"`
+	Note      *string   `json:"note" xorm:"null"`
 	State     int       `json:"state" xorm:"default(0) notnull"`
 	CreatorID int       `json:"-" xorm:"'creator_id' notnull unique(name_creator)"`
 	CreatedAt time.Time `json:"createdAt" xorm:"'created_at' created"`
 	UpdatedAt time.Time `json:"-" xorm:"'updated_at' updated"`
 	DeletedAt time.Time `json:"-" xorm:"deleted"`
 	Creator   *UserInfo `json:"creator" xorm:"-"`
-	Rules     []int     `json:"rules" xorm:"-"`
-	RuleCount int       `json:"ruleCount" xorm:"-"`
+	RuleNames []string  `json:"ruleNames" xorm:"-"`
 }
 
 type AssetUser struct {

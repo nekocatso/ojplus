@@ -242,7 +242,7 @@ func (ctrl *Asset) GetAssetByID(ctx *gin.Context) {
 	response(ctx, 200, asset)
 }
 
-func (ctrl *Asset) SelectAsset(ctx *gin.Context) {
+func (ctrl *Asset) SelectAssets(ctx *gin.Context) {
 	// 数据校验
 	form, err := forms.NewAssetSelect(ctx)
 	if err != nil {
