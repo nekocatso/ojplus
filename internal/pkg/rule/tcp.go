@@ -39,7 +39,7 @@ type Tcp struct {
 	nowclosetimeout []string
 }
 
-func NewTcp(id int, Rcp *models.Cache, mail *mail.MailBox, db *models.Database) *Tcp {
+func NewTcp(id int, Rcp *models.Cache, mail *mail.MailPool, db *models.Database) *Tcp {
 	var p Tcp
 	p.tools.db = db
 	p.tools.Rcp = Rcp

@@ -27,10 +27,10 @@ type ListenerPool struct {
 	cSendQ          *messagequeue.MessageQueue //用于和cpp端发送控制信息的mq的queue
 	cGetQ           *messagequeue.MessageQueue //用于和cpp端接收控制信息执行结果的mq的queue
 	cGetch          <-chan amqp.Delivery
-	mail            *mail.MailBox
+	mail            *mail.MailPool
 }
 
-func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *mail.MailBox) (*ListenerPool, error) {
+func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *mail.MailPool) (*ListenerPool, error) {
 	var err error
 	lp := &ListenerPool{MaxListener: 2, NumListener: 0, ListenerList: []*listener.Listener{},
 		RedisClientPool: RedisClientPool, db: db, mail: mail}
@@ -71,7 +71,7 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 		if err != nil {
 			return nil, err
 		}
-		log.Println(i.ID, ar)
+		//log.Println(i.ID, ar)
 		for _, j := range ar {
 
 			//获取ping规则

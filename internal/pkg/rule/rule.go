@@ -20,7 +20,7 @@ type State struct {
 }
 type tools struct {
 	Rcp  *models.Cache
-	mail *mail.MailBox
+	mail *mail.MailPool
 	db   *models.Database
 }
 

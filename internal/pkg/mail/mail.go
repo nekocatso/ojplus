@@ -1,6 +1,8 @@
 package mail
 
 import (
+	"errors"
+
 	"gopkg.in/gomail.v2"
 )
 
@@ -11,17 +13,27 @@ type MailBox struct {
 	port     int
 }
 
-type MaillPool struct {
-	mailmap map[string]string
-	mailbox *MailBox
+type MailPool struct {
+	sum int
+	num int
+	mailbox []MailBox
 }
 
-func NewMailBox(name string, password string, host string, port int) *MailBox {
-	return &MailBox{name: name, password: password, host: host, port: port}
+func NewMailPool(name []string, password []string, host []string, port []int) (*MailPool,error) {
+	var mp MailPool
+	if(len(name) != len(password) || len(name) != len(host) || len(name) != len(port)){
+		return nil,errors.New("参数长度不匹配")
+	}
+	for i := 0; i < len(name); i++ {
+		mp.mailbox = append(mp.mailbox, MailBox{name: name[i], password: password[i], host: host[i], port: port[i]})
+	}
+	mp.sum = len(name)
+	mp.num = 0
+	return &mp,nil
 }
-func (from *MailBox) SendMail(subject string, to []string, Cc []string, Bcc []string, message string, annex []string) error {
+func (mp *MailPool) SendMail(subject string, to []string, Cc []string, Bcc []string, message string, annex []string) error {
 	m := gomail.NewMessage()
-	m.SetHeader("From", from.name)
+	m.SetHeader("From", mp.mailbox[mp.num].name)
 	m.SetHeader("Subject", subject)
 	for _, t := range to {
 
@@ -41,15 +53,10 @@ func (from *MailBox) SendMail(subject string, to []string, Cc []string, Bcc []st
 		m.Attach(a)
 	}
 	d := gomail.NewDialer(
-		from.host, from.port, from.name, from.password,
+		mp.mailbox[mp.num].host, mp.mailbox[mp.num].port, mp.mailbox[mp.num].name, mp.mailbox[mp.num].password,
 	)
 	if err := d.DialAndSend(m); err != nil {
 		return err
 	}
 	return nil
-}
-
-func NewMailPool(name string, password string, host string, port int) MaillPool {
-
-	return MaillPool{mailbox: NewMailBox(name, password, host, port), mailmap: map[string]string{}}
 }

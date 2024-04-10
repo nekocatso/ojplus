@@ -29,7 +29,7 @@ type Ping struct {
 	mailto        []string
 }
 
-func NewPing(id int, Rcp *models.Cache, mail *mail.MailBox, db *models.Database) *Ping {
+func NewPing(id int, Rcp *models.Cache, mail *mail.MailPool, db *models.Database) *Ping {
 	var p Ping
 	p.tools.db = db
 	p.tools.Rcp = Rcp
@@ -131,6 +131,7 @@ func (p *Ping) Scan() error {
 	return nil
 }
 func (p *Ping) Jude() (bool, error) { //返回true是无错误，返回false是出错
+	log.Println("ping", p.address)
 	res, err := p.tools.Rcp.Client.Get(fmt.Sprintf("%d", p.State.correlation_id)).Bytes()
 	if err != nil {
 		return false, err

@@ -100,6 +100,9 @@ func (L Listener) deal(body []byte) {
 	id, _ := strconv.Atoi(res["correlation_id"].(string))
 
 	if L.Rule[id] != nil {
+		// log.Println(string(body))
 		L.Rule[id].Scan()
+	} else {
+		log.Println("rule is nil")
 	}
 }
