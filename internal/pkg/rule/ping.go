@@ -11,7 +11,7 @@ import (
 )
 
 type Ping struct {
-	state state
+	state State
 	tools tools
 	// 参数asset_name,address,rule,health_limit,wrong_limit,interval,mode,latency_limit,lost_limit,email
 	asset_id      int
@@ -66,7 +66,7 @@ func NewPing(id int, Rcp *models.Cache, mail *mail.MailBox, db *models.Database)
 
 	p.state.abn = 0
 	p.state.nor = 0
-	p.state.status = 1
+	p.state.Status = 3
 	p.state.reason = ""
 	p.state.time = time.Now()
 	return &p
@@ -79,23 +79,23 @@ func (p *Ping) State() error {
 	if err != nil {
 		return err
 	}
-	switch p.state.status {
-	case 1:
+	switch p.state.Status {
+	case 3:
 		if s {
 			p.state.nor++
 			if p.state.nor >= p.health_limit {
 				p.state.abn = 0
-				p.state.status = 2
+				p.state.Status = 1
 			}
 		} else {
 			p.state.abn++
 			if p.state.abn >= p.wrong_limit {
 				p.state.nor = 0
-				p.state.status = 3
+				p.state.Status = 2
 				p.Sendmail()
 			}
 		}
-	case 2:
+	case 1:
 		if s {
 			p.state.nor++
 			p.state.abn = 0
@@ -103,17 +103,17 @@ func (p *Ping) State() error {
 			p.state.abn++
 			if p.state.abn >= p.wrong_limit {
 				p.state.nor = 0
-				p.state.status = 3
+				p.state.Status = 2
 				p.Sendmail()
 
 			}
 		}
-	case 3:
+	case 2:
 		if s {
 			p.state.nor++
 			if p.state.nor >= p.health_limit {
 				p.state.abn = 0
-				p.state.status = 2
+				p.state.Status = 1
 				p.Sendmail()
 
 			}
@@ -127,7 +127,7 @@ func (p *Ping) State() error {
 
 		}
 	}
-	log.Println(p.state.nor, p.state.abn, p.state.status)
+	log.Println(p.state.nor, p.state.abn, p.state.Status)
 	return nil
 }
 func (p *Ping) Jude() (bool, error) { //返回true是无错误，返回false是出错
@@ -185,7 +185,7 @@ func (p *Ping) Sendmail() {
 		&nbsp&nbsp&nbsp&nbsp%s<br>
 		告警时间：%s<br><br>
 		该资产在此规则监控下触发异常，请尽快处理！`, p.asset_name,
-			p.address, p.rule, p.state.reason, p.state.time)
+			p.address, p.rule, p.state.reason, p.state.time.Format("2006-01-02 15:04:05"))
 
 	} else if p.state.abn > p.wrong_limit {
 		subject = fmt.Sprintf("【告警】%s资产-【规则】-异常持续", p.asset_name)
@@ -198,7 +198,7 @@ func (p *Ping) Sendmail() {
 		&nbsp&nbsp&nbsp&nbsp%s<br>
 		告警时间：%s<br><br>
 		该资产在此规则监控下处于异常持续中，请尽快处理！`, p.asset_name,
-			p.address, p.rule, p.state.reason, p.state.time.String())
+			p.address, p.rule, p.state.reason, p.state.time.Format("2006-01-02 15:04:05"))
 
 	} else if p.state.nor > 0 {
 		subject = fmt.Sprintf("【告警解除】%s资产-【规则】-异常恢复", p.asset_name)
@@ -211,7 +211,7 @@ func (p *Ping) Sendmail() {
 		&nbsp&nbsp&nbsp&nbsp%s<br>
 		告警时间：%s<br><br>
 		该资产在此规则监控下解除异常，告警结束`, p.asset_name,
-			p.address, p.rule, p.state.reason, p.state.time.String())
+			p.address, p.rule, p.state.reason, p.state.time.Format("2006-01-02 15:04:05"))
 	}
 	err := p.tools.mail.SendMail(subject, p.mailto, []string{}, []string{}, message, []string{})
 	p.Save()
@@ -220,6 +220,14 @@ func (p *Ping) Sendmail() {
 	}
 }
 func (p *Ping) Save() {
+	//更新资产状态
+	_, err := p.tools.db.Engine.Where("id=?", p.asset_id).Cols("state").Update(&models.Asset{
+		State: p.state.Status,
+	})
+	if err != nil {
+		log.Println(err)
+	}
+	//存储告警日志
 	var m []models.Mail
 	for i := 0; i < len(p.mailto); i++ {
 		m = append(m, models.Mail{
@@ -235,12 +243,12 @@ func (p *Ping) Save() {
 	} else if p.state.nor > 0 {
 		alarmstate = 3
 	}
-	_, err := p.tools.db.Engine.InsertOne(models.AlarmLog{
+	_, err = p.tools.db.Engine.InsertOne(models.AlarmLog{
 		AssetID:   p.asset_id,
 		RuleID:    p.rule_id,
 		State:     alarmstate,
 		Mails:     m,
-		Messages:   []string{p.state.reason},
+		Messages:  []string{p.state.reason},
 		CreatedAt: p.state.time,
 	})
 	if err != nil {

@@ -9,10 +9,10 @@ import (
 type Rule interface {
 	State() error
 }
-type state struct {
+type State struct {
 	nor            int
 	abn            int
-	status         int
+	Status         int
 	reason         string
 	correlation_id int
 	time           time.Time

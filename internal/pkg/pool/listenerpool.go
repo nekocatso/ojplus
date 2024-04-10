@@ -41,6 +41,9 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 	}
 
 	lp.cGetQ, err = lp.cConn.MessageQueueDeclare("queue3", false, false, false, false, nil)
+	if err != nil {
+		return nil, err
+	}
 	lp.cGetch, err = lp.cGetQ.GetMessage()
 
 	if err != nil {
@@ -136,7 +139,7 @@ func (p *ListenerPool) AddPing(id int) error {
 		Correlation_id: fmt.Sprintf("%d", id),
 		Timestamp:      fmt.Sprintf("%d", time.Now().Unix()),
 		Control:        "continuous",
-		Config:         []any{"ping", r.Interval, 1, r.Overtime},
+		Config:         []any{"ping", r.Overtime, 1, r.Interval},
 	})
 	if err != nil {
 		return err
@@ -200,7 +203,7 @@ func (p *ListenerPool) AddTCP(id int) error {
 		Correlation_id: fmt.Sprintf("%d", id),
 		Timestamp:      fmt.Sprintf("%d", time.Now().Unix()),
 		Control:        "continuous",
-		Config:         []any{"telnet", r.Interval, 1, r.Overtime},
+		Config:         []any{"telnet", r.Overtime, 1, r.Interval},
 	})
 	fmt.Println(string(m))
 	if err != nil {
@@ -294,22 +297,34 @@ func (p *ListenerPool) Close() {
 	m, err := json.Marshal(listener.Request{
 		Type:           "request",
 		Action:         "stop_all",
+		Target:         []string{},
 		Correlation_id: fmt.Sprintf("%d", 0),
 		Timestamp:      fmt.Sprintf("%d", time.Now().Unix()),
+		Config:         []any{},
+		Control:        "continuous",
 	})
+	log.Println(string(m))
 	if err != nil {
 		log.Println(err)
 	}
 	p.cSendQ.SendMessage(m)
 
-	if err != nil {
-		log.Println(err)
+	select {
+	case c := <-p.cGetch:
+
+		res := listener.RunResult{}
+		if err := json.Unmarshal(c.Body, &res); err != nil {
+			log.Println(err)
+		}
+		fmt.Println(res)
+		if res.Status == "success" {
+			log.Println("cpp stop all success")
+		} else {
+			log.Println("cpp stop all lose")
+		}
+
 	}
-	c := <-p.cGetch
-	res := listener.RunResult{}
-	if err := json.Unmarshal(c.Body, &res); err != nil {
-		log.Println(err)
-	}
+
 	p.cGetQ.Close()
 	p.cSendQ.Close()
 	p.cConn.Close()
