@@ -196,13 +196,13 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 	for key, value := range conditions {
 		switch key {
 		case "name":
-			queryBuilder = queryBuilder.And("name LIKE ?", "%"+value.(string)+"%")
+			queryBuilder = queryBuilder.And("asset.name LIKE ?", "%"+value.(string)+"%")
 		case "type":
-			queryBuilder = queryBuilder.And("type = ?", value)
+			queryBuilder = queryBuilder.And("asset.type = ?", value)
 		case "creatorID":
-			queryBuilder = queryBuilder.And("creator_id = ?", value)
+			queryBuilder = queryBuilder.And("asset.creator_id = ?", value)
 		case "address":
-			queryBuilder = queryBuilder.And("address LIKE ?", "%"+value.(string)+"%")
+			queryBuilder = queryBuilder.And("asset.address LIKE ?", "%"+value.(string)+"%")
 		case "availableRuleType":
 			queryBuilder = queryBuilder.And("rule.type != ?", value).Or("asset_rule.rule_id IS NULL")
 		case "createTimeBegin":

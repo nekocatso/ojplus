@@ -162,7 +162,7 @@ func (svc *Rule) FindRules(userID int, conditions map[string]interface{}) ([]mod
 	for key, value := range conditions {
 		switch key {
 		case "name":
-			queryBuilder = queryBuilder.And("rule.name LIKE ?", "%"+value.(string)+"%")
+			queryBuilder = queryBuilder.And("name LIKE ?", "%"+value.(string)+"%")
 		case "type":
 			queryBuilder = queryBuilder.And("rule.type = ?", value)
 		case "creatorID":

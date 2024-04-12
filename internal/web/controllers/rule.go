@@ -143,6 +143,7 @@ func (ctrl *Rule) SelectRules(ctx *gin.Context) {
 	data["rules"] = rules[start:end]
 	response(ctx, 200, data)
 }
+
 func (ctrl *Rule) GetRuleIDsByAssetID(ctx *gin.Context) {
 	// 数据校验
 	assetID, err := strconv.Atoi(ctx.Param("assetID"))
