@@ -181,30 +181,40 @@ func (svc *Rule) FindRules(userID int, conditions map[string]interface{}) ([]mod
 	if err != nil {
 		return nil, err
 	}
+
+	processedIDs := make(map[int]bool)
+	uniqueRules := make([]models.Rule, 0)
+	// 处理响应内容
 	for i := range rules {
-		rules[i].Creator, err = GetUserByID(svc.db.Engine, rules[i].CreatorID)
-		if err != nil {
-			return nil, err
-		}
-		if rules[i].Type == "ping" {
-			rules[i].Info, err = svc.GetPingInfo(rules[i].ID)
-		} else if rules[i].Type == "tcp" {
-			rules[i].Info, err = svc.GetTCPInfo(rules[i].ID)
-		}
-		if err != nil || rules[i].Info == nil {
-			return nil, err
-		}
-		rules[i].AssetNames, err = svc.GetAssetNames(rules[i].ID)
-		if err != nil {
-			return nil, err
-		}
-		rules[i].AssetsCount, err = svc.GetAssetCount(rules[i].ID)
-		if err != nil {
-			return nil, err
+		if !processedIDs[rules[i].ID] {
+			processedIDs[rules[i].ID] = true
+			rules[i].Creator, err = GetUserByID(svc.db.Engine, rules[i].CreatorID)
+			if err != nil {
+				return nil, err
+			}
+			if rules[i].Type == "ping" {
+				rules[i].Info, err = svc.GetPingInfo(rules[i].ID)
+			} else if rules[i].Type == "tcp" {
+				rules[i].Info, err = svc.GetTCPInfo(rules[i].ID)
+			}
+
+			if err != nil || rules[i].Info == nil {
+				return nil, err
+			}
+			rules[i].AssetNames, err = svc.GetAssetNames(rules[i].ID)
+			if err != nil {
+				return nil, err
+			}
+
+			rules[i].AssetsCount, err = svc.GetAssetCount(rules[i].ID)
+			if err != nil {
+				return nil, err
+			}
+			uniqueRules = append(uniqueRules, rules[i])
 		}
 	}
 
-	return rules, nil
+	return uniqueRules, nil
 }
 
 func (svc *Rule) GetAssetNames(ruleID int) ([]string, error) {

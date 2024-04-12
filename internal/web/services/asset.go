@@ -190,7 +190,8 @@ func (svc *Asset) IsAssetExistByID(assetID int) (bool, error) {
 func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]models.Asset, error) {
 	assets := make([]models.Asset, 0)
 	// 构建查询条件
-	queryBuilder := svc.db.Engine.Join("LEFT", "asset_user", "asset.id = asset_user.asset_id")
+	queryBuilder := svc.db.Engine.Table("asset")
+	queryBuilder = queryBuilder.Join("LEFT", "asset_user", "asset.id = asset_user.asset_id")
 	queryBuilder = queryBuilder.Join("LEFT", "asset_rule", "asset.id = asset_rule.asset_id")
 	queryBuilder = queryBuilder.Join("LEFT", "rule", "rule.id = asset_rule.rule_id")
 	for key, value := range conditions {
@@ -226,18 +227,31 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 	if err != nil {
 		return nil, err
 	}
+
+	processedIDs := make(map[int]bool)
+	uniqueAssets := make([]models.Asset, 0)
+
 	for i := range assets {
-		assets[i].Creator, err = GetUserByID(svc.db.Engine, assets[i].CreatorID)
-		if err != nil {
-			return nil, err
-		}
-		assets[i].RuleNames, err = svc.GetRuleNames(assets[i].ID)
-		if err != nil {
-			fmt.Println(assets[i].ID)
-			return nil, err
+		if !processedIDs[assets[i].ID] {
+			// 标记ID为已处理
+			processedIDs[assets[i].ID] = true
+
+			assets[i].Creator, err = GetUserByID(svc.db.Engine, assets[i].CreatorID)
+			if err != nil {
+				return nil, err
+			}
+
+			assets[i].RuleNames, err = svc.GetRuleNames(assets[i].ID)
+			if err != nil {
+				fmt.Println(assets[i].ID)
+				return nil, err
+			}
+
+			// 添加到去重后的列表中
+			uniqueAssets = append(uniqueAssets, assets[i])
 		}
 	}
-	return assets, nil
+	return uniqueAssets, nil
 }
 
 func (svc *Asset) IsAccessAsset(assetID int, userID int) (bool, error) {

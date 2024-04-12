@@ -130,8 +130,7 @@ func (ctrl *Asset) UpdateAsset(ctx *gin.Context) {
 	}
 	asset := form.Model
 	// 权限校验
-	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID := claims["userID"].(int)
+	userID := GetUserIDByContext(ctx)
 	access, err := ctrl.svc.IsAccessAsset(asset.ID, userID)
 	if err != nil {
 		log.Println(err)
@@ -175,8 +174,7 @@ func (ctrl *Asset) GetAssets(ctx *gin.Context) {
 		page = 1
 		pageSize = 10
 	}
-	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID := claims["userID"].(int)
+	userID := GetUserIDByContext(ctx)
 	assets, err := ctrl.svc.FindAssets(userID, map[string]interface{}{})
 	if err != nil {
 		response(ctx, 500, nil)
@@ -221,8 +219,7 @@ func (ctrl *Asset) GetAssetByID(ctx *gin.Context) {
 		return
 	}
 	// 权限校验
-	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID := claims["userID"].(int)
+	userID := GetUserIDByContext(ctx)
 	access, err := ctrl.svc.IsAccessAsset(assetID, userID)
 	if err != nil {
 		log.Println(err)
@@ -261,8 +258,7 @@ func (ctrl *Asset) SelectAssets(ctx *gin.Context) {
 	}
 	page := form.Page
 	pageSize := form.PageSize
-	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID := claims["userID"].(int)
+	userID := GetUserIDByContext(ctx)
 	assets, err := ctrl.svc.FindAssets(userID, form.Conditions)
 	if err != nil {
 		log.Println(err)
@@ -291,8 +287,7 @@ func (ctrl *Asset) SelectAssets(ctx *gin.Context) {
 }
 
 func (ctrl *Asset) GetAssetIDs(ctx *gin.Context) {
-	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID := claims["userID"].(int)
+	userID := GetUserIDByContext(ctx)
 	assets, err := ctrl.svc.FindAssets(userID, map[string]interface{}{})
 	if err != nil {
 		response(ctx, 500, nil)

@@ -98,6 +98,8 @@ func main() {
 		group.POST("/rules/query", AuthCtrl.LoginMiddleware, RuleCtrl.SelectRules)
 
 		group.POST("/alarm", AuthCtrl.LoginMiddleware, AlarmCtrl.CreateAlarm)
+		group.GET("/alarms", AuthCtrl.LoginMiddleware, AlarmCtrl.GetAlarms)
+		group.POST("/alarms/query", AuthCtrl.LoginMiddleware, AlarmCtrl.SelectAlarms)
 	}
 	engine.Run(globalConfig.Gin.Port)
 }

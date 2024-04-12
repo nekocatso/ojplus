@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-sql-driver/mysql"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type Rule struct {
@@ -40,8 +39,7 @@ func (ctrl *Rule) CreateRule(ctx *gin.Context) {
 		return
 	}
 	rule := ruleForm.Model
-	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID := claims["userID"].(int)
+	userID := GetUserIDByContext(ctx)
 	rule.CreatorID = userID
 	// 权限校验
 	for _, asset := range ruleForm.Assets {
@@ -85,8 +83,7 @@ func (ctrl *Rule) CreateRule(ctx *gin.Context) {
 }
 
 func (ctrl *Rule) GetRules(ctx *gin.Context) {
-	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID := claims["userID"].(int)
+	userID := GetUserIDByContext(ctx)
 	rules, err := ctrl.svc.FindRules(userID, nil)
 	if err != nil {
 		log.Println(err)
@@ -115,8 +112,7 @@ func (ctrl *Rule) SelectRules(ctx *gin.Context) {
 	}
 	page := form.Page
 	pageSize := form.PageSize
-	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID := claims["userID"].(int)
+	userID := GetUserIDByContext(ctx)
 	rules, err := ctrl.svc.FindRules(userID, form.Conditions)
 	if err != nil {
 		log.Println(err)
@@ -156,8 +152,7 @@ func (ctrl *Rule) GetRuleIDsByAssetID(ctx *gin.Context) {
 		return
 	}
 	// 权限校验
-	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID := claims["userID"].(int)
+	userID := GetUserIDByContext(ctx)
 	access, err := ctrl.svc.IsAccessAsset(assetID, userID)
 	if err != nil {
 		log.Println(err)
