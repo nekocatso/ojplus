@@ -86,7 +86,7 @@ func (svc *Account) GetUserByID(id int) (*models.UserInfo, error) {
 	return GetUserByID(svc.db.Engine, id)
 }
 
-func (svc *Account) FindUser(conditions map[string]interface{}) ([]models.UserInfo, error) {
+func (svc *Account) FindUsers(conditions map[string]interface{}) ([]models.UserInfo, error) {
 	var users []models.User
 	queryBuilder := svc.db.Engine.Table("user")
 	for key, value := range conditions {

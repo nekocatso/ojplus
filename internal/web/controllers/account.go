@@ -120,7 +120,7 @@ func (ctrl *Account) GetUsers(ctx *gin.Context) {
 		page = 1
 		pageSize = 10
 	}
-	users, err := ctrl.svc.FindUser(map[string]interface{}{})
+	users, err := ctrl.svc.FindUsers(map[string]interface{}{})
 	if err != nil {
 		response(ctx, 500, nil)
 		return
@@ -167,7 +167,7 @@ func (ctrl *Account) SelectUsers(ctx *gin.Context) {
 	page := form.Page
 	pageSize := form.PageSize
 
-	users, err := ctrl.svc.FindUser(form.Conditions)
+	users, err := ctrl.svc.FindUsers(form.Conditions)
 	if err != nil {
 		log.Println(err)
 		response(ctx, 500, nil)
