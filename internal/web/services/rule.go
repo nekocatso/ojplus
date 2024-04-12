@@ -191,7 +191,7 @@ func (svc *Rule) FindRules(userID int, conditions map[string]interface{}) ([]mod
 		} else if rules[i].Type == "tcp" {
 			rules[i].Info, err = svc.GetTCPInfo(rules[i].ID)
 		}
-		if err != nil {
+		if err != nil || rules[i].Info == nil {
 			return nil, err
 		}
 		rules[i].AssetNames, err = svc.GetAssetNames(rules[i].ID)

@@ -25,10 +25,7 @@ func NewAsset(cfg map[string]interface{}) *Asset {
 func (svc *Asset) CreateAsset(asset *models.Asset) error {
 	// 在数据库中插入资产
 	_, err := svc.db.Engine.Insert(asset)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (svc *Asset) BindUsers(assetID int, userIDs []int) error {
@@ -164,7 +161,7 @@ func (svc *Asset) DeleteAsset(asset *models.Asset) error {
 	return nil
 }
 
-func (svc *Asset) IsAssetExist(asset *models.Asset) (bool, string, error) {
+func (svc *Asset) GetAssetExistInfo(asset *models.Asset) (bool, string, error) {
 	has, err := svc.db.Engine.Where("name = ? and creator_id = ?", asset.Name, asset.CreatorID).Exist(&models.Asset{})
 	if err != nil {
 		return has, "", err
@@ -193,7 +190,9 @@ func (svc *Asset) IsAssetExistByID(assetID int) (bool, error) {
 func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]models.Asset, error) {
 	assets := make([]models.Asset, 0)
 	// 构建查询条件
-	queryBuilder := svc.db.Engine.Join("INNER", "asset_user", "asset.id = asset_user.asset_id").Where("asset_user.user_id = ?", userID)
+	queryBuilder := svc.db.Engine.Join("LEFT", "asset_user", "asset.id = asset_user.asset_id")
+	queryBuilder = queryBuilder.Join("LEFT", "asset_rule", "asset.id = asset_rule.asset_id")
+	queryBuilder = queryBuilder.Join("LEFT", "rule", "rule.id = asset_rule.rule_id")
 	for key, value := range conditions {
 		switch key {
 		case "name":
@@ -204,6 +203,8 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 			queryBuilder = queryBuilder.And("creator_id = ?", value)
 		case "address":
 			queryBuilder = queryBuilder.And("address LIKE ?", "%"+value.(string)+"%")
+		case "availableRuleType":
+			queryBuilder = queryBuilder.And("rule.type != ?", value).Or("asset_rule.rule_id IS NULL")
 		case "createTimeBegin":
 			tm := time.Unix(int64(value.(int)), 0).Format("2006-01-02 15:04:05")
 			queryBuilder = queryBuilder.And("asset.created_at >= ?", tm)
@@ -220,6 +221,7 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 			queryBuilder = queryBuilder.And("state = ?", value)
 		}
 	}
+	queryBuilder = queryBuilder.And("asset_user.user_id = ?", userID)
 	err := queryBuilder.Find(&assets)
 	if err != nil {
 		return nil, err

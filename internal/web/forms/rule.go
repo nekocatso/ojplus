@@ -9,10 +9,11 @@ import (
 type RuleCreate struct {
 	Name         string  `validate:"required,max=24"`
 	Type         string  `validate:"required,max=12"`
-	Note         *string `validate:"omitempty,max=128"`
+	Note         *string `validate:"omitempty,max=256"`
 	Assets       []int   `validate:"omitempty"`
-	Overtime     int     `validate:"required"`
-	Interval     int     `validate:"required"`
+	AlarmID      int     `validate:"omitempty"`
+	Overtime     int     `validate:"required,gt=100"`
+	Interval     int     `validate:"required,gte=5"`
 	DeclineLimit int     `validate:"required"`
 	RecoverLimit int     `validate:"required"`
 	Info         *typeInfo
@@ -24,8 +25,8 @@ type RuleCreate struct {
 
 type typeInfo struct {
 	Mode         int    `validate:"required_with=LatencyLimit LostLimit"`
-	LatencyLimit int    `validate:"required_with=Mode LostLimit"`
-	LostLimit    int    `validate:"required_with=Mode LatencyLimit"`
+	LatencyLimit int    `validate:"omitempty,gt=0,ltcsfield=RuleCreate.Overtime"`
+	LostLimit    int    `validate:"omitempty,gt=0"`
 	EnablePorts  string `validate:"required_with=DisablePorts,max=128"`
 	DisablePorts string `validate:"required_with=EnablePorts,max=128"`
 }
@@ -76,7 +77,7 @@ type RuleConditions struct {
 	Type            string `validate:"omitempty"`
 	CreatorID       int    `validate:"omitempty,gt=0"`
 	AssetID         int    `validate:"omitempty,gt=0"`
-	CreateTimeBegin int    `validate:"required_with=CreateTimeEnd"`
+	CreateTimeBegin int    `validate:"required_with=CreateTimeEnd,gte=0"`
 	CreateTimeEnd   int    `validate:"required_with=CreateTimeBegin,gtefield=CreateTimeBegin"`
 }
 

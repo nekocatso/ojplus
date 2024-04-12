@@ -38,7 +38,7 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 		return
 	}
 	user := form.Model
-	has, hasMessage, err := ctrl.svc.IsUserExist(user)
+	has, hasMessage, err := ctrl.svc.GetUserExistInfo(user)
 	if err != nil {
 		response(ctx, 500, nil)
 		return
@@ -96,7 +96,7 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 	response(ctx, 200, nil)
 }
 
-func (ctrl *Account) FindUsers(ctx *gin.Context) {
+func (ctrl *Account) GetUsers(ctx *gin.Context) {
 	pageStr := ctx.Query("page")
 	pageSizeStr := ctx.Query("pageSize")
 	var page, pageSize int
@@ -120,8 +120,56 @@ func (ctrl *Account) FindUsers(ctx *gin.Context) {
 		page = 1
 		pageSize = 10
 	}
-	users, err := ctrl.svc.AllUser()
+	users, err := ctrl.svc.FindUser(map[string]interface{}{})
 	if err != nil {
+		response(ctx, 500, nil)
+		return
+	}
+	// 对用户列表进行分页处理
+	data := make(map[string]interface{})
+	start := (page - 1) * pageSize
+	end := start + pageSize
+	pages := (len(users) + pageSize - 1) / pageSize
+	if pages == 0 {
+		pages = 1
+	}
+	data["pages"] = pages
+	data["total"] = len(users)
+	if start >= len(users) {
+		// 响应最后一页
+		start = (pages - 1) * pageSize
+		end = len(users)
+	}
+	if end > len(users) {
+		end = len(users)
+	}
+	data["users"] = users[start:end]
+	response(ctx, 200, data)
+}
+
+func (ctrl *Account) SelectUsers(ctx *gin.Context) {
+	//校验数据
+	form, err := forms.NewUserSelect(ctx)
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	isValid, errorsMap, err := forms.Verify(form)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !isValid {
+		response(ctx, 40002, errorsMap)
+		return
+	}
+	page := form.Page
+	pageSize := form.PageSize
+
+	users, err := ctrl.svc.FindUser(form.Conditions)
+	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}

@@ -8,7 +8,7 @@ type AlarmTemplate struct {
 	Interval  int       `xorm:"notnull"`
 	Mails     []string  `xorm:"notnull"`
 	CreatorID int       `xorm:"'creator_id' notnull unique(name_creator)"`
-	Note      string    `xorm:"'note'"`
+	Note      *string   `xorm:"'note'"`
 	CreatedAt time.Time `xorm:"'created_at' created"`
 	UpdatedAt time.Time `xorm:"'updated_at' updated"`
 	DeletedAt time.Time `xorm:"deleted"`

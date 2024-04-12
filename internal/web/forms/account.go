@@ -75,3 +75,66 @@ func checkPhone(phone string) bool {
 	matched := pattern.MatchString(phone)
 	return matched
 }
+
+type UserSelect struct {
+	Page       int `validate:"required,gt=0"`
+	PageSize   int `validate:"required,gt=0,lte=100"`
+	Query      *UserConditions
+	Model      *models.UserInfo       `validate:"-"`
+	Conditions map[string]interface{} `validate:"-"`
+}
+
+type UserConditions struct {
+	Username        string `validate:"omitempty"`
+	Name            string `validate:"omitempty"`
+	Phone           string `validate:"omitempty"`
+	IsActive        int    `validate:"omitempty,oneof=-1 1"`
+	Role            int    `validate:"omitempty,oneof=10 20 30"`
+	CreateTimeBegin int    `validate:"required_with=CreateTimeEnd,gte=0"`
+	CreateTimeEnd   int    `validate:"required_with=CreateTimeBegin,gtefield=CreateTimeBegin"`
+}
+
+func NewUserSelect(ctx *gin.Context) (*UserSelect, error) {
+	var form *UserSelect
+	err := ctx.ShouldBind(&form)
+	if err != nil {
+		return nil, err
+	}
+	if form.Query == nil {
+		form.Query = &UserConditions{}
+	}
+	form.Model = &models.UserInfo{
+		Username: form.Query.Username,
+		Name:     form.Query.Name,
+	}
+	form.Conditions = make(map[string]interface{})
+	if form.Query.Username != "" {
+		form.Conditions["username"] = form.Query.Username
+	}
+	if form.Query.Name != "" {
+		form.Conditions["name"] = form.Query.Name
+	}
+	if form.Query.Phone != "" {
+		form.Conditions["phone"] = form.Query.Phone
+	}
+	if form.Query.IsActive == -1 {
+		form.Conditions["isActive"] = 0
+	} else if form.Query.IsActive == 1 {
+		form.Conditions["isActive"] = 1
+	}
+	if form.Query.Role != 0 {
+		form.Conditions["role"] = form.Query.Role
+	}
+	if form.Query.CreateTimeBegin != 0 {
+		form.Conditions["createTimeBegin"] = form.Query.CreateTimeBegin
+	}
+	if form.Query.CreateTimeEnd != 0 {
+		form.Conditions["createTimeEnd"] = form.Query.CreateTimeEnd
+	}
+	return form, nil
+}
+
+func (form *UserSelect) check() map[string]string {
+	result := make(map[string]string)
+	return result
+}

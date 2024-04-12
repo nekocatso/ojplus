@@ -41,7 +41,7 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 	asset := form.Model
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	asset.CreatorID = claims["userID"].(int)
-	has, hasMessage, err := ctrl.svc.IsAssetExist(asset)
+	has, hasMessage, err := ctrl.svc.GetAssetExistInfo(asset)
 	if err != nil {
 		log.Println(err)
 		response(ctx, 500, nil)

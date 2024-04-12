@@ -18,15 +18,15 @@ type Asset struct {
 }
 
 type AssetUser struct {
-	ID        int       `xorm:"'id' pk autoincr"`
-	AssetID   int       `xorm:"'asset_id' notnull unique(asset_user)"`
-	UserID    int       `xorm:"'user_id' notnull unique(asset_user)"`
+	ID        int       `json:"id" xorm:"'id' pk autoincr"`
+	AssetID   int       `json:"assetID" xorm:"'asset_id' notnull unique(asset_user)"`
+	UserID    int       `json:"userID" xorm:"'user_id' notnull unique(asset_user)"`
 	CreatedAt time.Time `json:"-" xorm:"'created_at' created"`
 }
 
 type AssetRule struct {
-	ID        int       `xorm:"'id' pk autoincr"`
-	AssetID   int       `xorm:"'asset_id' notnull unique(asset_rule)"`
-	RuleID    int       `xorm:"'rule_id' notnull unique(asset_rule)"`
+	ID        int       `json:"id" xorm:"'id' pk autoincr"`
+	AssetID   int       `json:"assetID" xorm:"'asset_id' notnull unique(asset_rule)"`
+	RuleID    int       `json:"ruleID" xorm:"'rule_id' notnull unique(asset_rule)"`
 	CreatedAt time.Time `json:"-" xorm:"'created_at' created"`
 }

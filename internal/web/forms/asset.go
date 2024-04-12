@@ -13,7 +13,7 @@ type AssetCreate struct {
 	Name    string        `validate:"required,max=24"`
 	Type    string        `validate:"required,max=12"`
 	Address string        `validate:"required,max=128"`
-	Note    *string       `validate:"omitempty,max=128"`
+	Note    *string       `validate:"omitempty,max=256"`
 	Enable  bool          `validate:"omitempty"`
 	Users   []int         `validate:"omitempty"`
 	Rules   []int         `validate:"omitempty"`
@@ -53,10 +53,8 @@ func (form *AssetCreate) check() map[string]string {
 }
 
 type AssetUpdate struct {
-	Name string `validate:"required,max=24"`
-	// Type    string `validate:"required,max=12"`
-	// Address string `validate:"required,max=128"`
-	Note   *string       `validate:"required,max=128"`
+	Name   string        `validate:"required,max=24"`
+	Note   *string       `validate:"required,max=256"`
 	Enable bool          `validate:"required"`
 	Users  []int         `validate:"required"`
 	Rules  []int         `validate:"required"`
@@ -126,14 +124,15 @@ type AssetSelect struct {
 }
 
 type AssetConditions struct {
-	Name            string `validate:"omitempty"`
-	Type            string `validate:"omitempty"`
-	CreatorID       int    `validate:"omitempty,gt=0"`
-	Address         string `validate:"omitempty,max=128"`
-	State           int    `validate:"omitempty,gte=-1,lte=3"`
-	Enable          int    `validate:"omitempty"`
-	CreateTimeBegin int    `validate:"required_with=CreateTimeEnd"`
-	CreateTimeEnd   int    `validate:"required_with=CreateTimeBegin,gtefield=CreateTimeBegin"`
+	Name              string `validate:"omitempty"`
+	Type              string `validate:"omitempty"`
+	CreatorID         int    `validate:"omitempty,gt=0"`
+	Address           string `validate:"omitempty,max=128"`
+	State             int    `validate:"omitempty,gte=-1,lte=3"`
+	Enable            int    `validate:"omitempty"`
+	AvailableRuleType string `validate:"omitempty"`
+	CreateTimeBegin   int    `validate:"required_with=CreateTimeEnd,gte=0"`
+	CreateTimeEnd     int    `validate:"required_with=CreateTimeBegin,gtefield=CreateTimeBegin"`
 }
 
 func NewAssetSelect(ctx *gin.Context) (*AssetSelect, error) {
@@ -171,6 +170,9 @@ func NewAssetSelect(ctx *gin.Context) (*AssetSelect, error) {
 	}
 	if form.Query.Address != "" {
 		form.Conditions["address"] = form.Query.Address
+	}
+	if form.Query.AvailableRuleType != "" {
+		form.Conditions["availableRuleType"] = form.Query.AvailableRuleType
 	}
 	if form.Query.CreatorID != 0 {
 		form.Conditions["creatorID"] = form.Query.CreatorID

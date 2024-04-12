@@ -3,6 +3,7 @@ package services
 import (
 	"Alarm/internal/web/models"
 	"errors"
+	"time"
 )
 
 type Account struct {
@@ -85,9 +86,30 @@ func (svc *Account) GetUserByID(id int) (*models.UserInfo, error) {
 	return GetUserByID(svc.db.Engine, id)
 }
 
-func (svc *Account) AllUser() ([]models.UserInfo, error) {
+func (svc *Account) FindUser(conditions map[string]interface{}) ([]models.UserInfo, error) {
 	var users []models.User
-	err := svc.db.Engine.Find(&users)
+	queryBuilder := svc.db.Engine.Table("user")
+	for key, value := range conditions {
+		switch key {
+		case "username":
+			queryBuilder = queryBuilder.And("username LIKE ?", "%"+value.(string)+"%")
+		case "name":
+			queryBuilder = queryBuilder.And("name LIKE ?", "%"+value.(string)+"%")
+		case "phone":
+			queryBuilder = queryBuilder.And("phone LIKE ?", value.(string)+"%")
+		case "role":
+			queryBuilder = queryBuilder.And("role = ?", value)
+		case "isActive":
+			queryBuilder = queryBuilder.And("is_active = ?", value)
+		case "createTimeBegin":
+			tm := time.Unix(int64(value.(int)), 0).Format("2006-01-02 15:04:05")
+			queryBuilder = queryBuilder.And("user.created_at >= ?", tm)
+		case "createTimeEnd":
+			tm := time.Unix(int64(value.(int)), 0).Format("2006-01-02 15:04:05")
+			queryBuilder = queryBuilder.And("user.created_at <= ?", tm)
+		}
+	}
+	err := queryBuilder.Find(&users)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +120,7 @@ func (svc *Account) AllUser() ([]models.UserInfo, error) {
 	return usersInfo, nil
 }
 
-func (svc *Account) IsUserExist(user *models.User) (bool, string, error) {
+func (svc *Account) GetUserExistInfo(user *models.User) (bool, string, error) {
 	has, err := svc.db.Engine.Where("username = ?", user.Username).Exist(&models.User{})
 	if err != nil {
 		return has, "", err
