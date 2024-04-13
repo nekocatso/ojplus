@@ -50,14 +50,16 @@ type ListenerPool struct {
 // 功能：创建并初始化一个新的监听器池实例，包括数据库连接、缓存连接、邮件池、与C++端的通信通道及监听器列表等资源
 //
 // 参数：
-//   db *models.Database // 数据库连接，Database类型的指针，用于与数据库进行交互
-//   RedisClientPool *models.Cache // Redis客户端池，Cache类型的指针，用于与Redis缓存进行交互
-//   mail *mail.MailPool // 邮件池，MailPool类型的指针，用于发送邮件通知
-//   url string // AMQP连接URL，字符串类型，用于连接到AMQP消息代理服务器
+//
+//	db *models.Database // 数据库连接，Database类型的指针，用于与数据库进行交互
+//	RedisClientPool *models.Cache // Redis客户端池，Cache类型的指针，用于与Redis缓存进行交互
+//	mail *mail.MailPool // 邮件池，MailPool类型的指针，用于发送邮件通知
+//	url string // AMQP连接URL，字符串类型，用于连接到AMQP消息代理服务器
 //
 // 返回值：
-//   *ListenerPool // 新建的监听器池实例，类型为ListenerPool的指针，若成功创建则返回该实例，否则返回nil
-//   error // 错误信息，若初始化过程中出现错误则返回相应的错误信息，否则返回nil
+//
+//	*ListenerPool // 新建的监听器池实例，类型为ListenerPool的指针，若成功创建则返回该实例，否则返回nil
+//	error // 错误信息，若初始化过程中出现错误则返回相应的错误信息，否则返回nil
 func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *mail.MailPool, url string) (*ListenerPool, error) {
 	if db == nil {
 		return nil, errors.New("db is nil") // 检查数据库连接是否为空，若为空则返回错误信息
@@ -115,7 +117,7 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 		if err != nil {
 			return nil, err // 若查询失败，则返回错误信息
 		}
-
+		log.Println(ar)
 		// 遍历资产关联的规则，根据规则类型（Ping或TCP）创建相应的监听器
 		for _, j := range ar {
 			p := models.PingInfo{} // 查询Ping规则详细信息
@@ -135,6 +137,7 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 			flag, err = lp.db.Engine.Where("id = ?", j.RuleID).Get(&t)
 			log.Println(j.RuleID, "tcp ", flag)
 			if err != nil {
+
 				return nil, err // 若查询失败，则返回错误信息
 			}
 			if flag { // 若存在TCP规则，则添加TCP监听器
@@ -142,10 +145,10 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 			}
 		}
 	}
-
+	log.Println("rule built end")
 	// 根据最大监听器数量创建并启动监听器实例，添加到监听器列表
 	for i := 0; i < lp.MaxListener; i++ {
-		li, err := listener.NewListener("amqp://user:mkjsix7@172.16.0.15:5672/", lp.RedisClientPool, i, lp.Rule)
+		li, err := listener.NewListener("amqp://user:mkjsix7@172.16.0.15:5672/", lp.RedisClientPool, i+1, lp.Rule)
 		if err != nil {
 			return nil, err // 若创建监听器失败，则返回错误信息
 		}
@@ -153,7 +156,7 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 		lp.ListenerList = append(lp.ListenerList, li)
 	}
 
-	fmt.Println("newListenerpool ok")
+	log.Println("newListenerpool ok")
 	return lp, nil // 初始化成功，返回新建的监听器池实例和nil错误信息
 }
 
@@ -161,10 +164,12 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 // 功能：为监听器池添加一个Ping类型的监听任务，包括从数据库获取相关资产、规则信息，构造请求消息发送至C++端，并等待接收执行结果
 //
 // 参数：
-//   id int // 监听任务ID，整数类型，标识要添加的Ping监听任务，应为资产规则映射表中的主键
+//
+//	id int // 监听任务ID，整数类型，标识要添加的Ping监听任务，应为资产规则映射表中的主键
 //
 // 返回值：
-//   error // 错误信息，若添加过程出现错误则返回相应的错误信息，否则返回nil
+//
+//	error // 错误信息，若添加过程出现错误则返回相应的错误信息，否则返回nil
 func (p *ListenerPool) AddPing(id int) error {
 	// 从数据库中获取与监听任务ID关联的AssetRule记录
 	ar := models.AssetRule{}
@@ -188,17 +193,17 @@ func (p *ListenerPool) AddPing(id int) error {
 	m, err := json.Marshal(listener.Request{
 		Type:           "request",
 		Action:         "ping",
-		Target:         []string{a.Address}, // 目标地址，取自Asset的Address字段
-		Correlation_id: fmt.Sprintf("%d", id), // 关联ID，使用监听任务ID
-		Timestamp:      fmt.Sprintf("%d", time.Now().Unix()), // 时间戳，当前时间的Unix时间戳
-		Control:        "continuous", // 控制类型，固定为"continuous"
+		Target:         []string{a.Address},                      // 目标地址，取自Asset的Address字段
+		Correlation_id: fmt.Sprintf("%d", id),                    // 关联ID，使用监听任务ID
+		Timestamp:      fmt.Sprintf("%d", time.Now().Unix()),     // 时间戳，当前时间的Unix时间戳
+		Control:        "continuous",                             // 控制类型，固定为"continuous"
 		Config:         []any{"ping", r.Overtime, 1, r.Interval}, // 配置参数，包括Ping命令、超时时间、重试次数、间隔时间
 	})
 	if err != nil {
 		return err // 构造或发送消息失败，则返回错误信息
 	}
 	p.cSendQ.SendMessage(m) // 发送消息至C++端
-	log.Println(string(m)) // 打印发送的消息内容
+	log.Println(string(m))  // 打印发送的消息内容
 
 	// 循环等待接收C++端返回的执行结果
 	for {
@@ -227,10 +232,12 @@ func (p *ListenerPool) AddPing(id int) error {
 // 功能：为监听器池添加一个TCP类型的监听任务，包括从数据库获取相关资产、规则、TCP信息，构造请求消息发送至C++端，并等待接收执行结果
 //
 // 参数：
-//   id int // 监听任务ID，整数类型，标识要添加的TCP监听任务
+//
+//	id int // 监听任务ID，整数类型，标识要添加的TCP监听任务
 //
 // 返回值：
-//   error // 错误信息，若添加过程出现错误则返回相应的错误信息，否则返回nil
+//
+//	error // 错误信息，若添加过程出现错误则返回相应的错误信息，否则返回nil
 func (p *ListenerPool) AddTCP(id int) error {
 	// 从数据库中获取与监听任务ID关联的AssetRule记录
 	ar := models.AssetRule{}
@@ -272,18 +279,18 @@ func (p *ListenerPool) AddTCP(id int) error {
 	// 构造TCP请求消息
 	m, err := json.Marshal(listener.Request{
 		Type:           "request",
-		Action:         "telnet", // 行动类型，固定为"telnet"
-		Target:         add,      // 目标地址列表，包含启用端口和禁用端口的目标地址
-		Correlation_id: fmt.Sprintf("%d", id), // 关联ID，使用监听任务ID
-		Timestamp:      fmt.Sprintf("%d", time.Now().Unix()), // 时间戳，当前时间的Unix时间戳
-		Control:        "continuous", // 控制类型，固定为"continuous"
+		Action:         "telnet",                                   // 行动类型，固定为"telnet"
+		Target:         add,                                        // 目标地址列表，包含启用端口和禁用端口的目标地址
+		Correlation_id: fmt.Sprintf("%d", id),                      // 关联ID，使用监听任务ID
+		Timestamp:      fmt.Sprintf("%d", time.Now().Unix()),       // 时间戳，当前时间的Unix时间戳
+		Control:        "continuous",                               // 控制类型，固定为"continuous"
 		Config:         []any{"telnet", r.Overtime, 1, r.Interval}, // 配置参数，包括Telnet命令、超时时间、重试次数、间隔时间
 	})
 	fmt.Println(string(m)) // 打印发送的消息内容
 	if err != nil {
 		return err // 构造失败，则返回错误信息
 	}
-	err=p.cSendQ.SendMessage(m) // 发送消息至C++端
+	err = p.cSendQ.SendMessage(m) // 发送消息至C++端
 	if err != nil {
 		return err // 发送失败，则返回错误信息
 	}
@@ -309,20 +316,23 @@ func (p *ListenerPool) AddTCP(id int) error {
 		}
 	}
 }
+
 // DelPing
 // 功能：从监听器池中移除指定ID的Ping监听任务，包括构造停止请求消息发送至C++端，并等待接收执行结果
 //
 // 参数：
-//   id int // 监听任务ID，整数类型，标识要移除的Ping监听任务
+//
+//	id int // 监听任务ID，整数类型，标识要移除的Ping监听任务
 //
 // 返回值：
-//   error // 错误信息，若移除过程出现错误则返回相应的错误信息，否则返回nil
+//
+//	error // 错误信息，若移除过程出现错误则返回相应的错误信息，否则返回nil
 func (p *ListenerPool) DelPing(id int) error {
 	// 构造并向C++端发送停止Ping请求消息
 	m, err := json.Marshal(listener.Request{
 		Type:           "request",
-		Action:         "stop_ping", // 行动类型，固定为"stop_ping"
-		Correlation_id: fmt.Sprintf("%d", id), // 关联ID，使用监听任务ID
+		Action:         "stop_ping",                          // 行动类型，固定为"stop_ping"
+		Correlation_id: fmt.Sprintf("%d", id),                // 关联ID，使用监听任务ID
 		Timestamp:      fmt.Sprintf("%d", time.Now().Unix()), // 时间戳，当前时间的Unix时间戳
 	})
 	if err != nil {
@@ -342,26 +352,29 @@ func (p *ListenerPool) DelPing(id int) error {
 	// 检查执行结果状态和关联ID，若成功且匹配，则更新Ping监听器状态并从规则映射表中移除，然后返回nil
 	if res.Status == "success" && res.Corrlation_id == fmt.Sprintf("%d", id) {
 		p.Rule[id].Update() // 更新Ping监听器状态
-		delete(p.Rule, id) // 从规则映射表中移除指定ID的Ping监听器
+		delete(p.Rule, id)  // 从规则映射表中移除指定ID的Ping监听器
 		return nil
 	} else {
 		return errors.New("del ping failed") // 若执行结果状态不是成功或关联ID不匹配，则返回移除失败的错误信息
 	}
 }
+
 // DelTCP
 // 功能：从监听器池中移除指定ID的TCP监听任务，包括构造停止请求消息发送至C++端，并等待接收执行结果
 //
 // 参数：
-//   id int // 监听任务ID，整数类型，标识要移除的TCP监听任务
+//
+//	id int // 监听任务ID，整数类型，标识要移除的TCP监听任务
 //
 // 返回值：
-//   error // 错误信息，若移除过程出现错误则返回相应的错误信息，否则返回nil
+//
+//	error // 错误信息，若移除过程出现错误则返回相应的错误信息，否则返回nil
 func (p *ListenerPool) DelTCP(id int) error {
 	// 构造并向C++端发送停止TCP请求消息
 	m, err := json.Marshal(listener.Request{
 		Type:           "request",
-		Action:         "stop_tcp", // 行动类型，固定为"stop_tcp"
-		Correlation_id: fmt.Sprintf("%d", id), // 关联ID，使用监听任务ID
+		Action:         "stop_tcp",                           // 行动类型，固定为"stop_tcp"
+		Correlation_id: fmt.Sprintf("%d", id),                // 关联ID，使用监听任务ID
 		Timestamp:      fmt.Sprintf("%d", time.Now().Unix()), // 时间戳，当前时间的Unix时间戳
 	})
 	if err != nil {
@@ -381,20 +394,23 @@ func (p *ListenerPool) DelTCP(id int) error {
 	// 检查执行结果状态和关联ID，若成功且匹配，则更新TCP监听器状态并从规则映射表中移除，然后返回nil
 	if res.Status == "success" && res.Corrlation_id == fmt.Sprintf("%d", id) {
 		p.Rule[id].Update() // 更新TCP监听器状态
-		delete(p.Rule, id) // 从规则映射表中移除指定ID的TCP监听器
+		delete(p.Rule, id)  // 从规则映射表中移除指定ID的TCP监听器
 		return nil
 	} else {
 		return errors.New("del tcp failed") // 若执行结果状态不是成功或关联ID不匹配，则返回移除失败的错误信息
 	}
 }
+
 // UpdatePing
 // 功能：更新指定ID的Ping监听任务，包括调用监听器的Update方法更新其状态，然后重新添加该Ping监听任务到监听器池
 //
 // 参数：
-//   id int // 监听任务ID，整数类型，标识要更新的Ping监听任务
+//
+//	id int // 监听任务ID，整数类型，标识要更新的Ping监听任务
 //
 // 返回值：
-//   error // 错误信息，若更新或重新添加过程出现错误则返回相应的错误信息，否则返回nil
+//
+//	error // 错误信息，若更新或重新添加过程出现错误则返回相应的错误信息，否则返回nil
 func (p *ListenerPool) UpdatePing(id int) error {
 	// 调用Ping监听器的Update方法更新其状态
 	p.Rule[id].Update()
@@ -407,10 +423,12 @@ func (p *ListenerPool) UpdatePing(id int) error {
 // 功能：更新指定ID的TCP监听任务，包括调用监听器的Update方法更新其状态，然后重新添加该TCP监听任务到监听器池
 //
 // 参数：
-//   id int // 监听任务ID，整数类型，标识要更新的TCP监听任务
+//
+//	id int // 监听任务ID，整数类型，标识要更新的TCP监听任务
 //
 // 返回值：
-//   error // 错误信息，若更新或重新添加过程出现错误则返回相应的错误信息，否则返回nil
+//
+//	error // 错误信息，若更新或重新添加过程出现错误则返回相应的错误信息，否则返回nil
 func (p *ListenerPool) UpdateTCP(id int) error {
 	// 调用TCP监听器的Update方法更新其状态
 	p.Rule[id].Update()
@@ -418,6 +436,7 @@ func (p *ListenerPool) UpdateTCP(id int) error {
 	// 重新添加更新后的TCP监听任务到监听器池
 	return p.AddTCP(id) // 返回AddTCP方法的结果作为本方法的返回值
 }
+
 // Close
 // 功能：关闭监听器池，包括发送停止所有监听任务的请求至C++端，等待接收执行结果，关闭相关通道及连接，并关闭所有监听器
 //
@@ -429,19 +448,21 @@ func (p *ListenerPool) Close() {
 	// 构造并向C++端发送停止所有监听任务的请求消息
 	m, err := json.Marshal(listener.Request{
 		Type:           "request",
-		Action:         "stop_all", // 行动类型，固定为"stop_all"
-		Target:         []string{}, // 空目标列表，因停止所有任务无需特定目标
-		Correlation_id: fmt.Sprintf("%d", 0), // 关联ID，使用0表示停止所有任务
+		Action:         "stop_all",                           // 行动类型，固定为"stop_all"
+		Target:         []string{},                           // 空目标列表，因停止所有任务无需特定目标
+		Correlation_id: fmt.Sprintf("%d", 0),                 // 关联ID，使用0表示停止所有任务
 		Timestamp:      fmt.Sprintf("%d", time.Now().Unix()), // 时间戳，当前时间的Unix时间戳
-		Config:         []any{}, // 空配置参数列表，因停止所有任务无需特定配置
-		Control:        "continuous", // 控制类型，固定为"continuous"
+		Config:         []any{},                              // 空配置参数列表，因停止所有任务无需特定配置
+		Control:        "continuous",                         // 控制类型，固定为"continuous"
 	})
 	log.Println(string(m)) // 打印发送的消息内容
 	if err != nil {
 		log.Println(err) // 构造或发送消息失败，打印错误信息
 	}
-	p.cSendQ.SendMessage(m) // 发送消息至C++端
-
+	err = p.cSendQ.SendMessage(m) // 发送消息至C++端
+	if err != nil {
+		log.Println(err)
+	}
 	// 接收C++端返回的执行结果
 	c := <-p.cGetch // 从控制信息接收通道接收消息
 
@@ -460,9 +481,9 @@ func (p *ListenerPool) Close() {
 	}
 
 	// 关闭相关通道及连接
-	p.cGetQ.Close() // 关闭控制信息接收队列
+	p.cGetQ.Close()  // 关闭控制信息接收队列
 	p.cSendQ.Close() // 关闭控制信息发送队列
-	p.cConn.Close() // 关闭与C++端的连接
+	p.cConn.Close()  // 关闭与C++端的连接
 
 	// 关闭所有监听器
 	for _, v := range p.ListenerList {
