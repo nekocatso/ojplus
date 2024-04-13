@@ -226,4 +226,5 @@ func (ctrl *Rule) GetRuleByID(ctx *gin.Context) {
 		response(ctx, 404, nil)
 		return
 	}
+	response(ctx, 200, rule)
 }

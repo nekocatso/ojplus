@@ -57,14 +57,10 @@ require (
 require (
 	github.com/dlclark/regexp2 v1.11.0
 	github.com/gin-gonic/gin v1.9.1
-	github.com/go-playground/locales v0.14.1
-	github.com/go-playground/universal-translator v0.18.1
-	github.com/go-playground/validator/v10 v10.14.0
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-sql-driver/mysql v1.8.1
-	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/google/uuid v1.4.0
 	github.com/spf13/viper v1.18.2
 	github.com/streadway/amqp v1.1.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
-	xorm.io/xorm v1.3.9
 )

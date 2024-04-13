@@ -128,7 +128,7 @@ func (svc *Rule) BindAssets(ruleID int, assetIDs []int, userID int) error {
 }
 
 func (svc *Rule) GetRuleByID(ruleID int) (*models.Rule, error) {
-	var rule models.Rule
+	rule := new(models.Rule)
 	has, err := svc.db.Engine.ID(ruleID).Get(rule)
 	if err != nil {
 		return nil, err
@@ -136,7 +136,7 @@ func (svc *Rule) GetRuleByID(ruleID int) (*models.Rule, error) {
 	if !has {
 		return nil, fmt.Errorf("rule with ID %d does not exist", ruleID)
 	}
-	return &rule, nil
+	return rule, nil
 }
 
 func (svc *Rule) GetPingInfo(ruleID int) (*models.PingInfo, error) {
