@@ -101,12 +101,8 @@ func (ctrl *Account) GetUsers(ctx *gin.Context) {
 	if pageStr != "" && pageSizeStr != "" {
 		var err error
 		page, err = strconv.Atoi(pageStr)
-		if err != nil || page <= 0 {
+		if err != nil || page <= 0 || pageSize > 100 {
 			response(ctx, 40002, nil)
-			return
-		}
-		if pageSize > 100 {
-			response(ctx, 40003, nil)
 			return
 		}
 		pageSize, err = strconv.Atoi(pageSizeStr)

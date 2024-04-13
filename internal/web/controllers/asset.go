@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-sql-driver/mysql"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type Asset struct {
@@ -39,8 +38,7 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 		return
 	}
 	asset := form.Model
-	claims := ctx.Value("claims").(jwt.MapClaims)
-	asset.CreatorID = claims["userID"].(int)
+	asset.CreatorID = GetUserIDByContext(ctx)
 	has, hasMessage, err := ctrl.svc.GetAssetExistInfo(asset)
 	if err != nil {
 		log.Println(err)
@@ -157,12 +155,8 @@ func (ctrl *Asset) GetAssets(ctx *gin.Context) {
 	if pageStr != "" && pageSizeStr != "" {
 		var err error
 		page, err = strconv.Atoi(pageStr)
-		if err != nil || page <= 0 {
+		if err != nil || page <= 0 || pageSize > 100 {
 			response(ctx, 40002, nil)
-			return
-		}
-		if pageSize > 100 {
-			response(ctx, 40003, nil)
 			return
 		}
 		pageSize, err = strconv.Atoi(pageSizeStr)
