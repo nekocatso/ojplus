@@ -177,3 +177,53 @@ func (ctrl *Rule) GetRuleIDsByAssetID(ctx *gin.Context) {
 	}
 	response(ctx, 200, ruleIDs)
 }
+
+func (ctrl *Rule) GetRuleByID(ctx *gin.Context) {
+	// 数据校验
+	ruleID, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	if ruleID <= 0 {
+		response(ctx, 40002, nil)
+		return
+	}
+	// 权限校验
+	userID := GetUserIDByContext(ctx)
+	access, err := ctrl.svc.IsAccessRule(ruleID, userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !access {
+		response(ctx, 404, nil)
+		return
+	}
+	// 获取数据
+	rule, err := ctrl.svc.GetRuleByID(ruleID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if rule.Type == "ping" {
+		rule.Info, err = ctrl.svc.GetPingInfo(ruleID)
+	} else if rule.Type == "tcp" {
+		rule.Info, err = ctrl.svc.GetTCPInfo(ruleID)
+	} else {
+		log.Println("a rule type not ping or tcp")
+		response(ctx, 500, nil)
+		return
+	}
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if rule == nil {
+		response(ctx, 404, nil)
+		return
+	}
+}

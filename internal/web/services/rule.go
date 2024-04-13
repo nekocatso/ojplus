@@ -127,6 +127,18 @@ func (svc *Rule) BindAssets(ruleID int, assetIDs []int, userID int) error {
 	return err
 }
 
+func (svc *Rule) GetRuleByID(ruleID int) (*models.Rule, error) {
+	var rule models.Rule
+	has, err := svc.db.Engine.ID(ruleID).Get(rule)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, fmt.Errorf("rule with ID %d does not exist", ruleID)
+	}
+	return &rule, nil
+}
+
 func (svc *Rule) GetPingInfo(ruleID int) (*models.PingInfo, error) {
 	var pingInfo models.PingInfo
 	exists, err := svc.db.Engine.ID(ruleID).Get(&pingInfo)
@@ -241,9 +253,10 @@ func (svc *Rule) GetRuleIDsByAssetID(assetID int) ([]int, error) {
 }
 
 func (svc *Rule) IsAccessRule(ruleID, userID int) (bool, error) {
-	queryBuilder := svc.db.Engine.Join("INNER", "asset_rule", "rule.id = asset_rule.rule_id")
-	queryBuilder = queryBuilder.Join("INNER", "asset_user", "asset_rule.asset_id = asset_user.asset_id")
+	queryBuilder := svc.db.Engine.Join("LEFT", "asset_rule", "rule.id = asset_rule.rule_id")
+	queryBuilder = queryBuilder.Join("LEFT", "asset_user", "asset_rule.asset_id = asset_user.asset_id")
 	queryBuilder = queryBuilder.Where("asset_user.user_id = ?", userID)
+	queryBuilder = queryBuilder.Or("rule.creator_id = ?", userID)
 	has, err := queryBuilder.ID(ruleID).Exist(&models.Rule{})
 	if err != nil {
 		return false, err

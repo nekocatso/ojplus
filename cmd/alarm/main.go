@@ -70,7 +70,7 @@ func main() {
 	group := engine.Group("/api")
 	{
 		group.POST("/register", AccountCtrl.CreateUser)
-		group.POST("/users/query", AccountCtrl.SelectUsers)
+		group.POST("/users/query", AuthCtrl.LoginMiddleware, AccountCtrl.SelectUsers)
 		group.GET("/users", AuthCtrl.LoginMiddleware, AccountCtrl.GetUsers)
 		group.GET("/user/:id", AuthCtrl.LoginMiddleware, AccountCtrl.GetUserByID)
 		group.PATCH("/user/:id", AuthCtrl.LoginMiddleware, AccountCtrl.UpdateUser)
@@ -84,7 +84,6 @@ func main() {
 		group.GET("/assets/id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetIDs)
 		group.POST("/asset", AuthCtrl.LoginMiddleware, AssetCtrl.CreateAsset)
 		group.POST("/assets/query", AuthCtrl.LoginMiddleware, AssetCtrl.SelectAssets)
-		// group.GET("/assets/:assetID/:target", AuthCtrl.LoginMiddleware, AccountCtrl.GetUsersByAsset)
 		group.GET("/assets/:assetID/:target", AuthCtrl.LoginMiddleware, func(ctx *gin.Context) {
 			if ctx.Param("target") == "users" {
 				AccountCtrl.GetUserIDsByAssetID(ctx)
@@ -94,6 +93,7 @@ func main() {
 		})
 
 		group.GET("/rules", AuthCtrl.LoginMiddleware, RuleCtrl.GetRules)
+		group.GET("/rule/:id", AuthCtrl.LoginMiddleware, RuleCtrl.GetRuleByID)
 		group.POST("/rule", AuthCtrl.LoginMiddleware, RuleCtrl.CreateRule)
 		group.POST("/rules/query", AuthCtrl.LoginMiddleware, RuleCtrl.SelectRules)
 
