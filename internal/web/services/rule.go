@@ -257,17 +257,9 @@ func (svc *Rule) IsAccessRule(ruleID, userID int) (bool, error) {
 	queryBuilder = queryBuilder.Join("LEFT", "asset_user", "asset_rule.asset_id = asset_user.asset_id")
 	queryBuilder = queryBuilder.Where("asset_user.user_id = ?", userID)
 	queryBuilder = queryBuilder.Or("rule.creator_id = ?", userID)
-	has, err := queryBuilder.ID(ruleID).Exist(&models.Rule{})
-	if err != nil {
-		return false, err
-	}
-	return has, nil
+	return queryBuilder.ID(ruleID).Exist(&models.Rule{})
 }
 
 func (svc *Rule) IsAccessAsset(assetID int, userID int) (bool, error) {
-	has, err := svc.db.Engine.Where("asset_id = ? AND user_id = ?", assetID, userID).Exist(&models.AssetUser{})
-	if err != nil {
-		return false, err
-	}
-	return has, nil
+	return svc.db.Engine.Where("asset_id = ? AND user_id = ?", assetID, userID).Exist(&models.AssetUser{})
 }
