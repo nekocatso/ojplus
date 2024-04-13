@@ -99,7 +99,7 @@ func (ctrl *Auth) Login(ctx *gin.Context) {
 		return
 	}
 	refreshClaims := map[string]interface{}{
-		"userID": int(user.ID),
+		"userID": user.ID,
 		"type":   "refresh",
 	}
 	refreshToken, err := ctrl.svc.GenerateToken(ctrl.cfg["privateKey"], ctrl.cfg["refreshTokenValidity"].(int), refreshClaims)
@@ -108,7 +108,7 @@ func (ctrl *Auth) Login(ctx *gin.Context) {
 		response(ctx, 500, nil)
 		return
 	}
-	err = ctrl.logger.SaveUserLog(ctx, &logs.UserLog{
+	err = ctrl.logger.SaveUserLog(ctx, user.ID, &logs.UserLog{
 		Module:  "账号管理",
 		Type:    "编辑",
 		Content: "成功",

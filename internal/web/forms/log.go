@@ -1,8 +1,6 @@
 package forms
 
 import (
-	"Alarm/internal/web/models"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -10,7 +8,6 @@ type AlarmLogSelect struct {
 	Page       int `validate:"required,gt=0"`
 	PageSize   int `validate:"required,gt=0,lte=100"`
 	Query      *AlarmLogConditions
-	Model      *models.AlarmLog       `validate:"-"`
 	Conditions map[string]interface{} `validate:"-"`
 }
 
@@ -32,11 +29,6 @@ func NewAlarmLogSelect(ctx *gin.Context) (*AlarmLogSelect, error) {
 	}
 	if form.Query == nil {
 		form.Query = &AlarmLogConditions{}
-	}
-	form.Model = &models.AlarmLog{
-		AssetID: form.Query.AssetID,
-		RuleID:  form.Query.RuleID,
-		State:   form.Query.State,
 	}
 	form.Conditions = make(map[string]interface{})
 	if form.Query.AssetID != 0 {
@@ -64,6 +56,54 @@ func NewAlarmLogSelect(ctx *gin.Context) (*AlarmLogSelect, error) {
 }
 
 func (form *AlarmLogSelect) check() map[string]string {
+	result := make(map[string]string)
+	return result
+}
+
+type UserLogSelect struct {
+	Page       int `validate:"required,gt=0"`
+	PageSize   int `validate:"required,gt=0,lte=100"`
+	Query      *UserLogConditions
+	Conditions map[string]interface{} `validate:"-"`
+}
+
+type UserLogConditions struct {
+	Username        string `validate:"omitempty"`
+	Phone           string `validate:"omitempty"`
+	IP              string `validate:"omitempty"`
+	CreateTimeBegin int    `validate:"required_with=CreateTimeEnd,gte=0"`
+	CreateTimeEnd   int    `validate:"required_with=CreateTimeBegin,gtefield=CreateTimeBegin"`
+}
+
+func NewUserLogSelect(ctx *gin.Context) (*UserLogSelect, error) {
+	var form *UserLogSelect
+	err := ctx.ShouldBind(&form)
+	if err != nil {
+		return nil, err
+	}
+	if form.Query == nil {
+		form.Query = &UserLogConditions{}
+	}
+	form.Conditions = make(map[string]interface{})
+	if form.Query.Username != "" {
+		form.Conditions["username"] = form.Query.Username
+	}
+	if form.Query.Phone != "" {
+		form.Conditions["phone"] = form.Query.Phone
+	}
+	if form.Query.IP != "" {
+		form.Conditions["ip"] = form.Query.IP
+	}
+	if form.Query.CreateTimeBegin != 0 {
+		form.Conditions["createTimeBegin"] = form.Query.CreateTimeBegin
+	}
+	if form.Query.CreateTimeEnd != 0 {
+		form.Conditions["createTimeEnd"] = form.Query.CreateTimeEnd
+	}
+	return form, nil
+}
+
+func (form *UserLogSelect) check() map[string]string {
 	result := make(map[string]string)
 	return result
 }

@@ -2,10 +2,8 @@ package logs
 
 import (
 	"Alarm/internal/web/models"
-	"errors"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type Logger struct {
@@ -24,11 +22,7 @@ type UserLog struct {
 	Content string
 }
 
-func (l *Logger) SaveUserLog(ctx *gin.Context, userLog *UserLog) error {
-	userID := getUserIDByContext(ctx)
-	if userID == 0 {
-		return errors.New("user id cannot be 0")
-	}
+func (l *Logger) SaveUserLog(ctx *gin.Context, userID int, userLog *UserLog) error {
 	_, err := l.db.Engine.Insert(&models.UserLog{
 		UserID:  userID,
 		Module:  userLog.Module,
@@ -37,9 +31,4 @@ func (l *Logger) SaveUserLog(ctx *gin.Context, userLog *UserLog) error {
 		IP:      ctx.ClientIP(),
 	})
 	return err
-}
-
-func getUserIDByContext(ctx *gin.Context) int {
-	claims := ctx.Value("claims").(jwt.MapClaims)
-	return claims["userID"].(int)
 }

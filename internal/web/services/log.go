@@ -21,8 +21,9 @@ func NewLog(cfg map[string]interface{}) *Log {
 }
 
 func (svc *Log) FindALarmLogs(userID int, conditions map[string]interface{}) ([]models.AlarmLog, error) {
-	logs := make([]models.AlarmLog, 0)
+	logs := []models.AlarmLog{}
 	// 构建查询条件
+	// svc.db.Engine.ShowSQL(true)
 	queryBuilder := svc.db.Engine.Table("alarm_log").Alias("log")
 	queryBuilder = queryBuilder.Join("LEFT", "rule", "log.rule_id = rule.id")
 	queryBuilder = queryBuilder.Join("LEFT", "asset", "log.asset_id = asset.id")
@@ -69,6 +70,46 @@ func (svc *Log) FindALarmLogs(userID int, conditions map[string]interface{}) ([]
 				return nil, err
 			}
 			logs[i].RuleName = rule.Name
+			uniqueLogs = append(uniqueLogs, logs[i])
+		}
+	}
+	return uniqueLogs, nil
+}
+
+func (svc *Log) FindUserLogs(userID int, conditions map[string]interface{}) ([]models.UserLog, error) {
+	logs := []models.UserLog{}
+	// 构建查询条件
+	// svc.db.Engine.ShowSQL(true)
+	queryBuilder := svc.db.Engine.Table("user_log").Alias("log")
+	queryBuilder = queryBuilder.Join("LEFT", "user", "log.user_id = user.id")
+	for key, value := range conditions {
+		switch key {
+		case "username":
+			queryBuilder = queryBuilder.And("user.username = ?", value)
+		case "phone":
+			queryBuilder = queryBuilder.And("user.phone = ?", value)
+		case "ip":
+			queryBuilder = queryBuilder.And("log.ip = ?", value)
+		case "createTimeBegin":
+			tm := time.Unix(int64(value.(int)), 0).Format("2006-01-02 15:04:05")
+			queryBuilder = queryBuilder.And("log.created_at >= ?", tm)
+		case "createTimeEnd":
+			tm := time.Unix(int64(value.(int)), 0).Format("2006-01-02 15:04:05")
+			queryBuilder = queryBuilder.And("log.created_at <= ?", tm)
+		}
+	}
+	err := queryBuilder.Find(&logs)
+	if err != nil {
+		return nil, err
+	}
+
+	processedIDs := make(map[int]bool)
+	uniqueLogs := make([]models.UserLog, 0)
+
+	for i := range logs {
+		if !processedIDs[logs[i].ID] {
+			processedIDs[logs[i].ID] = true
+
 			uniqueLogs = append(uniqueLogs, logs[i])
 		}
 	}
