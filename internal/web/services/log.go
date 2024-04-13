@@ -27,7 +27,7 @@ func (svc *Log) FindALarmLogs(userID int, conditions map[string]interface{}) ([]
 	queryBuilder = queryBuilder.Join("LEFT", "rule", "log.rule_id = rule.id")
 	queryBuilder = queryBuilder.Join("LEFT", "asset", "log.asset_id = asset.id")
 	queryBuilder = queryBuilder.Join("LEFT", "asset_user", "log.asset_id = asset.id")
-	queryBuilder = queryBuilder.Where("asset_user.user_id = ?", userID).Or("asset.creator = ?", userID)
+	queryBuilder = queryBuilder.Where("asset_user.user_id = ?", userID).Or("asset.creator_id = ?", userID)
 	for key, value := range conditions {
 		switch key {
 		case "assetID":

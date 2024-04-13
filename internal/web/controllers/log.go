@@ -42,6 +42,7 @@ func (ctrl *Log) GetAlarmLogs(ctx *gin.Context) {
 	userID := GetUserIDByContext(ctx)
 	alarmLogs, err := ctrl.svc.FindALarmLogs(userID, map[string]interface{}{})
 	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}

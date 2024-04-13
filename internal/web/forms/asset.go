@@ -14,7 +14,7 @@ type AssetCreate struct {
 	Type    string        `validate:"required,max=12"`
 	Address string        `validate:"required,max=128"`
 	Note    *string       `validate:"omitempty,max=256"`
-	Enable  bool          `validate:"omitempty"`
+	Enable  int           `validate:"omitempty"`
 	Users   []int         `validate:"omitempty"`
 	Rules   []int         `validate:"omitempty"`
 	Model   *models.Asset `validate:"-"`
@@ -27,7 +27,7 @@ func NewAssetCreate(ctx *gin.Context) (*AssetCreate, error) {
 		return nil, err
 	}
 	var state int
-	if form.Enable {
+	if form.Enable > 0 {
 		state = 3
 	} else {
 		state = -1
@@ -44,7 +44,7 @@ func NewAssetCreate(ctx *gin.Context) (*AssetCreate, error) {
 
 func (form *AssetCreate) check() map[string]string {
 	result := make(map[string]string)
-	if form.Enable && len(form.Rules) == 0 {
+	if form.Enable > 0 && len(form.Rules) == 0 {
 		result["state"] = "未绑定规则时无法启用监测"
 	}
 	checkAddress(result, form.Type, form.Address)

@@ -15,6 +15,7 @@ type User struct {
 	UpdatedAt time.Time `json:"-" xorm:"updated"`
 	DeletedAt time.Time `json:"-" xorm:"deleted"`
 	Note      *string   `json:"note" xorm:"null"`
+	IP        string    `json:"-" xorm:"-"`
 }
 
 func (u *User) GetInfo() *UserInfo {

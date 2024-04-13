@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"Alarm/internal/web/forms"
+	"Alarm/internal/web/logs"
 	"Alarm/internal/web/models"
 	"Alarm/internal/web/services"
 	"log"
@@ -12,13 +13,15 @@ import (
 )
 
 type Account struct {
-	svc *services.Account
-	cfg map[string]interface{}
+	svc    *services.Account
+	cfg    map[string]interface{}
+	logger *logs.Logger
 }
 
 func NewAccount(cfg map[string]interface{}) *Account {
 	svc := services.NewAccount(cfg)
-	return &Account{svc: svc, cfg: cfg}
+	logger := logs.NewLogger(cfg["db"].(*models.Database))
+	return &Account{svc: svc, cfg: cfg, logger: logger}
 }
 
 func (ctrl *Account) CreateUser(ctx *gin.Context) {
@@ -46,6 +49,15 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 		responseWithMessage(ctx, hasMessage, 40901, nil)
 		return
 	}
+	err = ctrl.logger.SaveUserLog(ctx, &logs.UserLog{
+		Module:  "账号管理",
+		Type:    "注册",
+		Content: "成功",
+	})
+	if err != nil {
+		response(ctx, 500, nil)
+		return
+	}
 	err = ctrl.svc.CreateUser(user)
 	if merr, ok := err.(*mysql.MySQLError); ok {
 		if merr.Number == 1062 {
@@ -59,7 +71,15 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 }
 
 func (ctrl *Account) UpdateUser(ctx *gin.Context) {
-	userID := GetUserIDByContext(ctx)
+	userID, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	if userID <= 0 {
+		response(ctx, 40002, nil)
+		return
+	}
 	// 表单校验
 	form, err := forms.NewUserUpdate(ctx)
 	if err != nil {
@@ -75,6 +95,15 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 		response(ctx, 40002, errorsMap)
 		return
 	}
+	pass, err := ctrl.svc.VerifyPassword(form.OldPassword, form.Password)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !pass {
+		response(ctx, 40101, nil)
+	}
 	//更新数据
 	has, err := ctrl.svc.IsUserIDExist(userID)
 	if err != nil {
@@ -84,6 +113,15 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 	}
 	if !has {
 		response(ctx, 404, nil)
+		return
+	}
+	err = ctrl.logger.SaveUserLog(ctx, &logs.UserLog{
+		Module:  "账号管理",
+		Type:    "编辑",
+		Content: "成功",
+	})
+	if err != nil {
+		response(ctx, 500, nil)
 		return
 	}
 	err = ctrl.svc.UpdateUserByID(userID, form.Model)
@@ -190,14 +228,17 @@ func (ctrl *Account) SelectUsers(ctx *gin.Context) {
 }
 
 func (ctrl *Account) GetUserByID(ctx *gin.Context) {
-	id := ctx.Param("id")
-	idInt, err := strconv.Atoi(id)
+	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		response(ctx, 400, nil)
+		response(ctx, 40001, nil)
+		return
+	}
+	if id <= 0 {
+		response(ctx, 40002, nil)
 		return
 	}
 	var userInfo *models.UserInfo
-	userInfo, err = ctrl.svc.GetUserByID(idInt)
+	userInfo, err = ctrl.svc.GetUserByID(id)
 	if err != nil {
 		response(ctx, 500, nil)
 		log.Println(err)

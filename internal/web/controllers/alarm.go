@@ -23,11 +23,13 @@ func NewAlarm(cfg map[string]interface{}) *Alarm {
 func (ctrl *Alarm) CreateAlarm(ctx *gin.Context) {
 	form, err := forms.NewAlarmCreate(ctx)
 	if err != nil {
+		log.Println(err)
 		response(ctx, 40001, nil)
 		return
 	}
 	isValid, errorsMap, err := forms.Verify(form)
 	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}

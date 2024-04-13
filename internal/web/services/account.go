@@ -25,20 +25,6 @@ func (svc *Account) CreateUser(user *models.User) error {
 	return err
 }
 
-func (svc *Account) DeepDeleteUser(user *models.User) error {
-	if user.ID == 0 {
-		has, err := svc.getUser(user)
-		if err != nil {
-			return err
-		}
-		if !has {
-			return errors.New("无法找到user数据")
-		}
-	}
-	_, err := svc.db.Engine.ID(user.ID).Unscoped().Delete(user)
-	return err
-}
-
 func (svc *Account) DeleteUser(user *models.User) error {
 	if user.ID == 0 {
 		has, err := svc.getUser(user)
@@ -159,4 +145,16 @@ func (svc *Account) GetUserIDsByAssetID(assetID int) ([]int, error) {
 		return nil, err
 	}
 	return userIDs, nil
+}
+
+func (svc *Account) VerifyPassword(username string, password string) (bool, error) {
+	user := &models.User{
+		Username: username,
+		Password: password,
+	}
+	has, err := svc.db.Engine.Exist(user)
+	if err != nil {
+		return false, err
+	}
+	return has, nil
 }

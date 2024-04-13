@@ -138,6 +138,10 @@ func (svc *Asset) GetAssetByID(id int) (*models.Asset, error) {
 	if !has {
 		return nil, errors.New("Asset not found")
 	}
+	asset.RuleNames, err = svc.GetRuleNames(asset.ID)
+	if err != nil {
+		return nil, err
+	}
 	return asset, nil
 }
 
@@ -190,7 +194,7 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 	queryBuilder = queryBuilder.Join("LEFT", "asset_user", "asset.id = asset_user.asset_id")
 	queryBuilder = queryBuilder.Join("LEFT", "asset_rule", "asset.id = asset_rule.asset_id")
 	queryBuilder = queryBuilder.Join("LEFT", "rule", "rule.id = asset_rule.rule_id")
-	queryBuilder = queryBuilder.Where("asset_user.user_id = ?", userID).Or("asset.creator = ?", userID)
+	queryBuilder = queryBuilder.Where("asset_user.user_id = ?", userID).Or("asset.creator_id = ?", userID)
 	for key, value := range conditions {
 		switch key {
 		case "name":

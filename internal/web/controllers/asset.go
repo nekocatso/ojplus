@@ -3,6 +3,7 @@ package controllers
 import (
 	"Alarm/internal/web/forms"
 	"Alarm/internal/web/services"
+	"fmt"
 	"log"
 	"strconv"
 
@@ -73,6 +74,7 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 		userIDs := append(form.Users, asset.CreatorID)
 		err := ctrl.svc.BindUsers(asset.ID, userIDs)
 		if err != nil {
+			fmt.Println(err)
 			response(ctx, 400, nil)
 			return
 		}
