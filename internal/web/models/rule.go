@@ -23,17 +23,17 @@ type Rule struct {
 }
 
 type PingInfo struct {
-	ID           int       `json:"id" xorm:"'id' pk"`
+	ID           int       `json:"-" xorm:"'id' pk"`
 	Mode         int       `json:"mode" xorm:"notnull"`
 	LatencyLimit int       `json:"latencyLimit" xorm:"notnull"`
-	LostLimit    int       `json:"-" xorm:"notnull"`
+	LostLimit    int       `json:"lostLimit" xorm:"notnull"`
 	CreateAt     time.Time `json:"-" xorm:"'created_at' created"`
 	UpdateAt     time.Time `json:"-" xorm:"'updated_at' updated"`
 	DeleteAt     time.Time `json:"-" xorm:"deleted"`
 }
 
 type TCPInfo struct {
-	ID           int       `json:"id" xorm:"'id' pk"`
+	ID           int       `json:"-" xorm:"'id' pk"`
 	EnablePorts  string    `json:"enablePorts" xorm:"notnull"`
 	DisablePorts string    `json:"disablePorts" xorm:"notnull"`
 	CreateAt     time.Time `json:"-" xorm:"'created_at' created"`

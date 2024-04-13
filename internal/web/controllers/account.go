@@ -49,15 +49,7 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 		responseWithMessage(ctx, hasMessage, 40901, nil)
 		return
 	}
-	err = ctrl.logger.SaveUserLog(ctx, &logs.UserLog{
-		Module:  "账号管理",
-		Type:    "注册",
-		Content: "成功",
-	})
-	if err != nil {
-		response(ctx, 500, nil)
-		return
-	}
+	user.IsActive = true
 	err = ctrl.svc.CreateUser(user)
 	if merr, ok := err.(*mysql.MySQLError); ok {
 		if merr.Number == 1062 {

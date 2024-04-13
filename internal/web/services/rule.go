@@ -263,3 +263,26 @@ func (svc *Rule) IsAccessRule(ruleID, userID int) (bool, error) {
 func (svc *Rule) IsAccessAsset(assetID int, userID int) (bool, error) {
 	return svc.db.Engine.Where("asset_id = ? AND user_id = ?", assetID, userID).Exist(&models.AssetUser{})
 }
+
+func (svc *Rule) GetRulesByAssetID(assetID int) ([]models.Rule, error) {
+	rules := make([]models.Rule, 0)
+	err := svc.db.Engine.Table("rule").Join("INNER", "asset_rule", "rule.id = asset_rule.rule_id").Where("asset_rule.asset_id = ?", assetID).Find(&rules)
+	if err != nil {
+		return nil, err
+	}
+	for i := range rules {
+		rules[i].Creator, err = GetUserByID(svc.db.Engine, rules[i].CreatorID)
+		if err != nil {
+			return nil, err
+		}
+		if rules[i].Type == "ping" {
+			rules[i].Info, err = svc.GetPingInfo(rules[i].ID)
+		} else if rules[i].Type == "tcp" {
+			rules[i].Info, err = svc.GetTCPInfo(rules[i].ID)
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	return rules, nil
+}

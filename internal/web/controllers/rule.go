@@ -178,6 +178,38 @@ func (ctrl *Rule) GetRuleIDsByAssetID(ctx *gin.Context) {
 	response(ctx, 200, ruleIDs)
 }
 
+func (ctrl *Rule) GetRulesByAssetID(ctx *gin.Context) {
+	// 数据校验
+	assetID, err := strconv.Atoi(ctx.Param("assetID"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	if assetID <= 0 {
+		response(ctx, 40002, nil)
+		return
+	}
+	// 权限校验
+	userID := GetUserIDByContext(ctx)
+	access, err := ctrl.svc.IsAccessAsset(assetID, userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !access {
+		response(ctx, 404, nil)
+		return
+	}
+	rules, err := ctrl.svc.GetRulesByAssetID(assetID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	response(ctx, 200, rules)
+}
+
 func (ctrl *Rule) GetRuleByID(ctx *gin.Context) {
 	// 数据校验
 	ruleID, err := strconv.Atoi(ctx.Param("id"))

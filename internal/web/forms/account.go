@@ -12,7 +12,8 @@ type UserCreate struct {
 	Password string       `validate:"required,min=6,max=128"`
 	Name     string       `validate:"required,max=24"`
 	Email    string       `validate:"omitempty,email"`
-	Phone    string       `validate:"omitempty,number,min=6,max=32"`
+	Phone    string       `validate:"required,number,min=6,max=24"`
+	Role     int          `validate:"required,oneof=10 20 30"`
 	Model    *models.User `validate:"-"`
 }
 
@@ -28,6 +29,7 @@ func NewUserCreate(ctx *gin.Context) (*UserCreate, error) {
 		Name:     form.Name,
 		Email:    form.Email,
 		Phone:    form.Phone,
+		Role:     form.Role,
 	}
 	return form, nil
 }

@@ -88,8 +88,8 @@ func main() {
 		group.GET("/assets/:assetID/:target", AuthCtrl.LoginMiddleware, func(ctx *gin.Context) {
 			if ctx.Param("target") == "users" {
 				AccountCtrl.GetUserIDsByAssetID(ctx)
-			} else {
-				RuleCtrl.GetRuleIDsByAssetID(ctx)
+			} else if ctx.Param("target") == "rules" {
+				RuleCtrl.GetRulesByAssetID(ctx)
 			}
 		})
 
