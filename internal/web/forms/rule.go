@@ -25,7 +25,7 @@ type RuleCreate struct {
 
 type typeInfo struct {
 	Mode         int    `validate:"required_with=LatencyLimit LostLimit"`
-	LatencyLimit int    `validate:"omitempty,gt=0,ltcsfield=RuleCreate.Overtime"`
+	LatencyLimit int    `validate:"omitempty,gt=0"`
 	LostLimit    int    `validate:"omitempty,gt=0"`
 	EnablePorts  string `validate:"required_with=DisablePorts,max=128"`
 	DisablePorts string `validate:"required_with=EnablePorts,max=128"`
@@ -61,6 +61,9 @@ func NewRuleCreate(ctx *gin.Context) (*RuleCreate, error) {
 
 func (form *RuleCreate) check() map[string]string {
 	result := make(map[string]string)
+	if form.Info.LatencyLimit >= form.Overtime {
+		result["latencyLimit"] = "latencyLimit必须小于overtime"
+	}
 	return result
 }
 

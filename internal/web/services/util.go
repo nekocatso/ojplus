@@ -21,6 +21,30 @@ func GetUserByID(engine *xorm.Engine, id int) (*models.UserInfo, error) {
 	return user.GetInfo(), nil
 }
 
+func GetAssetByID(engine *xorm.Engine, id int) (*models.Asset, error) {
+	asset := new(models.Asset)
+	has, err := engine.ID(id).Get(asset)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, nil
+	}
+	return asset, nil
+}
+
+func GetRuleByID(engine *xorm.Engine, id int) (*models.Rule, error) {
+	rule := new(models.Rule)
+	has, err := engine.ID(id).Get(rule)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, nil
+	}
+	return rule, nil
+}
+
 func AddUUIDToUniqueFields(data interface{}) {
 	v := reflect.ValueOf(data).Elem()
 	uuidStr := uuid.New().String()

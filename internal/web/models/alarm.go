@@ -14,16 +14,6 @@ type AlarmTemplate struct {
 	DeletedAt time.Time `json:"-" xorm:"deleted"`
 }
 
-type AlarmLog struct {
-	ID        int       `xorm:"'id' pk autoincr"`
-	AssetID   int       `xorm:"'asset_id' notnull"`
-	RuleID    int       `xorm:"'rule_id' notnull"`
-	State     int       `xorm:"notnull"`
-	Mails     []Mail    `xorm:"notnull"`
-	Messages  []string  `xorm:"notnull"`
-	CreatedAt time.Time `xorm:"'created_at' created"`
-}
-
 type Mail struct {
 	Address string
 	State   bool

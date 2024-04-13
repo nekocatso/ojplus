@@ -48,6 +48,7 @@ func (svc *Alarm) FindAlarms(userID int, conditions map[string]interface{}) ([]m
 	queryBuilder = queryBuilder.Join("LEFT", "asset_rule", "asset_rule.rule_id = rule.id")
 	queryBuilder = queryBuilder.Join("LEFT", "asset_user", "asset_rule.asset_id = asset_rule.asset_id")
 	queryBuilder = queryBuilder.Where("asset_user.user_id = ?", userID)
+	queryBuilder = queryBuilder.Or("alarm.creator_id = ?", userID)
 	for key, value := range conditions {
 		switch key {
 		case "name":
@@ -77,4 +78,19 @@ func (svc *Alarm) FindAlarms(userID int, conditions map[string]interface{}) ([]m
 		}
 	}
 	return uniqueAlarms, nil
+}
+
+func (svc *Alarm) DeleteAlarm(alarmID int) error {
+	_, err := svc.db.Engine.ID(alarmID).Delete(&models.AlarmTemplate{})
+	return err
+}
+
+func (svc *Alarm) IsAccessAlarm(alarmID int, userID int) (bool, error) {
+	queryBuilder := svc.db.Engine.Table("alarm_template").Alias("alarm")
+	queryBuilder = queryBuilder.Join("LEFT", "rule", "rule.alarm_id = alarm.id")
+	queryBuilder = queryBuilder.Join("LEFT", "asset_rule", "asset_rule.rule_id = rule.id")
+	queryBuilder = queryBuilder.Join("LEFT", "asset_user", "asset_rule.asset_id = asset_rule.asset_id")
+	queryBuilder = queryBuilder.Where("asset_user.user_id = ?", userID)
+	queryBuilder = queryBuilder.Or("alarm.creator_id = ?", userID)
+	return queryBuilder.ID(alarmID).Exist(&models.AlarmTemplate{})
 }

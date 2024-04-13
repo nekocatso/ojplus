@@ -180,11 +180,7 @@ func (svc *Asset) GetAssetExistInfo(asset *models.Asset) (bool, string, error) {
 }
 
 func (svc *Asset) IsAssetExistByID(assetID int) (bool, error) {
-	has, err := svc.db.Engine.ID(assetID).Exist(&models.Asset{})
-	if err != nil {
-		return has, err
-	}
-	return has, nil
+	return svc.db.Engine.ID(assetID).Exist(&models.Asset{})
 }
 
 func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]models.Asset, error) {
@@ -194,6 +190,7 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 	queryBuilder = queryBuilder.Join("LEFT", "asset_user", "asset.id = asset_user.asset_id")
 	queryBuilder = queryBuilder.Join("LEFT", "asset_rule", "asset.id = asset_rule.asset_id")
 	queryBuilder = queryBuilder.Join("LEFT", "rule", "rule.id = asset_rule.rule_id")
+	queryBuilder = queryBuilder.Where("asset_user.user_id = ?", userID).Or("asset.creator = ?", userID)
 	for key, value := range conditions {
 		switch key {
 		case "name":
@@ -222,7 +219,6 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 			queryBuilder = queryBuilder.And("state = ?", value)
 		}
 	}
-	queryBuilder = queryBuilder.And("asset_user.user_id = ?", userID)
 	err := queryBuilder.Find(&assets)
 	if err != nil {
 		return nil, err

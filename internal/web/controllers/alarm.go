@@ -36,6 +36,8 @@ func (ctrl *Alarm) CreateAlarm(ctx *gin.Context) {
 		return
 	}
 	alarm := form.Model
+	userID := GetUserIDByContext(ctx)
+	alarm.CreatorID = userID
 	err = ctrl.svc.CreateAlarm(alarm)
 	if merr, ok := err.(*mysql.MySQLError); ok {
 		if merr.Number == 1062 {
@@ -124,7 +126,7 @@ func (ctrl *Alarm) SelectAlarms(ctx *gin.Context) {
 	page := form.Page
 	pageSize := form.PageSize
 	userID := GetUserIDByContext(ctx)
-	users, err := ctrl.svc.FindAlarms(userID, form.Conditions)
+	alarms, err := ctrl.svc.FindAlarms(userID, form.Conditions)
 	if err != nil {
 		log.Println(err)
 		response(ctx, 500, nil)
@@ -134,20 +136,47 @@ func (ctrl *Alarm) SelectAlarms(ctx *gin.Context) {
 	data := make(map[string]interface{})
 	start := (page - 1) * pageSize
 	end := start + pageSize
-	pages := (len(users) + pageSize - 1) / pageSize
+	pages := (len(alarms) + pageSize - 1) / pageSize
 	if pages == 0 {
 		pages = 1
 	}
 	data["pages"] = pages
-	data["total"] = len(users)
-	if start >= len(users) {
+	data["total"] = len(alarms)
+	if start >= len(alarms) {
 		// 响应最后一页
 		start = (pages - 1) * pageSize
-		end = len(users)
+		end = len(alarms)
 	}
-	if end > len(users) {
-		end = len(users)
+	if end > len(alarms) {
+		end = len(alarms)
 	}
-	data["users"] = users[start:end]
+	data["alarms"] = alarms[start:end]
 	response(ctx, 200, data)
+}
+
+func (ctrl *Alarm) GetAlarmByID(ctx *gin.Context) {
+	alarmIDStr := ctx.Param("id")
+	alarmID, err := strconv.Atoi(alarmIDStr)
+	if err != nil {
+		response(ctx, 40002, nil)
+		return
+	}
+	userID := GetUserIDByContext(ctx)
+	access, err := ctrl.svc.IsAccessAlarm(alarmID, userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !access {
+		response(ctx, 404, nil)
+		return
+	}
+	alarm, err := ctrl.svc.GetAlarmByID(alarmID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	response(ctx, 200, alarm)
 }

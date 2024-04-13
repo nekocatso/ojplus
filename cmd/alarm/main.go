@@ -65,6 +65,7 @@ func main() {
 	AssetCtrl := controllers.NewAsset(ctrlConfig)
 	RuleCtrl := controllers.NewRule(ctrlConfig)
 	AlarmCtrl := controllers.NewAlarm(ctrlConfig)
+	LogCtrl := controllers.NewLog(ctrlConfig)
 
 	// --Router Init
 	group := engine.Group("/api")
@@ -99,7 +100,11 @@ func main() {
 
 		group.POST("/alarm", AuthCtrl.LoginMiddleware, AlarmCtrl.CreateAlarm)
 		group.GET("/alarms", AuthCtrl.LoginMiddleware, AlarmCtrl.GetAlarms)
+		group.GET("/alarm/:id", AuthCtrl.LoginMiddleware, AlarmCtrl.GetAlarmByID)
 		group.POST("/alarms/query", AuthCtrl.LoginMiddleware, AlarmCtrl.SelectAlarms)
+
+		group.GET("/log/alarms", AuthCtrl.LoginMiddleware, LogCtrl.GetAlarmLogs)
+		group.POST("/log/alarms/query", AuthCtrl.LoginMiddleware, LogCtrl.SelectAlarmLogs)
 	}
 	engine.Run(globalConfig.Gin.Port)
 }
