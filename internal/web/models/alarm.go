@@ -12,6 +12,7 @@ type AlarmTemplate struct {
 	CreatedAt time.Time `json:"createdAt" xorm:"'created_at' created"`
 	UpdatedAt time.Time `json:"-" xorm:"'updated_at' updated"`
 	DeletedAt time.Time `json:"-" xorm:"deleted"`
+	RuleNames []string  `json:"ruleNames" xorm:"-"`
 }
 
 type Mail struct {

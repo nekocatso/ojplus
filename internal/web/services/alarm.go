@@ -74,6 +74,10 @@ func (svc *Alarm) FindAlarms(userID int, conditions map[string]interface{}) ([]m
 		if !seen[alarm.ID] {
 			seen[alarm.ID] = true
 
+			alarm.RuleNames, err = svc.GetRuleNames(alarm.ID)
+			if err != nil {
+				return nil, err
+			}
 			uniqueAlarms = append(uniqueAlarms, alarm)
 		}
 	}
@@ -93,4 +97,13 @@ func (svc *Alarm) IsAccessAlarm(alarmID int, userID int) (bool, error) {
 	queryBuilder = queryBuilder.Where("asset_user.user_id = ?", userID)
 	queryBuilder = queryBuilder.Or("alarm.creator_id = ?", userID)
 	return queryBuilder.ID(alarmID).Exist(&models.AlarmTemplate{})
+}
+
+func (svc *Alarm) GetRuleNames(alarmID int) ([]string, error) {
+	rules := []string{}
+	err := svc.db.Engine.Table("rule").Cols("rule.name").Where("alarm_id = ?", alarmID).Find(&rules)
+	if err != nil {
+		return nil, err
+	}
+	return rules, nil
 }
