@@ -109,9 +109,9 @@ func (ctrl *Auth) Login(ctx *gin.Context) {
 		return
 	}
 	err = ctrl.logger.SaveUserLog(ctx, user.ID, &logs.UserLog{
-		Module:  "账号管理",
-		Type:    "编辑",
-		Content: "成功",
+		Module:  "权限控制",
+		Type:    "登录",
+		Content: user.Username,
 	})
 	if err != nil {
 		log.Println(err)

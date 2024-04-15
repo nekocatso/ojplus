@@ -2,8 +2,6 @@ package main
 
 import (
 	"Alarm/internal/config"
-	"Alarm/internal/pkg/listenerpool"
-	"Alarm/internal/pkg/mail"
 	"Alarm/internal/web/controllers"
 	"Alarm/internal/web/models"
 	"crypto/x509"
@@ -50,16 +48,16 @@ func main() {
 	engine := gin.Default()
 
 	// Mail Init
-	mail, err := mail.NewMailPool([]string{"yangquanmailtest@163.com"}, []string{"APQJNHKHMXPGRFVO"}, []string{"smtp.163.com"}, []int{25})
-	if err != nil {
-		log.Fatal(err)
-	}
-	// ListeningPool Init
-	listener, err := listenerpool.NewListenerPool(db, cache, mail, "amqp://user:mkjsix7@172.16.0.15:5672/")
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	// mail, err := mail.NewMailPool([]string{"yangquanmailtest@163.com"}, []string{"APQJNHKHMXPGRFVO"}, []string{"smtp.163.com"}, []int{25})
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// // ListeningPool Init
+	// listener, err := listenerpool.NewListenerPool(db, cache, mail, "amqp://user:mkjsix7@172.16.0.15:5672/")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	listener := 0
 	// --Controller Init
 	ctrlConfig := map[string]interface{}{
 		"db":       db,
