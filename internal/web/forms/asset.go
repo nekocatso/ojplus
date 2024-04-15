@@ -53,12 +53,12 @@ func (form *AssetCreate) check() map[string]string {
 }
 
 type AssetUpdate struct {
-	Name   string        `validate:"required,max=24"`
-	Note   *string       `validate:"required,max=256"`
-	Enable bool          `validate:"required"`
-	Users  []int         `validate:"required"`
-	Rules  []int         `validate:"required"`
-	Model  *models.Asset `validate:"-"`
+	Name      *string                `validate:"omitempty,max=24"`
+	Note      *string                `validate:"omitempty,max=256"`
+	Enable    int                    `validate:"omitempty"`
+	Users     []int                  `validate:"omitempty"`
+	Rules     []int                  `validate:"omitempty"`
+	UpdateMap map[string]interface{} `validate:"-"`
 }
 
 func NewAssetUpdate(ctx *gin.Context) (*AssetUpdate, error) {
@@ -68,24 +68,22 @@ func NewAssetUpdate(ctx *gin.Context) (*AssetUpdate, error) {
 		return nil, err
 	}
 	var state int
-	if form.Enable {
+	if form.Enable > 0 {
 		state = 3
 	} else {
 		state = -1
 	}
-	form.Model = &models.Asset{
-		Name: form.Name,
-		// Address: form.Address,
-		State: state,
-		// Type:    form.Type,
-		Note: form.Note,
+	form.UpdateMap = map[string]interface{}{
+		"name":  form.Name,
+		"note":  form.Note,
+		"state": state,
 	}
 	return form, nil
 }
 
 func (form *AssetUpdate) check() map[string]string {
 	result := make(map[string]string)
-	if form.Enable && len(form.Rules) == 0 {
+	if form.Enable > 0 && len(form.Rules) == 0 {
 		result["state"] = "未绑定规则时无法启用监测"
 	}
 	// checkAddress(result, form.Type, form.Address)

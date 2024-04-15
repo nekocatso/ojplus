@@ -87,7 +87,7 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 				return
 			}
 		}
-		if err != nil || asset.ID == 0 {
+		if err != nil {
 			log.Println(err)
 			response(ctx, 400, nil)
 			return
@@ -128,10 +128,10 @@ func (ctrl *Asset) UpdateAsset(ctx *gin.Context) {
 		response(ctx, 40002, errorsMap)
 		return
 	}
-	asset := form.Model
+
 	// 权限校验
 	userID := GetUserIDByContext(ctx)
-	access, err := ctrl.svc.IsAccessAsset(asset.ID, userID)
+	access, err := ctrl.svc.IsAccessAsset(assetID, userID)
 	if err != nil {
 		log.Println(err)
 		response(ctx, 500, nil)
@@ -142,11 +142,35 @@ func (ctrl *Asset) UpdateAsset(ctx *gin.Context) {
 		return
 	}
 	// 更新数据
-	err = ctrl.svc.UpdateAsset(asset)
+	// err = ctrl.svc.UpdateAsset(form.UpdateMap)
 	if err != nil {
 		response(ctx, 500, nil)
 		return
 	}
+	if form.Users != nil {
+		userIDs := append(form.Users, userID)
+		err := ctrl.svc.BindUsers(assetID, userIDs)
+		if err != nil {
+			fmt.Println(err)
+			response(ctx, 400, nil)
+			return
+		}
+	}
+	if form.Rules != nil {
+		err = ctrl.svc.BindRules(assetID, form.Rules)
+		if merr, ok := err.(*mysql.MySQLError); ok {
+			if merr.Number == 1062 {
+				response(ctx, 40901, nil)
+				return
+			}
+		}
+		if err != nil {
+			log.Println(err)
+			response(ctx, 400, nil)
+			return
+		}
+	}
+	response(ctx, 200, nil)
 }
 
 func (ctrl *Asset) GetAssets(ctx *gin.Context) {

@@ -32,6 +32,7 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 	}
 	isValid, errorsMap, err := forms.Verify(form)
 	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}
@@ -42,6 +43,7 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 	user := form.Model
 	has, hasMessage, err := ctrl.svc.GetUserExistInfo(user)
 	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}
@@ -56,8 +58,7 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 		Content: user.Username,
 	})
 	if err != nil {
-		response(ctx, 500, nil)
-		return
+		log.Println(err)
 	}
 	err = ctrl.svc.CreateUser(user)
 	if merr, ok := err.(*mysql.MySQLError); ok {
@@ -66,6 +67,7 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 			return
 		}
 	} else if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 	}
 	response(ctx, 201, map[string]int{"userID": user.ID})
@@ -89,6 +91,7 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 	}
 	isValid, errorsMap, err := forms.Verify(form)
 	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}
@@ -104,6 +107,7 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 	}
 	if !pass {
 		response(ctx, 40101, nil)
+		return
 	}
 	//更新数据
 	has, err := ctrl.svc.IsUserIDExist(userID)
@@ -117,17 +121,22 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 		return
 	}
 	user, err := ctrl.svc.GetUserByID(userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
 	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
 		Module:  "账号管理",
 		Type:    "编辑",
 		Content: user.Username,
 	})
 	if err != nil {
-		response(ctx, 500, nil)
-		return
+		log.Println(err)
 	}
 	err = ctrl.svc.UpdateUserByID(userID, form.Model)
 	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}

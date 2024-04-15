@@ -205,7 +205,11 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 		case "address":
 			queryBuilder = queryBuilder.And("asset.address LIKE ?", "%"+value.(string)+"%")
 		case "availableRuleType":
-			queryBuilder = queryBuilder.And("rule.type != ?", value).Or("asset_rule.rule_id IS NULL")
+			queryBuilder = queryBuilder.Where(
+				`asset.id NOT IN (SELECT asset.id FROM asset LEFT JOIN asset_rule
+				ON asset.id = asset_rule.asset_id LEFT JOIN rule
+				ON rule.id = asset_rule.rule_id WHERE rule.type = ?)`,
+				value)
 		case "createTimeBegin":
 			tm := time.Unix(int64(value.(int)), 0).Format("2006-01-02 15:04:05")
 			queryBuilder = queryBuilder.And("asset.created_at >= ?", tm)
@@ -222,7 +226,7 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 			queryBuilder = queryBuilder.And("state = ?", value)
 		}
 	}
-	queryBuilder = queryBuilder.And("asset_user.user_id = ?", userID).Or("asset.creator_id = ?", userID)
+	queryBuilder = queryBuilder.And("asset_user.user_id = ? OR asset.creator_id = ?", userID, userID)
 	err := queryBuilder.Find(&assets)
 	if err != nil {
 		return nil, err
