@@ -2,7 +2,6 @@ package services
 
 import (
 	"Alarm/internal/web/models"
-	"fmt"
 
 	"time"
 )
@@ -89,6 +88,10 @@ func (svc *Log) FindUserLogs(userID int, conditions map[string]interface{}) ([]m
 			queryBuilder = queryBuilder.And("user.username = ?", value)
 		case "phone":
 			queryBuilder = queryBuilder.And("user.phone = ?", value)
+		case "module":
+			queryBuilder = queryBuilder.And("log.module = ?", value)
+		case "type":
+			queryBuilder = queryBuilder.And("log.type = ?", value)
 		case "ip":
 			queryBuilder = queryBuilder.And("log.ip = ?", value)
 		case "createTimeBegin":
@@ -114,7 +117,6 @@ func (svc *Log) FindUserLogs(userID int, conditions map[string]interface{}) ([]m
 			if err != nil {
 				return nil, err
 			}
-			fmt.Println(logs[i])
 			logs[i].Username = user.Username
 			logs[i].Phone = user.Phone
 			uniqueLogs = append(uniqueLogs, logs[i])

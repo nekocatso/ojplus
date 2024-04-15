@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"Alarm/internal/web/forms"
+	"Alarm/internal/web/models"
 	"Alarm/internal/web/services"
 	"fmt"
 	"log"
@@ -318,4 +319,30 @@ func (ctrl *Asset) GetAssetIDs(ctx *gin.Context) {
 		assetIDs = append(assetIDs, asset.ID)
 	}
 	response(ctx, 200, assetIDs)
+}
+
+func (ctrl *Asset) GetAssetsByRuleID(ctx *gin.Context) {
+	ruleID, err := strconv.Atoi(ctx.Param("ruleID"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	assets, err := ctrl.svc.GetAssetsByRuleID(ruleID)
+	userID := GetUserIDByContext(ctx)
+	accessAssets := []*models.Asset{}
+	for _, asset := range assets {
+		access, err := ctrl.svc.IsAccessAsset(asset.ID, userID)
+		if err != nil {
+			response(ctx, 500, nil)
+			return
+		}
+		if access {
+			accessAssets = append(accessAssets, asset)
+		}
+	}
+	if err != nil {
+		response(ctx, 500, nil)
+		return
+	}
+	response(ctx, 200, accessAssets)
 }

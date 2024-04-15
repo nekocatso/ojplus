@@ -69,6 +69,8 @@ type UserLogSelect struct {
 
 type UserLogConditions struct {
 	Username        string `validate:"omitempty"`
+	Module          string `validate:"omitempty"`
+	Type            string `validate:"omitempty"`
 	Phone           string `validate:"omitempty"`
 	IP              string `validate:"omitempty"`
 	CreateTimeBegin int    `validate:"required_with=CreateTimeEnd,gte=0"`
@@ -87,6 +89,12 @@ func NewUserLogSelect(ctx *gin.Context) (*UserLogSelect, error) {
 	form.Conditions = make(map[string]interface{})
 	if form.Query.Username != "" {
 		form.Conditions["username"] = form.Query.Username
+	}
+	if form.Query.Module != "" {
+		form.Conditions["module"] = form.Query.Module
+	}
+	if form.Query.Type != "" {
+		form.Conditions["type"] = form.Query.Type
 	}
 	if form.Query.Phone != "" {
 		form.Conditions["phone"] = form.Query.Phone

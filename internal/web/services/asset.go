@@ -310,3 +310,22 @@ func (svc *Asset) GetRuleNames(assetID int) ([]string, error) {
 	}
 	return rules, nil
 }
+
+func (svc *Asset) GetAssetsByRuleID(ruleID int) ([]*models.Asset, error) {
+	assets := []*models.Asset{}
+	err := svc.db.Engine.Table("asset").Join("INNER", "asset_rule", "asset.id = asset_rule.asset_id").Where("asset_rule.rule_id = ?", ruleID).Find(&assets)
+	if err != nil {
+		return nil, err
+	}
+	for i := range assets {
+		assets[i].Creator, err = GetUserByID(svc.db.Engine, assets[i].CreatorID)
+		if err != nil {
+			return nil, err
+		}
+		assets[i].RuleNames, err = svc.GetRuleNames(assets[i].ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return assets, nil
+}
