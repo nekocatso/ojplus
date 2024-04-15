@@ -46,7 +46,10 @@ func main() {
 
 	// Gin Init
 	engine := gin.Default()
-
+	// Mail Init
+	// mail := mail.NewMailPool()
+	// ListeningPool Init
+	// listener, err := pool.NewListenerPool(db, cache)
 	// --Controller Init
 	ctrlConfig := map[string]interface{}{
 		"db":    db,

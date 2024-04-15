@@ -80,14 +80,47 @@ func (svc *Asset) BindRules(assetID int, ruleIDs []int) error {
 	if err != nil {
 		return err
 	}
-	// 解除已有关联
-	_, err = session.Where("asset_id = ?", assetID).Delete(&models.AssetRule{})
+	// 获取当前asset已绑定的rule.id
+	var existingRuleIDs []int
+	err = session.Table("asset_rule").Cols("rule_id").Where("asset_id = ?", assetID).Find(&existingRuleIDs)
 	if err != nil {
 		session.Rollback()
 		return err
 	}
-	// 关联新的规则
+	// 比较新增和已有的ruleIDs，找出新增的和需要删除的
+	var toAdd, toDelete []int
+	existingRuleIDMap := make(map[int]bool)
+	for _, ruleID := range existingRuleIDs {
+		existingRuleIDMap[ruleID] = true
+	}
 	for _, ruleID := range ruleIDs {
+		if !existingRuleIDMap[ruleID] {
+			toAdd = append(toAdd, ruleID)
+		}
+	}
+	for _, ruleID := range existingRuleIDs {
+		flag := true
+		for _, item := range ruleIDs {
+			if item == ruleID {
+				flag = false
+			}
+		}
+		if flag {
+			toDelete = append(toDelete, ruleID)
+		}
+	}
+
+	// 删除多余的关联
+	if len(toDelete) > 0 {
+		_, err = session.In("rule_id", toDelete).Delete(&models.AssetRule{})
+		if err != nil {
+			session.Rollback()
+			return err
+		}
+	}
+
+	// 添加新增的关联
+	for _, ruleID := range toAdd {
 		rule := &models.Rule{ID: ruleID}
 		exists, err := session.Exist(rule)
 		if err != nil {
@@ -109,13 +142,14 @@ func (svc *Asset) BindRules(assetID int, ruleIDs []int) error {
 			return err
 		}
 	}
+
 	// 提交事务
 	err = session.Commit()
 	if err != nil {
 		session.Rollback()
 		return err
 	}
-	return err
+	return nil
 }
 
 func (svc *Asset) GetAssetInfo(asset *models.Asset) error {

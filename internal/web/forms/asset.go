@@ -1,6 +1,7 @@
 package forms
 
 import (
+	"Alarm/internal/utils"
 	"Alarm/internal/web/models"
 	"strings"
 
@@ -110,6 +111,12 @@ func checkAddress(result map[string]string, typeStr, address string) {
 		if matched != nil {
 			result["address"] = "domain地址格式不正确"
 		}
+	}
+}
+
+func checkDuplicates(result map[string]string, arr []interface{}, name string) {
+	if utils.HasDuplicates(arr) {
+		result[name] = "存在重复项"
 	}
 }
 

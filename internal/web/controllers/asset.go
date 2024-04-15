@@ -143,10 +143,10 @@ func (ctrl *Asset) UpdateAsset(ctx *gin.Context) {
 	}
 	// 更新数据
 	// err = ctrl.svc.UpdateAsset(form.UpdateMap)
-	if err != nil {
-		response(ctx, 500, nil)
-		return
-	}
+	// if err != nil {
+	// 	response(ctx, 500, nil)
+	// 	return
+	// }
 	if form.Users != nil {
 		userIDs := append(form.Users, userID)
 		err := ctrl.svc.BindUsers(assetID, userIDs)
