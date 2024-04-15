@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"Alarm/internal/web/forms"
+	"Alarm/internal/web/logs"
+	"Alarm/internal/web/models"
 	"Alarm/internal/web/services"
 	"log"
 	"strconv"
@@ -11,13 +13,15 @@ import (
 )
 
 type Rule struct {
-	svc *services.Rule
-	cfg map[string]interface{}
+	svc    *services.Rule
+	cfg    map[string]interface{}
+	logger *logs.Logger
 }
 
 func NewRule(cfg map[string]interface{}) *Rule {
 	svc := services.NewRule(cfg)
-	return &Rule{svc: svc, cfg: cfg}
+	logger := logs.NewLogger(cfg["db"].(*models.Database))
+	return &Rule{svc: svc, cfg: cfg, logger: logger}
 }
 
 func (ctrl *Rule) CreateRule(ctx *gin.Context) {
@@ -202,7 +206,42 @@ func (ctrl *Rule) GetRulesByAssetID(ctx *gin.Context) {
 		response(ctx, 404, nil)
 		return
 	}
-	rules, err := ctrl.svc.GetRulesByAssetID(assetID)
+	rules, err := ctrl.svc.FindRules(userID, map[string]interface{}{
+		"assetID": assetID,
+	})
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	response(ctx, 200, rules)
+}
+func (ctrl *Rule) GetRulesByAlarmID(ctx *gin.Context) {
+	// 数据校验
+	alarmID, err := strconv.Atoi(ctx.Param("alarmID"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	if alarmID <= 0 {
+		response(ctx, 40002, nil)
+		return
+	}
+	// 权限校验
+	userID := GetUserIDByContext(ctx)
+	access, err := ctrl.svc.IsAccessAsset(alarmID, userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !access {
+		response(ctx, 404, nil)
+		return
+	}
+	rules, err := ctrl.svc.FindRules(userID, map[string]interface{}{
+		"alarmID": alarmID,
+	})
 	if err != nil {
 		log.Println(err)
 		response(ctx, 500, nil)

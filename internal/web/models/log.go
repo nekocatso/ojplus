@@ -21,7 +21,7 @@ type UserLog struct {
 	Type     string    `json:"type" xorm:"notnull"`
 	Content  string    `json:"content" xorm:"notnull"`
 	IP       string    `json:"ip" xorm:"'ip' notnull"`
+	CreateAt time.Time `json:"createdAt" xorm:"'created_at' created"`
 	Username string    `json:"username" xorm:"-"`
 	Phone    string    `json:"phone" xorm:"-"`
-	CreateAt time.Time `json:"createdAt" xorm:"'created_at' created"`
 }

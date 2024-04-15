@@ -102,6 +102,8 @@ func main() {
 				AccountCtrl.GetUserIDsByAssetID(ctx)
 			} else if ctx.Param("target") == "rules" {
 				RuleCtrl.GetRulesByAssetID(ctx)
+			} else {
+				ctx.JSON(404, nil)
 			}
 		})
 
@@ -114,6 +116,13 @@ func main() {
 		group.GET("/alarms", AuthCtrl.LoginMiddleware, AlarmCtrl.GetAlarms)
 		group.GET("/alarm/:id", AuthCtrl.LoginMiddleware, AlarmCtrl.GetAlarmByID)
 		group.POST("/alarms/query", AuthCtrl.LoginMiddleware, AlarmCtrl.SelectAlarms)
+		group.GET("/alarms/:alarmID/:target", AuthCtrl.LoginMiddleware, func(ctx *gin.Context) {
+			if ctx.Param("target") == "rules" {
+				RuleCtrl.GetRulesByAlarmID(ctx)
+			} else {
+				ctx.JSON(404, nil)
+			}
+		})
 
 		group.GET("/log/alarms", AuthCtrl.LoginMiddleware, LogCtrl.GetAlarmLogs)
 		group.POST("/log/alarms/query", AuthCtrl.LoginMiddleware, LogCtrl.SelectAlarmLogs)

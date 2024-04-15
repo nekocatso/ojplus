@@ -169,7 +169,7 @@ func (svc *Rule) FindRules(userID int, conditions map[string]interface{}) ([]mod
 	queryBuilder := svc.db.Engine.Table("rule")
 	queryBuilder = queryBuilder.Join("LEFT", "asset_rule", "rule.id = asset_rule.rule_id")
 	queryBuilder = queryBuilder.Join("LEFT", "asset_user", "asset_rule.asset_id = asset_user.asset_id")
-	queryBuilder = queryBuilder.Where("asset_user.user_id = ?", userID)
+	queryBuilder = queryBuilder.And("asset_user.user_id = ?", userID)
 	queryBuilder = queryBuilder.Or("rule.creator_id = ?", userID)
 	for key, value := range conditions {
 		switch key {
@@ -187,6 +187,8 @@ func (svc *Rule) FindRules(userID int, conditions map[string]interface{}) ([]mod
 			queryBuilder = queryBuilder.And("rule.created_at <= ?", tm)
 		case "assetID":
 			queryBuilder = queryBuilder.And("asset_rule.asset_id = ?", value)
+		case "alarmID":
+			queryBuilder = queryBuilder.And("rule.alarm_id = ?", value)
 		}
 	}
 	err := queryBuilder.Find(&rules)
@@ -200,42 +202,61 @@ func (svc *Rule) FindRules(userID int, conditions map[string]interface{}) ([]mod
 	for i := range rules {
 		if !processedIDs[rules[i].ID] {
 			processedIDs[rules[i].ID] = true
-			rules[i].Creator, err = GetUserByID(svc.db.Engine, rules[i].CreatorID)
-			if err != nil {
-				return nil, err
-			}
-			if rules[i].Type == "ping" {
-				rules[i].Info, err = svc.GetPingInfo(rules[i].ID)
-			} else if rules[i].Type == "tcp" {
-				rules[i].Info, err = svc.GetTCPInfo(rules[i].ID)
-			}
-
-			if err != nil || rules[i].Info == nil {
-				return nil, err
-			}
-			rules[i].AssetNames, err = svc.GetAssetNames(rules[i].ID)
-			if err != nil {
-				return nil, err
-			}
-
-			rules[i].AssetsCount, err = svc.GetAssetCount(rules[i].ID)
+			err := svc.packRule(&rules[i], userID)
 			if err != nil {
 				return nil, err
 			}
 			uniqueRules = append(uniqueRules, rules[i])
 		}
 	}
-
 	return uniqueRules, nil
 }
 
-func (svc *Rule) GetAssetNames(ruleID int) ([]string, error) {
+func (svc *Rule) packRule(rule *models.Rule, userID int) error {
+	var err error
+	rule.Creator, err = GetUserByID(svc.db.Engine, rule.CreatorID)
+	if err != nil {
+		return err
+	}
+	if rule.Type == "ping" {
+		rule.Info, err = svc.GetPingInfo(rule.ID)
+	} else if rule.Type == "tcp" {
+		rule.Info, err = svc.GetTCPInfo(rule.ID)
+	}
+
+	if err != nil || rule.Info == nil {
+		return err
+	}
+	rule.AssetNames, err = svc.GetAssetNames(rule.ID, userID)
+	if err != nil {
+		return err
+	}
+	rule.AssetsCount, err = svc.GetAssetCount(rule.ID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (svc *Rule) GetAssetNames(ruleID, userID int) ([]string, error) {
 	assets := []string{}
-	err := svc.db.Engine.Table("asset").Join("INNER", "asset_rule", "asset.id = asset_rule.asset_id").Cols("asset.name").Where("asset_rule.rule_id = ?", ruleID).Find(&assets)
+	assetsMap := map[string]bool{}
+	queryBuilder := svc.db.Engine.Table("asset")
+	queryBuilder = queryBuilder.Join("LEFT", "asset_rule", "asset.id = asset_rule.asset_id")
+	queryBuilder = queryBuilder.Join("LEFT", "asset_user", "asset.id = asset_user.asset_id")
+	queryBuilder = queryBuilder.Where("asset_user.user_id = ?", userID).Or("asset.creator_id = ?", userID)
+	err := queryBuilder.Cols("asset.name").Where("asset_rule.rule_id = ?", ruleID).Find(&assets)
 	if err != nil {
 		return nil, err
 	}
-	return assets, nil
+	for _, asset := range assets {
+		assetsMap[asset] = true
+	}
+	uniqueAssets := []string{}
+	for asset := range assetsMap {
+		uniqueAssets = append(uniqueAssets, asset)
+	}
+	return uniqueAssets, nil
 }
 
 func (svc *Rule) GetAssetCount(ruleID int) (int, error) {
@@ -262,29 +283,6 @@ func (svc *Rule) IsAccessRule(ruleID, userID int) (bool, error) {
 
 func (svc *Rule) IsAccessAsset(assetID int, userID int) (bool, error) {
 	return svc.db.Engine.Where("asset_id = ? AND user_id = ?", assetID, userID).Exist(&models.AssetUser{})
-}
-
-func (svc *Rule) GetRulesByAssetID(assetID int) ([]models.Rule, error) {
-	rules := make([]models.Rule, 0)
-	err := svc.db.Engine.Table("rule").Join("INNER", "asset_rule", "rule.id = asset_rule.rule_id").Where("asset_rule.asset_id = ?", assetID).Find(&rules)
-	if err != nil {
-		return nil, err
-	}
-	for i := range rules {
-		rules[i].Creator, err = GetUserByID(svc.db.Engine, rules[i].CreatorID)
-		if err != nil {
-			return nil, err
-		}
-		if rules[i].Type == "ping" {
-			rules[i].Info, err = svc.GetPingInfo(rules[i].ID)
-		} else if rules[i].Type == "tcp" {
-			rules[i].Info, err = svc.GetTCPInfo(rules[i].ID)
-		}
-		if err != nil {
-			return nil, err
-		}
-	}
-	return rules, nil
 }
 
 func (svc *Rule) GetUserByID(userID int) (*models.UserInfo, error) {
