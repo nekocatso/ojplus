@@ -232,7 +232,7 @@ func (p *ListenerPool) AddPing(id int) error {
 
 			}
 		case <-control:
-			return errors.New("Communication with cpp timed out")
+			return errors.New("communication with cpp timed out")
 		}
 
 	}
@@ -332,7 +332,7 @@ func (p *ListenerPool) AddTCP(id int) error {
 				return errors.New("add tcp failed") // 若执行结果状态不是成功或关联ID不匹配，则返回添加失败的错误信息
 			}
 		case <-control:
-			return errors.New("Communication with cpp timed out")
+			return errors.New("communication with cpp timed out")
 		}
 	}
 }
@@ -390,7 +390,7 @@ func (p *ListenerPool) DelPing(id int) error {
 				return errors.New("add tcp failed") // 若执行结果状态不是成功或关联ID不匹配，则返回添加失败的错误信息
 			}
 		case <-control:
-			return errors.New("Communication with cpp timed out")
+			return errors.New("communication with cpp timed out")
 		}
 	}
 }
@@ -448,7 +448,7 @@ func (p *ListenerPool) DelTCP(id int) error {
 				return errors.New("add tcp failed") // 若执行结果状态不是成功或关联ID不匹配，则返回添加失败的错误信息
 			}
 		case <-control:
-			return errors.New("Communication with cpp timed out")
+			return errors.New("communication with cpp timed out")
 		}
 	}
 }
@@ -530,30 +530,29 @@ func (p *ListenerPool) Close() error {
 			if err := json.Unmarshal(c.Body, &res); err != nil {
 				return err // 反序列化失败，则返回错误信息
 			}
-			fmt.Println(res) // 打印接收到的执行结果
+			//fmt.Println(res) // 打印接收到的执行结果
 
 			// 检查执行结果状态和关联ID，若成功且匹配，则添加TCP监听器至规则映射表并返回nil
 			if res.Status == "success" {
+				// 关闭相关通道及连接
+				p.cGetQ.Close()  // 关闭控制信息接收队列
+				p.cSendQ.Close() // 关闭控制信息发送队列
+				p.cConn.Close()  // 关闭与C++端的连接
 
+				// 关闭所有监听器
+				for _, v := range p.ListenerList {
+					v.Close() // 关闭单个监听器
+				}
+				log.Println("close all") // 输出关闭所有资源的日志信息
 				return nil
-
 			} else {
 				return errors.New("add tcp failed") // 若执行结果状态不是成功或关联ID不匹配，则返回添加失败的错误信息
+
 			}
+
 		case <-control:
-			return errors.New("Communication with cpp timed out")
+			return errors.New("communication with cpp timed out")
 		}
 	}
 
-	// 关闭相关通道及连接
-	p.cGetQ.Close()  // 关闭控制信息接收队列
-	p.cSendQ.Close() // 关闭控制信息发送队列
-	p.cConn.Close()  // 关闭与C++端的连接
-
-	// 关闭所有监听器
-	for _, v := range p.ListenerList {
-		v.Close() // 关闭单个监听器
-	}
-	log.Println("close all") // 输出关闭所有资源的日志信息
-	return nil
 }
