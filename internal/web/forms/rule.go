@@ -27,8 +27,8 @@ type typeInfo struct {
 	Mode         int    `validate:"required_with=LatencyLimit LostLimit"`
 	LatencyLimit int    `validate:"omitempty,gt=0"`
 	LostLimit    int    `validate:"omitempty,gt=0"`
-	EnablePorts  string `validate:"required_with=DisablePorts,max=128"`
-	DisablePorts string `validate:"required_with=EnablePorts,max=128"`
+	EnablePorts  string `validate:"omitempty,max=128"`
+	DisablePorts string `validate:"omitempty,max=128"`
 }
 
 func NewRuleCreate(ctx *gin.Context) (*RuleCreate, error) {

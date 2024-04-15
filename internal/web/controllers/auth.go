@@ -47,10 +47,36 @@ func (ctrl *Auth) LoginMiddleware(ctx *gin.Context) {
 	ctx.Next()
 }
 
-// func (ctrl *Auth) AdminMiddleware(ctx *gin.Context) {
-// 	userID := GetUserIDByContext(ctx)
-// 	user := GetUserByID(ctx)
-// }
+func (ctrl *Auth) AdminMiddleware(ctx *gin.Context) {
+	userID := GetUserIDByContext(ctx)
+	user, err := ctrl.svc.GetUserByID(userID)
+	if err != nil {
+		response(ctx, 500, nil)
+		ctx.Abort()
+		return
+	}
+	if user.Role < 20 {
+		ctx.JSON(404, nil)
+		ctx.Abort()
+		return
+	}
+	ctx.Next()
+}
+func (ctrl *Auth) SuperAdminMiddleware(ctx *gin.Context) {
+	userID := GetUserIDByContext(ctx)
+	user, err := ctrl.svc.GetUserByID(userID)
+	if err != nil {
+		response(ctx, 500, nil)
+		ctx.Abort()
+		return
+	}
+	if user.Role < 30 {
+		ctx.JSON(404, nil)
+		ctx.Abort()
+		return
+	}
+	ctx.Next()
+}
 
 func (ctrl *Auth) Login(ctx *gin.Context) {
 	//校验表单

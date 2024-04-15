@@ -98,3 +98,7 @@ func (svc *Auth) GetUserByUsername(username string) (*models.UserInfo, error) {
 	userInfo := user.GetInfo()
 	return userInfo, nil
 }
+
+func (svc *Auth) GetUserByID(userID int) (*models.UserInfo, error) {
+	return GetUserByID(svc.db.Engine, userID)
+}

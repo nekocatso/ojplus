@@ -53,6 +53,7 @@ func (ctrl *Rule) CreateRule(ctx *gin.Context) {
 			return
 		}
 	}
+	rule.AlarmID = ruleForm.AlarmID
 	// 创建规则
 	if rule.Type == "ping" {
 		err = ctrl.svc.CreatePingRule(rule, ruleForm.PingInfo)

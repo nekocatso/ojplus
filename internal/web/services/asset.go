@@ -329,3 +329,7 @@ func (svc *Asset) GetAssetsByRuleID(ruleID int) ([]*models.Asset, error) {
 	}
 	return assets, nil
 }
+
+func (svc *Asset) GetUserByID(userID int) (*models.UserInfo, error) {
+	return GetUserByID(svc.db.Engine, userID)
+}

@@ -286,3 +286,7 @@ func (svc *Rule) GetRulesByAssetID(assetID int) ([]models.Rule, error) {
 	}
 	return rules, nil
 }
+
+func (svc *Rule) GetUserByID(userID int) (*models.UserInfo, error) {
+	return GetUserByID(svc.db.Engine, userID)
+}

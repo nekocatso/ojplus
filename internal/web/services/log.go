@@ -85,15 +85,15 @@ func (svc *Log) FindUserLogs(userID int, conditions map[string]interface{}) ([]m
 	for key, value := range conditions {
 		switch key {
 		case "username":
-			queryBuilder = queryBuilder.And("user.username = ?", value)
+			queryBuilder = queryBuilder.And("user.username LIKE ?", "%"+value.(string)+"%")
 		case "phone":
-			queryBuilder = queryBuilder.And("user.phone = ?", value)
+			queryBuilder = queryBuilder.And("user.phone LIKE ?", "%"+value.(string)+"%")
 		case "module":
 			queryBuilder = queryBuilder.And("log.module = ?", value)
 		case "type":
 			queryBuilder = queryBuilder.And("log.type = ?", value)
 		case "ip":
-			queryBuilder = queryBuilder.And("log.ip = ?", value)
+			queryBuilder = queryBuilder.And("log.ip LIKE ?", value.(string)+"%")
 		case "createTimeBegin":
 			tm := time.Unix(int64(value.(int)), 0).Format("2006-01-02 15:04:05")
 			queryBuilder = queryBuilder.And("log.created_at >= ?", tm)

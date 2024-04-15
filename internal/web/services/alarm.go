@@ -38,6 +38,7 @@ func (svc *Alarm) GetAlarmByID(alarmID int) (*models.AlarmTemplate, error) {
 	if !has {
 		return nil, fmt.Errorf("alarm with ID %d does not exist", alarmID)
 	}
+	alarm.RuleNames, err = svc.GetRuleNames(alarm.ID)
 	return &alarm, nil
 }
 
@@ -106,4 +107,8 @@ func (svc *Alarm) GetRuleNames(alarmID int) ([]string, error) {
 		return nil, err
 	}
 	return rules, nil
+}
+
+func (svc *Alarm) GetUserByID(userID int) (*models.UserInfo, error) {
+	return GetUserByID(svc.db.Engine, userID)
 }
