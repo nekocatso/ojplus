@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"Alarm/internal/web/forms"
+	"Alarm/internal/web/logs"
+	"Alarm/internal/web/models"
 	"Alarm/internal/web/services"
 	"log"
 	"strconv"
@@ -11,13 +13,15 @@ import (
 )
 
 type Alarm struct {
-	svc *services.Alarm
-	cfg map[string]interface{}
+	svc    *services.Alarm
+	cfg    map[string]interface{}
+	logger *logs.Logger
 }
 
 func NewAlarm(cfg map[string]interface{}) *Alarm {
 	svc := services.NewAlarm(cfg)
-	return &Alarm{svc: svc, cfg: cfg}
+	logger := logs.NewLogger(cfg["db"].(*models.Database))
+	return &Alarm{svc: svc, cfg: cfg, logger: logger}
 }
 
 func (ctrl *Alarm) CreateAlarm(ctx *gin.Context) {

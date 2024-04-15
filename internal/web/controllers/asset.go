@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"Alarm/internal/web/forms"
+	"Alarm/internal/web/logs"
 	"Alarm/internal/web/models"
 	"Alarm/internal/web/services"
 	"fmt"
@@ -13,13 +14,15 @@ import (
 )
 
 type Asset struct {
-	svc *services.Asset
-	cfg map[string]interface{}
+	svc    *services.Asset
+	cfg    map[string]interface{}
+	logger *logs.Logger
 }
 
 func NewAsset(cfg map[string]interface{}) *Asset {
 	svc := services.NewAsset(cfg)
-	return &Asset{svc: svc, cfg: cfg}
+	logger := logs.NewLogger(cfg["db"].(*models.Database))
+	return &Asset{svc: svc, cfg: cfg, logger: logger}
 }
 
 func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
