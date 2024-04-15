@@ -104,8 +104,9 @@ func (svc *Log) FindUserLogs(userID int, conditions map[string]interface{}) ([]m
 	}
 	_, ok1 := conditions["module"]
 	_, ok2 := conditions["type"]
-	if ok1 || ok2 {
-		queryBuilder = queryBuilder.And("log.module != 权限控制")
+	if !ok1 && !ok2 {
+		value := "权限控制"
+		queryBuilder = queryBuilder.And("log.module != ?", value)
 	}
 
 	err := queryBuilder.Find(&logs)
