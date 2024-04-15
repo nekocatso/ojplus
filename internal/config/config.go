@@ -5,9 +5,11 @@ import (
 )
 
 type Global struct {
-	Gin *Gin
+	Gin      *Gin
+	Listener *Listener
 }
 
+// Gin
 type Gin struct {
 	Port  string
 	Mysql *Mysql
@@ -27,6 +29,18 @@ type Token struct {
 	PrivateKeyPath  string
 	RefreshValidity int
 	AccessValidity  int
+}
+
+// Listener
+type Listener struct {
+	Mail *Mail
+}
+
+type Mail struct {
+	Name     []string
+	Password []string
+	Host     []string
+	Port     []int
 }
 
 func NewConfig(configPath, configName string) (*Global, error) {

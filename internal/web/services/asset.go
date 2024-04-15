@@ -1,6 +1,7 @@
 package services
 
 import (
+	"Alarm/internal/pkg/pool"
 	"Alarm/internal/web/models"
 	"errors"
 	"fmt"
@@ -8,9 +9,10 @@ import (
 )
 
 type Asset struct {
-	db    *models.Database
-	cache *models.Cache
-	cfg   map[string]interface{}
+	db       *models.Database
+	cache    *models.Cache
+	listener *pool.ListenerPool
+	cfg      map[string]interface{}
 }
 
 func NewAsset(cfg map[string]interface{}) *Asset {
