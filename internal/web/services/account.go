@@ -1,22 +1,25 @@
 package services
 
 import (
+	"Alarm/internal/config"
 	"Alarm/internal/web/models"
 	"errors"
 	"time"
 )
 
 type Account struct {
-	db    *models.Database
-	cache *models.Cache
-	cfg   map[string]interface{}
+	db     *models.Database
+	cache  *models.Cache
+	cfg    map[string]interface{}
+	global *config.Global
 }
 
 func NewAccount(cfg map[string]interface{}) *Account {
 	return &Account{
-		db:    cfg["db"].(*models.Database),
-		cache: cfg["cache"].(*models.Cache),
-		cfg:   cfg,
+		db:     cfg["db"].(*models.Database),
+		cache:  cfg["cache"].(*models.Cache),
+		cfg:    cfg,
+		global: cfg["global"].(*config.Global),
 	}
 }
 
@@ -39,26 +42,16 @@ func (svc *Account) DeleteUser(user *models.User) error {
 	return err
 }
 
-func (svc *Account) UpdateUserByID(id int, user *models.User) error {
-	updateFields := []string{}
-	if user.Password != "" {
-		updateFields = append(updateFields, "password")
-	}
-	if user.Email != "" {
-		updateFields = append(updateFields, "email")
-	}
-	if user.Phone != "" {
-		updateFields = append(updateFields, "phone")
-	}
-	_, err := svc.db.Engine.ID(id).Cols(updateFields...).Update(user)
+func (svc *Account) UpdateUserByID(userID int, updateMap map[string]interface{}) error {
+	_, err := svc.db.Engine.Table("user").ID(userID).Update(updateMap)
 	return err
 }
 
-// func (svc *Account) UpdateUserByID(id int, updateMap map[string]interface{}) error {
-
-// 	_, err := svc.db.Engine.ID(id).Update(user)
-// 	return err
-// }
+func (svc *Account) RestPassword(userID int) error {
+	password := svc.global.Gin.Account.DefaultPassword
+	_, err := svc.db.Engine.Table("user").ID(userID).Update(map[string]interface{}{"password": password})
+	return err
+}
 
 func (svc *Account) getUser(user *models.User) (bool, error) {
 	if user.ID != 0 {

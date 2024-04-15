@@ -43,6 +43,15 @@ func (ctrl *Auth) LoginMiddleware(ctx *gin.Context) {
 	if _, ok := claims["userID"]; ok {
 		claims["userID"] = int(claims["userID"].(float64))
 	}
+	user, err := ctrl.svc.GetUserByID(claims["userID"].(int))
+	if err != nil {
+		response(ctx, 500, nil)
+		ctx.Abort()
+		return
+	}
+	if user == nil || !user.IsActive {
+		response(ctx, 401, nil)
+	}
 	ctx.Set("claims", claims)
 	ctx.Next()
 }

@@ -74,6 +74,7 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 }
 
 func (ctrl *Account) UpdateUser(ctx *gin.Context) {
+	// 参数校验
 	userID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		response(ctx, 40001, nil)
@@ -81,6 +82,28 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 	}
 	if userID <= 0 {
 		response(ctx, 40002, nil)
+		return
+	}
+	// 权限校验
+	user, err := ctrl.svc.GetUserByID(userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if user == nil {
+		response(ctx, 404, nil)
+		return
+	}
+	loginerID := GetUserIDByContext(ctx)
+	loginer, err := ctrl.svc.GetUserByID(userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if userID != loginerID && loginer.Role < 30 {
+		response(ctx, 404, nil)
 		return
 	}
 	// 表单校验
@@ -99,41 +122,38 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 		response(ctx, 40002, errorsMap)
 		return
 	}
-	pass, err := ctrl.svc.VerifyPassword(form.OldPassword, form.Password)
-	if err != nil {
-		log.Println(err)
-		response(ctx, 500, nil)
-		return
+	// 重置密码的处理
+	if form.IsResetPwd && user.Role >= 30 {
+		err := ctrl.svc.RestPassword(userID)
+		if err != nil {
+			log.Println(err)
+			response(ctx, 500, nil)
+			return
+		}
 	}
-	if !pass {
-		response(ctx, 40101, nil)
-		return
+	// 修改密码的处理
+	if form.Password != "" && form.OldPassword != "" {
+		pass, err := ctrl.svc.VerifyPassword(user.Username, form.OldPassword)
+		if err != nil {
+			log.Println(err)
+			response(ctx, 500, nil)
+			return
+		}
+		if !pass {
+			response(ctx, 40101, nil)
+			return
+		}
+		form.UpdateMap["password"] = form.Password
 	}
 	//更新数据
-	has, err := ctrl.svc.IsUserIDExist(userID)
-	if err != nil {
-		log.Println(err)
-		response(ctx, 500, nil)
-		return
-	}
-	if !has {
-		response(ctx, 404, nil)
-		return
-	}
-	user, err := ctrl.svc.GetUserByID(userID)
-	if err != nil {
-		log.Println(err)
-		response(ctx, 500, nil)
-		return
-	}
-	err = ctrl.svc.UpdateUserByID(userID, form.Model)
+	err = ctrl.svc.UpdateUserByID(userID, form.UpdateMap)
 	if err != nil {
 		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}
 	response(ctx, 200, nil)
-	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+	err = ctrl.logger.SaveUserLog(ctx, loginerID, &logs.UserLog{
 		Module:  "账号管理",
 		Type:    "编辑",
 		Content: user.Username,

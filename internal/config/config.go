@@ -11,10 +11,11 @@ type Global struct {
 
 // Gin
 type Gin struct {
-	Port  string
-	Mysql *Mysql
-	Redis *Redis
-	Token *Token
+	Port    string
+	Mysql   *Mysql
+	Redis   *Redis
+	Token   *Token
+	Account *Account
 }
 type Mysql struct {
 	DSN string
@@ -29,6 +30,10 @@ type Token struct {
 	PrivateKeyPath  string
 	RefreshValidity int
 	AccessValidity  int
+}
+
+type Account struct {
+	DefaultPassword string
 }
 
 // Listener

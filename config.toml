@@ -11,3 +11,5 @@ token.privateKeyPath = "."
 # token.accessValidity = 3600   # 1小时
 token.accessValidity = 172800   # 1小时
 token.refreshValidity = 172800 # 2天
+
+account.defaultPasswords = "dc483e80a7a0bd9ef71d8cf973673924"

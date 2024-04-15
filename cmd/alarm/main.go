@@ -63,6 +63,7 @@ func main() {
 		"db":       db,
 		"cache":    cache,
 		"listener": listener,
+		"global":   globalConfig,
 	}
 	authConfig := map[string]interface{}{
 		"db":                   db,

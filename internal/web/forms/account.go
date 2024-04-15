@@ -43,11 +43,12 @@ func (form *UserCreate) check() map[string]string {
 }
 
 type UserUpdate struct {
-	Email       string       `validate:"omitempty,email"`
-	Phone       string       `validate:"omitempty,number,min=6,max=32"`
-	OldPassword string       `validate:"omitempty,required_with=Password,min=6,max=128"`
-	Password    string       `validate:"omitempty,min=6,max=128"`
-	Model       *models.User `validate:"-"`
+	Email       string                 `validate:"omitempty,email"`
+	Phone       string                 `validate:"omitempty,number,min=6,max=32"`
+	OldPassword string                 `validate:"omitempty,required_with=Password,min=6,max=128"`
+	Password    string                 `validate:"omitempty,min=6,max=128"`
+	IsResetPwd  bool                   `validate:"omitempty"`
+	UpdateMap   map[string]interface{} `validate:"-"`
 }
 
 func NewUserUpdate(ctx *gin.Context) (*UserUpdate, error) {
@@ -56,10 +57,9 @@ func NewUserUpdate(ctx *gin.Context) (*UserUpdate, error) {
 	if err != nil {
 		return nil, err
 	}
-	form.Model = &models.User{
-		Password: form.Password,
-		Email:    form.Email,
-		Phone:    form.Phone,
+	form.UpdateMap = map[string]interface{}{
+		"email": form.Email,
+		"phone": form.Phone,
 	}
 	return form, nil
 }
