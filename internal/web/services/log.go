@@ -102,6 +102,12 @@ func (svc *Log) FindUserLogs(userID int, conditions map[string]interface{}) ([]m
 			queryBuilder = queryBuilder.And("log.created_at <= ?", tm)
 		}
 	}
+	_, ok1 := conditions["module"]
+	_, ok2 := conditions["type"]
+	if ok1 || ok2 {
+		queryBuilder = queryBuilder.And("log.module != 权限控制")
+	}
+
 	err := queryBuilder.Find(&logs)
 	if err != nil {
 		return nil, err
