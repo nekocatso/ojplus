@@ -25,10 +25,7 @@ func NewAsset(cfg map[string]interface{}) *Asset {
 func (svc *Asset) CreateAsset(asset *models.Asset) error {
 	// 在数据库中插入资产
 	_, err := svc.db.Engine.Insert(asset)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (svc *Asset) BindUsers(assetID int, userIDs []int) error {
@@ -83,14 +80,47 @@ func (svc *Asset) BindRules(assetID int, ruleIDs []int) error {
 	if err != nil {
 		return err
 	}
-	// 解除已有关联
-	_, err = session.Where("asset_id = ?", assetID).Delete(&models.AssetRule{})
+	// 获取当前asset已绑定的rule.id
+	var existingRuleIDs []int
+	err = session.Table("asset_rule").Cols("rule_id").Where("asset_id = ?", assetID).Find(&existingRuleIDs)
 	if err != nil {
 		session.Rollback()
 		return err
 	}
-	// 关联新的规则
+	// 比较新增和已有的ruleIDs，找出新增的和需要删除的
+	var toAdd, toDelete []int
+	existingRuleIDMap := make(map[int]bool)
+	for _, ruleID := range existingRuleIDs {
+		existingRuleIDMap[ruleID] = true
+	}
 	for _, ruleID := range ruleIDs {
+		if !existingRuleIDMap[ruleID] {
+			toAdd = append(toAdd, ruleID)
+		}
+	}
+	for _, ruleID := range existingRuleIDs {
+		flag := true
+		for _, item := range ruleIDs {
+			if item == ruleID {
+				flag = false
+			}
+		}
+		if flag {
+			toDelete = append(toDelete, ruleID)
+		}
+	}
+
+	// 删除多余的关联
+	if len(toDelete) > 0 {
+		_, err = session.In("rule_id", toDelete).Delete(&models.AssetRule{})
+		if err != nil {
+			session.Rollback()
+			return err
+		}
+	}
+
+	// 添加新增的关联
+	for _, ruleID := range toAdd {
 		rule := &models.Rule{ID: ruleID}
 		exists, err := session.Exist(rule)
 		if err != nil {
@@ -112,13 +142,14 @@ func (svc *Asset) BindRules(assetID int, ruleIDs []int) error {
 			return err
 		}
 	}
+
 	// 提交事务
 	err = session.Commit()
 	if err != nil {
 		session.Rollback()
 		return err
 	}
-	return err
+	return nil
 }
 
 func (svc *Asset) GetAssetInfo(asset *models.Asset) error {
@@ -140,6 +171,10 @@ func (svc *Asset) GetAssetByID(id int) (*models.Asset, error) {
 	}
 	if !has {
 		return nil, errors.New("Asset not found")
+	}
+	asset.RuleNames, err = svc.GetRuleNames(asset.ID)
+	if err != nil {
+		return nil, err
 	}
 	return asset, nil
 }
@@ -164,7 +199,7 @@ func (svc *Asset) DeleteAsset(asset *models.Asset) error {
 	return nil
 }
 
-func (svc *Asset) IsAssetExist(asset *models.Asset) (bool, string, error) {
+func (svc *Asset) GetAssetExistInfo(asset *models.Asset) (bool, string, error) {
 	has, err := svc.db.Engine.Where("name = ? and creator_id = ?", asset.Name, asset.CreatorID).Exist(&models.Asset{})
 	if err != nil {
 		return has, "", err
@@ -182,20 +217,33 @@ func (svc *Asset) IsAssetExist(asset *models.Asset) (bool, string, error) {
 	return false, "", nil
 }
 
+func (svc *Asset) IsAssetExistByID(assetID int) (bool, error) {
+	return svc.db.Engine.ID(assetID).Exist(&models.Asset{})
+}
+
 func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]models.Asset, error) {
 	assets := make([]models.Asset, 0)
 	// 构建查询条件
-	queryBuilder := svc.db.Engine.Join("INNER", "asset_user", "asset.id = asset_user.asset_id").Where("asset_user.user_id = ?", userID)
+	queryBuilder := svc.db.Engine.Table("asset")
+	queryBuilder = queryBuilder.Join("LEFT", "asset_user", "asset.id = asset_user.asset_id")
+	queryBuilder = queryBuilder.Join("LEFT", "asset_rule", "asset.id = asset_rule.asset_id")
+	queryBuilder = queryBuilder.Join("LEFT", "rule", "rule.id = asset_rule.rule_id")
 	for key, value := range conditions {
 		switch key {
 		case "name":
-			queryBuilder = queryBuilder.And("name LIKE ?", "%"+value.(string)+"%")
+			queryBuilder = queryBuilder.And("asset.name LIKE ?", "%"+value.(string)+"%")
 		case "type":
-			queryBuilder = queryBuilder.And("type = ?", value)
+			queryBuilder = queryBuilder.And("asset.type = ?", value)
 		case "creatorID":
-			queryBuilder = queryBuilder.And("creator_id = ?", value)
+			queryBuilder = queryBuilder.And("asset.creator_id = ?", value)
 		case "address":
-			queryBuilder = queryBuilder.And("address LIKE ?", "%"+value.(string)+"%")
+			queryBuilder = queryBuilder.And("asset.address LIKE ?", "%"+value.(string)+"%")
+		case "availableRuleType":
+			queryBuilder = queryBuilder.Where(
+				`asset.id NOT IN (SELECT asset.id FROM asset LEFT JOIN asset_rule
+				ON asset.id = asset_rule.asset_id LEFT JOIN rule
+				ON rule.id = asset_rule.rule_id WHERE rule.type = ?)`,
+				value)
 		case "createTimeBegin":
 			tm := time.Unix(int64(value.(int)), 0).Format("2006-01-02 15:04:05")
 			queryBuilder = queryBuilder.And("asset.created_at >= ?", tm)
@@ -212,20 +260,51 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 			queryBuilder = queryBuilder.And("state = ?", value)
 		}
 	}
+	queryBuilder = queryBuilder.And("asset_user.user_id = ? OR asset.creator_id = ?", userID, userID)
 	err := queryBuilder.Find(&assets)
 	if err != nil {
 		return nil, err
 	}
+
+	processedIDs := make(map[int]bool)
+	uniqueAssets := make([]models.Asset, 0)
+
 	for i := range assets {
-		assets[i].Creator, err = GetUserByID(svc.db.Engine, assets[i].CreatorID)
-		if err != nil {
-			return nil, err
+		if !processedIDs[assets[i].ID] {
+			// 标记ID为已处理
+			processedIDs[assets[i].ID] = true
+
+			assets[i].Creator, err = GetUserByID(svc.db.Engine, assets[i].CreatorID)
+			if err != nil {
+				return nil, err
+			}
+
+			assets[i].RuleNames, err = svc.GetRuleNames(assets[i].ID)
+			if err != nil {
+				fmt.Println(assets[i].ID)
+				return nil, err
+			}
+
+			// 添加到去重后的列表中
+			uniqueAssets = append(uniqueAssets, assets[i])
 		}
 	}
-	return assets, nil
+	return uniqueAssets, nil
 }
 
-func (svc *Account) UpdateAsset(id int, asset *models.Asset) error {
-	_, err := svc.db.Engine.ID(id).Update(asset)
-	return err
+func (svc *Asset) IsAccessAsset(assetID int, userID int) (bool, error) {
+	has, err := svc.db.Engine.Where("asset_id = ? AND user_id = ?", assetID, userID).Exist(&models.AssetUser{})
+	if err != nil {
+		return false, err
+	}
+	return has, nil
+}
+
+func (svc *Asset) GetRuleNames(assetID int) ([]string, error) {
+	rules := []string{}
+	err := svc.db.Engine.Table("rule").Join("INNER", "asset_rule", "rule.id = asset_rule.rule_id").Cols("rule.name").Where("asset_rule.asset_id = ?", assetID).Find(&rules)
+	if err != nil {
+		return nil, err
+	}
+	return rules, nil
 }

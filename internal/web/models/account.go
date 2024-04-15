@@ -3,17 +3,19 @@ package models
 import "time"
 
 type User struct {
-	ID        int       `xorm:"'id' pk autoincr"`
-	Username  string    `xorm:"notnull"`
-	Name      string    `xorm:"notnull"`
-	Password  string    `xorm:"notnull"`
-	Email     string    `xorm:"null"`
-	Phone     string    `xorm:"null"`
-	Role      int       `xorm:"default(10)"`
-	IsActive  bool      `xorm:"default(true)"`
-	CreatedAt time.Time `xorm:"created"`
-	UpdatedAt time.Time `xorm:"updated"`
-	DeletedAt time.Time `xorm:"deleted"`
+	ID        int       `json:"id" xorm:"'id' pk autoincr"`
+	Username  string    `json:"usernameusername" xorm:"notnull"`
+	Name      string    `json:"name" xorm:"notnull"`
+	Password  string    `json:"-" xorm:"notnull"`
+	Email     string    `json:"email" xorm:"null"`
+	Phone     string    `json:"phone" xorm:"null"`
+	Role      int       `json:"role" xorm:"default(10)"`
+	IsActive  bool      `json:"isActive" xorm:"default(true)"`
+	CreatedAt time.Time `json:"createdAt" xorm:"created"`
+	UpdatedAt time.Time `json:"-" xorm:"updated"`
+	DeletedAt time.Time `json:"-" xorm:"deleted"`
+	Note      *string   `json:"note" xorm:"null"`
+	IP        string    `json:"-" xorm:"-"`
 }
 
 func (u *User) GetInfo() *UserInfo {
@@ -26,6 +28,7 @@ func (u *User) GetInfo() *UserInfo {
 		Role:      u.Role,
 		IsActive:  u.IsActive,
 		CreatedAt: u.CreatedAt,
+		Note:      u.Note,
 	}
 }
 
@@ -38,4 +41,5 @@ type UserInfo struct {
 	Role      int       `json:"role"`
 	IsActive  bool      `json:"isActive"`
 	CreatedAt time.Time `json:"createAt"`
+	Note      *string   `json:"note"`
 }

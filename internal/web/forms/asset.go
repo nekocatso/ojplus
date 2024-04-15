@@ -1,6 +1,7 @@
 package forms
 
 import (
+	"Alarm/internal/utils"
 	"Alarm/internal/web/models"
 	"strings"
 
@@ -13,8 +14,8 @@ type AssetCreate struct {
 	Name    string        `validate:"required,max=24"`
 	Type    string        `validate:"required,max=12"`
 	Address string        `validate:"required,max=128"`
-	Note    string        `validate:"omitempty,max=128"`
-	Enable  bool          `validate:"omitempty"`
+	Note    *string       `validate:"omitempty,max=256"`
+	Enable  int           `validate:"omitempty"`
 	Users   []int         `validate:"omitempty"`
 	Rules   []int         `validate:"omitempty"`
 	Model   *models.Asset `validate:"-"`
@@ -27,7 +28,7 @@ func NewAssetCreate(ctx *gin.Context) (*AssetCreate, error) {
 		return nil, err
 	}
 	var state int
-	if form.Enable {
+	if form.Enable > 0 {
 		state = 3
 	} else {
 		state = -1
@@ -44,7 +45,7 @@ func NewAssetCreate(ctx *gin.Context) (*AssetCreate, error) {
 
 func (form *AssetCreate) check() map[string]string {
 	result := make(map[string]string)
-	if form.Enable && len(form.Rules) == 0 {
+	if form.Enable > 0 && len(form.Rules) == 0 {
 		result["state"] = "未绑定规则时无法启用监测"
 	}
 	checkAddress(result, form.Type, form.Address)
@@ -53,14 +54,12 @@ func (form *AssetCreate) check() map[string]string {
 }
 
 type AssetUpdate struct {
-	Name string `validate:"required,max=24"`
-	// Type    string `validate:"required,max=12"`
-	// Address string `validate:"required,max=128"`
-	Note   string        `validate:"required,max=128"`
-	Enable bool          `validate:"required"`
-	Users  []int         `validate:"required"`
-	Rules  []int         `validate:"required"`
-	Model  *models.Asset `validate:"-"`
+	Name      *string                `validate:"omitempty,max=24"`
+	Note      *string                `validate:"omitempty,max=256"`
+	Enable    int                    `validate:"omitempty"`
+	Users     []int                  `validate:"omitempty"`
+	Rules     []int                  `validate:"omitempty"`
+	UpdateMap map[string]interface{} `validate:"-"`
 }
 
 func NewAssetUpdate(ctx *gin.Context) (*AssetUpdate, error) {
@@ -70,24 +69,22 @@ func NewAssetUpdate(ctx *gin.Context) (*AssetUpdate, error) {
 		return nil, err
 	}
 	var state int
-	if form.Enable {
+	if form.Enable > 0 {
 		state = 3
 	} else {
 		state = -1
 	}
-	form.Model = &models.Asset{
-		Name: form.Name,
-		// Address: form.Address,
-		State: state,
-		// Type:    form.Type,
-		Note: form.Note,
+	form.UpdateMap = map[string]interface{}{
+		"name":  form.Name,
+		"note":  form.Note,
+		"state": state,
 	}
 	return form, nil
 }
 
 func (form *AssetUpdate) check() map[string]string {
 	result := make(map[string]string)
-	if form.Enable && len(form.Rules) == 0 {
+	if form.Enable > 0 && len(form.Rules) == 0 {
 		result["state"] = "未绑定规则时无法启用监测"
 	}
 	// checkAddress(result, form.Type, form.Address)
@@ -117,6 +114,12 @@ func checkAddress(result map[string]string, typeStr, address string) {
 	}
 }
 
+func checkDuplicates(result map[string]string, arr []interface{}, name string) {
+	if utils.HasDuplicates(arr) {
+		result[name] = "存在重复项"
+	}
+}
+
 type AssetSelect struct {
 	Page       int `validate:"required,gt=0"`
 	PageSize   int `validate:"required,gt=0,lte=100"`
@@ -126,14 +129,15 @@ type AssetSelect struct {
 }
 
 type AssetConditions struct {
-	Name            string `validate:"omitempty"`
-	Type            string `validate:"omitempty"`
-	CreatorID       int    `validate:"omitempty,gt=0"`
-	Address         string `validate:"omitempty,max=128"`
-	State           int    `validate:"omitempty,gte=-1,lte=3"`
-	Enable          int    `validate:"omitempty"`
-	CreateTimeBegin int    `validate:"required_with=CreateTimeEnd"`
-	CreateTimeEnd   int    `validate:"required_with=CreateTimeBegin,gtefield=CreateTimeBegin"`
+	Name              string `validate:"omitempty"`
+	Type              string `validate:"omitempty"`
+	CreatorID         int    `validate:"omitempty,gt=0"`
+	Address           string `validate:"omitempty,max=128"`
+	State             int    `validate:"omitempty,gte=-1,lte=3"`
+	Enable            int    `validate:"omitempty"`
+	AvailableRuleType string `validate:"omitempty"`
+	CreateTimeBegin   int    `validate:"required_with=CreateTimeEnd,gte=0"`
+	CreateTimeEnd     int    `validate:"required_with=CreateTimeBegin,gtefield=CreateTimeBegin"`
 }
 
 func NewAssetSelect(ctx *gin.Context) (*AssetSelect, error) {
@@ -142,10 +146,10 @@ func NewAssetSelect(ctx *gin.Context) (*AssetSelect, error) {
 	if err != nil {
 		return nil, err
 	}
-	var state int
 	if form.Query == nil {
 		form.Query = &AssetConditions{}
 	}
+	var state int
 	if form.Query.State != 0 {
 		if form.Query.Enable > 0 {
 			state = 3
@@ -171,6 +175,9 @@ func NewAssetSelect(ctx *gin.Context) (*AssetSelect, error) {
 	}
 	if form.Query.Address != "" {
 		form.Conditions["address"] = form.Query.Address
+	}
+	if form.Query.AvailableRuleType != "" {
+		form.Conditions["availableRuleType"] = form.Query.AvailableRuleType
 	}
 	if form.Query.CreatorID != 0 {
 		form.Conditions["creatorID"] = form.Query.CreatorID

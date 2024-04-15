@@ -3,12 +3,12 @@ package controllers
 import (
 	"Alarm/internal/web/forms"
 	"Alarm/internal/web/services"
+	"fmt"
 	"log"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-sql-driver/mysql"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type Asset struct {
@@ -39,9 +39,8 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 		return
 	}
 	asset := form.Model
-	claims := ctx.Value("claims").(jwt.MapClaims)
-	asset.CreatorID = claims["userID"].(int)
-	has, hasMessage, err := ctrl.svc.IsAssetExist(asset)
+	asset.CreatorID = GetUserIDByContext(ctx)
+	has, hasMessage, err := ctrl.svc.GetAssetExistInfo(asset)
 	if err != nil {
 		log.Println(err)
 		response(ctx, 500, nil)
@@ -75,6 +74,7 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 		userIDs := append(form.Users, asset.CreatorID)
 		err := ctrl.svc.BindUsers(asset.ID, userIDs)
 		if err != nil {
+			fmt.Println(err)
 			response(ctx, 400, nil)
 			return
 		}
@@ -87,7 +87,7 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 				return
 			}
 		}
-		if err != nil || asset.ID == 0 {
+		if err != nil {
 			log.Println(err)
 			response(ctx, 400, nil)
 			return
@@ -98,6 +98,21 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 
 func (ctrl *Asset) UpdateAsset(ctx *gin.Context) {
 	// 数据校验
+	assetID, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	has, err := ctrl.svc.IsAssetExistByID(assetID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !has {
+		response(ctx, 404, nil)
+		return
+	}
 	form, err := forms.NewAssetUpdate(ctx)
 	if err != nil {
 		response(ctx, 40001, nil)
@@ -113,13 +128,49 @@ func (ctrl *Asset) UpdateAsset(ctx *gin.Context) {
 		response(ctx, 40002, errorsMap)
 		return
 	}
-	asset := form.Model
-	// 更新数据
-	err = ctrl.svc.UpdateAsset(asset)
+
+	// 权限校验
+	userID := GetUserIDByContext(ctx)
+	access, err := ctrl.svc.IsAccessAsset(assetID, userID)
 	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}
+	if !access {
+		response(ctx, 404, nil)
+		return
+	}
+	// 更新数据
+	// err = ctrl.svc.UpdateAsset(form.UpdateMap)
+	// if err != nil {
+	// 	response(ctx, 500, nil)
+	// 	return
+	// }
+	if form.Users != nil {
+		userIDs := append(form.Users, userID)
+		err := ctrl.svc.BindUsers(assetID, userIDs)
+		if err != nil {
+			fmt.Println(err)
+			response(ctx, 400, nil)
+			return
+		}
+	}
+	if form.Rules != nil {
+		err = ctrl.svc.BindRules(assetID, form.Rules)
+		if merr, ok := err.(*mysql.MySQLError); ok {
+			if merr.Number == 1062 {
+				response(ctx, 40901, nil)
+				return
+			}
+		}
+		if err != nil {
+			log.Println(err)
+			response(ctx, 400, nil)
+			return
+		}
+	}
+	response(ctx, 200, nil)
 }
 
 func (ctrl *Asset) GetAssets(ctx *gin.Context) {
@@ -130,12 +181,8 @@ func (ctrl *Asset) GetAssets(ctx *gin.Context) {
 	if pageStr != "" && pageSizeStr != "" {
 		var err error
 		page, err = strconv.Atoi(pageStr)
-		if err != nil || page <= 0 {
+		if err != nil || page <= 0 || pageSize > 100 {
 			response(ctx, 40002, nil)
-			return
-		}
-		if pageSize > 100 {
-			response(ctx, 40003, nil)
 			return
 		}
 		pageSize, err = strconv.Atoi(pageSizeStr)
@@ -147,8 +194,7 @@ func (ctrl *Asset) GetAssets(ctx *gin.Context) {
 		page = 1
 		pageSize = 10
 	}
-	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID := claims["userID"].(int)
+	userID := GetUserIDByContext(ctx)
 	assets, err := ctrl.svc.FindAssets(userID, map[string]interface{}{})
 	if err != nil {
 		response(ctx, 500, nil)
@@ -175,7 +221,45 @@ func (ctrl *Asset) GetAssets(ctx *gin.Context) {
 	response(ctx, 200, data)
 }
 
-func (ctrl *Asset) SelectAsset(ctx *gin.Context) {
+func (ctrl *Asset) GetAssetByID(ctx *gin.Context) {
+	// 数据校验
+	assetID, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	has, err := ctrl.svc.IsAssetExistByID(assetID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !has {
+		response(ctx, 404, nil)
+		return
+	}
+	// 权限校验
+	userID := GetUserIDByContext(ctx)
+	access, err := ctrl.svc.IsAccessAsset(assetID, userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !access {
+		response(ctx, 404, nil)
+		return
+	}
+	// 获取资产信息
+	asset, err := ctrl.svc.GetAssetByID(assetID)
+	if err != nil {
+		response(ctx, 500, nil)
+		return
+	}
+	response(ctx, 200, asset)
+}
+
+func (ctrl *Asset) SelectAssets(ctx *gin.Context) {
 	// 数据校验
 	form, err := forms.NewAssetSelect(ctx)
 	if err != nil {
@@ -194,8 +278,7 @@ func (ctrl *Asset) SelectAsset(ctx *gin.Context) {
 	}
 	page := form.Page
 	pageSize := form.PageSize
-	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID := claims["userID"].(int)
+	userID := GetUserIDByContext(ctx)
 	assets, err := ctrl.svc.FindAssets(userID, form.Conditions)
 	if err != nil {
 		log.Println(err)
@@ -224,8 +307,7 @@ func (ctrl *Asset) SelectAsset(ctx *gin.Context) {
 }
 
 func (ctrl *Asset) GetAssetIDs(ctx *gin.Context) {
-	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID := claims["userID"].(int)
+	userID := GetUserIDByContext(ctx)
 	assets, err := ctrl.svc.FindAssets(userID, map[string]interface{}{})
 	if err != nil {
 		response(ctx, 500, nil)

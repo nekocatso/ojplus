@@ -46,7 +46,10 @@ func main() {
 
 	// Gin Init
 	engine := gin.Default()
-
+	// Mail Init
+	// mail := mail.NewMailPool()
+	// ListeningPool Init
+	// listener, err := pool.NewListenerPool(db, cache)
 	// --Controller Init
 	ctrlConfig := map[string]interface{}{
 		"db":    db,
@@ -64,26 +67,49 @@ func main() {
 	AuthCtrl := controllers.NewAuth(authConfig)
 	AssetCtrl := controllers.NewAsset(ctrlConfig)
 	RuleCtrl := controllers.NewRule(ctrlConfig)
+	AlarmCtrl := controllers.NewAlarm(ctrlConfig)
+	LogCtrl := controllers.NewLog(ctrlConfig)
 
 	// --Router Init
-	group := engine.Group("")
+	group := engine.Group("/api")
 	{
 		group.POST("/register", AccountCtrl.CreateUser)
-		group.GET("/users", AuthCtrl.LoginMiddleware, AccountCtrl.FindUsers)
-		group.GET("/users/:id", AuthCtrl.LoginMiddleware, AccountCtrl.GetUserByID)
-		group.GET("/assets/:assetID/users", AuthCtrl.LoginMiddleware, AccountCtrl.GetUsersByAsset)
-		group.PATCH("/users/:id", AuthCtrl.LoginMiddleware, AccountCtrl.UpdateUser)
+		group.POST("/users/query", AuthCtrl.LoginMiddleware, AccountCtrl.SelectUsers)
+		group.GET("/users", AuthCtrl.LoginMiddleware, AccountCtrl.GetUsers)
+		group.GET("/user/:id", AuthCtrl.LoginMiddleware, AccountCtrl.GetUserByID)
+		group.PATCH("/user/:id", AuthCtrl.LoginMiddleware, AccountCtrl.UpdateUser)
 
 		group.GET("/authtest", AuthCtrl.LoginMiddleware, AuthCtrl.Test)
 		group.POST("/login", AuthCtrl.Login)
 		group.POST("/token", AuthCtrl.Refresh)
 
 		group.GET("/assets", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssets)
+		group.GET("/asset/:id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetByID)
 		group.GET("/assets/id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetIDs)
 		group.POST("/asset", AuthCtrl.LoginMiddleware, AssetCtrl.CreateAsset)
-		group.POST("/assets/query", AuthCtrl.LoginMiddleware, AssetCtrl.SelectAsset)
+		group.POST("/assets/query", AuthCtrl.LoginMiddleware, AssetCtrl.SelectAssets)
+		group.GET("/assets/:assetID/:target", AuthCtrl.LoginMiddleware, func(ctx *gin.Context) {
+			if ctx.Param("target") == "users" {
+				AccountCtrl.GetUserIDsByAssetID(ctx)
+			} else if ctx.Param("target") == "rules" {
+				RuleCtrl.GetRulesByAssetID(ctx)
+			}
+		})
 
+		group.GET("/rules", AuthCtrl.LoginMiddleware, RuleCtrl.GetRules)
+		group.GET("/rule/:id", AuthCtrl.LoginMiddleware, RuleCtrl.GetRuleByID)
 		group.POST("/rule", AuthCtrl.LoginMiddleware, RuleCtrl.CreateRule)
+		group.POST("/rules/query", AuthCtrl.LoginMiddleware, RuleCtrl.SelectRules)
+
+		group.POST("/alarm", AuthCtrl.LoginMiddleware, AlarmCtrl.CreateAlarm)
+		group.GET("/alarms", AuthCtrl.LoginMiddleware, AlarmCtrl.GetAlarms)
+		group.GET("/alarm/:id", AuthCtrl.LoginMiddleware, AlarmCtrl.GetAlarmByID)
+		group.POST("/alarms/query", AuthCtrl.LoginMiddleware, AlarmCtrl.SelectAlarms)
+
+		group.GET("/log/alarms", AuthCtrl.LoginMiddleware, LogCtrl.GetAlarmLogs)
+		group.POST("/log/alarms/query", AuthCtrl.LoginMiddleware, LogCtrl.SelectAlarmLogs)
+		group.GET("/log/users", AuthCtrl.LoginMiddleware, LogCtrl.GetUserLogs)
+		group.POST("/log/users/query", AuthCtrl.LoginMiddleware, LogCtrl.SelectUserLogs)
 	}
 	engine.Run(globalConfig.Gin.Port)
 }

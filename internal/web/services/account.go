@@ -3,6 +3,7 @@ package services
 import (
 	"Alarm/internal/web/models"
 	"errors"
+	"time"
 )
 
 type Account struct {
@@ -21,20 +22,6 @@ func NewAccount(cfg map[string]interface{}) *Account {
 
 func (svc *Account) CreateUser(user *models.User) error {
 	_, err := svc.db.Engine.Insert(user)
-	return err
-}
-
-func (svc *Account) DeepDeleteUser(user *models.User) error {
-	if user.ID == 0 {
-		has, err := svc.getUser(user)
-		if err != nil {
-			return err
-		}
-		if !has {
-			return errors.New("无法找到user数据")
-		}
-	}
-	_, err := svc.db.Engine.ID(user.ID).Unscoped().Delete(user)
 	return err
 }
 
@@ -85,9 +72,30 @@ func (svc *Account) GetUserByID(id int) (*models.UserInfo, error) {
 	return GetUserByID(svc.db.Engine, id)
 }
 
-func (svc *Account) AllUser() ([]models.UserInfo, error) {
+func (svc *Account) FindUsers(conditions map[string]interface{}) ([]models.UserInfo, error) {
 	var users []models.User
-	err := svc.db.Engine.Find(&users)
+	queryBuilder := svc.db.Engine.Table("user")
+	for key, value := range conditions {
+		switch key {
+		case "username":
+			queryBuilder = queryBuilder.And("username LIKE ?", "%"+value.(string)+"%")
+		case "name":
+			queryBuilder = queryBuilder.And("name LIKE ?", "%"+value.(string)+"%")
+		case "phone":
+			queryBuilder = queryBuilder.And("phone LIKE ?", value.(string)+"%")
+		case "role":
+			queryBuilder = queryBuilder.And("role = ?", value)
+		case "isActive":
+			queryBuilder = queryBuilder.And("is_active = ?", value)
+		case "createTimeBegin":
+			tm := time.Unix(int64(value.(int)), 0).Format("2006-01-02 15:04:05")
+			queryBuilder = queryBuilder.And("user.created_at >= ?", tm)
+		case "createTimeEnd":
+			tm := time.Unix(int64(value.(int)), 0).Format("2006-01-02 15:04:05")
+			queryBuilder = queryBuilder.And("user.created_at <= ?", tm)
+		}
+	}
+	err := queryBuilder.Find(&users)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +106,7 @@ func (svc *Account) AllUser() ([]models.UserInfo, error) {
 	return usersInfo, nil
 }
 
-func (svc *Account) IsUserExist(user *models.User) (bool, string, error) {
+func (svc *Account) GetUserExistInfo(user *models.User) (bool, string, error) {
 	has, err := svc.db.Engine.Where("username = ?", user.Username).Exist(&models.User{})
 	if err != nil {
 		return has, "", err
@@ -131,16 +139,22 @@ func (svc *Account) IsUserIDExist(userID int) (bool, error) {
 }
 
 func (svc *Account) GetUserIDsByAssetID(assetID int) ([]int, error) {
-	var assetUsers []models.AssetUser
-	err := svc.db.Engine.Where("asset_id = ?", assetID).Find(&assetUsers)
+	var userIDs []int
+	err := svc.db.Engine.Table("asset_user").Cols("user_id").Where("asset_id =?", assetID).Find(&userIDs)
 	if err != nil {
 		return nil, err
 	}
-
-	userIDs := []int{}
-	for _, assetUser := range assetUsers {
-		userIDs = append(userIDs, assetUser.UserID)
-	}
-
 	return userIDs, nil
+}
+
+func (svc *Account) VerifyPassword(username string, password string) (bool, error) {
+	user := &models.User{
+		Username: username,
+		Password: password,
+	}
+	has, err := svc.db.Engine.Exist(user)
+	if err != nil {
+		return false, err
+	}
+	return has, nil
 }

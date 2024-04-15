@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"Alarm/internal/web/forms"
+	"Alarm/internal/web/logs"
+	"Alarm/internal/web/models"
 	"Alarm/internal/web/services"
 	"log"
 
@@ -9,13 +11,15 @@ import (
 )
 
 type Auth struct {
-	svc *services.Auth
-	cfg map[string]interface{}
+	svc    *services.Auth
+	cfg    map[string]interface{}
+	logger *logs.Logger
 }
 
 func NewAuth(cfg map[string]interface{}) *Auth {
 	svc := services.NewAuth(cfg)
-	return &Auth{svc: svc, cfg: cfg}
+	logger := logs.NewLogger(cfg["db"].(*models.Database))
+	return &Auth{svc: svc, cfg: cfg, logger: logger}
 }
 
 func (ctrl *Auth) LoginMiddleware(ctx *gin.Context) {
@@ -25,7 +29,6 @@ func (ctrl *Auth) LoginMiddleware(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-
 	claims, err := ctrl.svc.ParseToken(ctrl.cfg["publicKey"], token)
 	if err != nil || claims == nil {
 		response(ctx, 401, nil)
@@ -43,6 +46,11 @@ func (ctrl *Auth) LoginMiddleware(ctx *gin.Context) {
 	ctx.Set("claims", claims)
 	ctx.Next()
 }
+
+// func (ctrl *Auth) AdminMiddleware(ctx *gin.Context) {
+// 	userID := GetUserIDByContext(ctx)
+// 	user := GetUserByID(ctx)
+// }
 
 func (ctrl *Auth) Login(ctx *gin.Context) {
 	//校验表单
@@ -91,7 +99,7 @@ func (ctrl *Auth) Login(ctx *gin.Context) {
 		return
 	}
 	refreshClaims := map[string]interface{}{
-		"userID": int(user.ID),
+		"userID": user.ID,
 		"type":   "refresh",
 	}
 	refreshToken, err := ctrl.svc.GenerateToken(ctrl.cfg["privateKey"], ctrl.cfg["refreshTokenValidity"].(int), refreshClaims)
@@ -99,6 +107,14 @@ func (ctrl *Auth) Login(ctx *gin.Context) {
 		log.Println(err)
 		response(ctx, 500, nil)
 		return
+	}
+	err = ctrl.logger.SaveUserLog(ctx, user.ID, &logs.UserLog{
+		Module:  "账号管理",
+		Type:    "编辑",
+		Content: "成功",
+	})
+	if err != nil {
+		log.Println(err)
 	}
 	//响应
 	data := map[string]interface{}{

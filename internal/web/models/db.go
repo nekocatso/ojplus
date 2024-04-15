@@ -28,6 +28,7 @@ func NewDatabase(cfg *config.Mysql) (*Database, error) {
 		new(PingInfo),
 		new(AlarmTemplate),
 		new(AlarmLog),
+		new(UserLog),
 	)
 	if err != nil {
 		return nil, err

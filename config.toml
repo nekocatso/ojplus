@@ -1,12 +1,13 @@
 [gin]
 port = ":8080"
 # Mysql
-mysql.dsn = "zzh:123.com@tcp(127.0.0.1:3306)/alarm?charset=utf8"
+mysql.dsn = "alarm:123.com@tcp(127.0.0.1:3306)/alarm?charset=utf8"
 # Redis
 redis.addr = "127.0.0.1:6379"
 redis.password = ""
 redis.db = 0
 
 token.privateKeyPath = "."
-token.accessValidity = 3600   # 1小时
+# token.accessValidity = 3600   # 1小时
+token.accessValidity = 172800   # 1小时
 token.refreshValidity = 172800 # 2天
