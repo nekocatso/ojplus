@@ -1,4 +1,4 @@
-package pool
+package listenerpool
 
 import (
 	"Alarm/internal/pkg/listener"

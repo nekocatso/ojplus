@@ -2,8 +2,8 @@ package main
 
 import (
 	"Alarm/internal/config"
+	"Alarm/internal/pkg/listenerpool"
 	"Alarm/internal/pkg/mail"
-	"Alarm/internal/pkg/pool"
 	"Alarm/internal/web/controllers"
 	"Alarm/internal/web/models"
 	"crypto/x509"
@@ -55,7 +55,7 @@ func main() {
 		log.Fatal(err)
 	}
 	// ListeningPool Init
-	listener, err := pool.NewListenerPool(db, cache, mail, "amqp://user:mkjsix7@172.16.0.15:5672/")
+	listener, err := listenerpool.NewListenerPool(db, cache, mail, "amqp://user:mkjsix7@172.16.0.15:5672/")
 	if err != nil {
 		log.Fatal(err)
 	}

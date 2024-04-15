@@ -1,7 +1,7 @@
 package services
 
 import (
-	"Alarm/internal/pkg/pool"
+	"Alarm/internal/pkg/listenerpool"
 	"Alarm/internal/web/models"
 	"errors"
 	"fmt"
@@ -11,7 +11,7 @@ import (
 type Asset struct {
 	db       *models.Database
 	cache    *models.Cache
-	listener *pool.ListenerPool
+	listener *listenerpool.ListenerPool
 	cfg      map[string]interface{}
 }
 
