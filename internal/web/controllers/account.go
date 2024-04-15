@@ -52,14 +52,6 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 		return
 	}
 	user.IsActive = true
-	err = ctrl.logger.SaveUserLog(ctx, user.ID, &logs.UserLog{
-		Module:  "账号管理",
-		Type:    "新增",
-		Content: user.Username,
-	})
-	if err != nil {
-		log.Println(err)
-	}
 	err = ctrl.svc.CreateUser(user)
 	if merr, ok := err.(*mysql.MySQLError); ok {
 		if merr.Number == 1062 {
@@ -71,6 +63,14 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 		response(ctx, 500, nil)
 	}
 	response(ctx, 201, map[string]int{"userID": user.ID})
+	err = ctrl.logger.SaveUserLog(ctx, user.ID, &logs.UserLog{
+		Module:  "账号管理",
+		Type:    "新增",
+		Content: user.Username,
+	})
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func (ctrl *Account) UpdateUser(ctx *gin.Context) {
@@ -126,6 +126,13 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 		response(ctx, 500, nil)
 		return
 	}
+	err = ctrl.svc.UpdateUserByID(userID, form.Model)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	response(ctx, 200, nil)
 	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
 		Module:  "账号管理",
 		Type:    "编辑",
@@ -134,13 +141,6 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 	if err != nil {
 		log.Println(err)
 	}
-	err = ctrl.svc.UpdateUserByID(userID, form.Model)
-	if err != nil {
-		log.Println(err)
-		response(ctx, 500, nil)
-		return
-	}
-	response(ctx, 200, nil)
 }
 
 func (ctrl *Account) GetUsers(ctx *gin.Context) {

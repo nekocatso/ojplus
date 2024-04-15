@@ -39,6 +39,9 @@ func (svc *Alarm) GetAlarmByID(alarmID int) (*models.AlarmTemplate, error) {
 		return nil, fmt.Errorf("alarm with ID %d does not exist", alarmID)
 	}
 	alarm.RuleNames, err = svc.GetRuleNames(alarm.ID)
+	if err != nil {
+		return nil, err
+	}
 	return &alarm, nil
 }
 

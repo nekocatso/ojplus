@@ -182,9 +182,9 @@ func (svc *Asset) GetAssetByID(id int) (*models.Asset, error) {
 }
 
 // 更新资产
-func (svc *Asset) UpdateAsset(asset *models.Asset) error {
+func (svc *Asset) UpdateAsset(assetID int, updateMap map[string]interface{}) error {
 	// 更新数据库中的资产信息
-	_, err := svc.db.Engine.ID(asset.ID).Update(asset)
+	_, err := svc.db.Engine.Table("asset").ID(assetID).Update(updateMap)
 	if err != nil {
 		return err
 	}
@@ -240,6 +240,8 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 			queryBuilder = queryBuilder.And("asset.creator_id = ?", value)
 		case "address":
 			queryBuilder = queryBuilder.And("asset.address LIKE ?", "%"+value.(string)+"%")
+		case "ruleID":
+			queryBuilder = queryBuilder.And("asset_rule.rule_id = ?", value)
 		case "availableRuleType":
 			queryBuilder = queryBuilder.Where(
 				`asset.id NOT IN (SELECT asset.id FROM asset LEFT JOIN asset_rule
@@ -273,25 +275,30 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 
 	for i := range assets {
 		if !processedIDs[assets[i].ID] {
-			// 标记ID为已处理
 			processedIDs[assets[i].ID] = true
-
-			assets[i].Creator, err = GetUserByID(svc.db.Engine, assets[i].CreatorID)
+			err := svc.packAsset(&assets[i])
 			if err != nil {
 				return nil, err
 			}
-
-			assets[i].RuleNames, err = svc.GetRuleNames(assets[i].ID)
-			if err != nil {
-				fmt.Println(assets[i].ID)
-				return nil, err
-			}
-
-			// 添加到去重后的列表中
 			uniqueAssets = append(uniqueAssets, assets[i])
 		}
 	}
 	return uniqueAssets, nil
+}
+
+func (svc *Asset) packAsset(asset *models.Asset) error {
+	var err error
+	asset.Creator, err = GetUserByID(svc.db.Engine, asset.CreatorID)
+	if err != nil {
+		return err
+	}
+
+	asset.RuleNames, err = svc.GetRuleNames(asset.ID)
+	if err != nil {
+		fmt.Println(asset.ID)
+		return err
+	}
+	return nil
 }
 
 func (svc *Asset) IsAccessAsset(assetID int, userID int) (bool, error) {
@@ -309,25 +316,6 @@ func (svc *Asset) GetRuleNames(assetID int) ([]string, error) {
 		return nil, err
 	}
 	return rules, nil
-}
-
-func (svc *Asset) GetAssetsByRuleID(ruleID int) ([]*models.Asset, error) {
-	assets := []*models.Asset{}
-	err := svc.db.Engine.Table("asset").Join("INNER", "asset_rule", "asset.id = asset_rule.asset_id").Where("asset_rule.rule_id = ?", ruleID).Find(&assets)
-	if err != nil {
-		return nil, err
-	}
-	for i := range assets {
-		assets[i].Creator, err = GetUserByID(svc.db.Engine, assets[i].CreatorID)
-		if err != nil {
-			return nil, err
-		}
-		assets[i].RuleNames, err = svc.GetRuleNames(assets[i].ID)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return assets, nil
 }
 
 func (svc *Asset) GetUserByID(userID int) (*models.UserInfo, error) {

@@ -62,6 +62,14 @@ func (ctrl *Alarm) CreateAlarm(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 201, map[string]int{"ararmID": alarm.ID})
+	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+		Module:  "通知策略",
+		Type:    "新增",
+		Content: alarm.Name,
+	})
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func (ctrl *Alarm) GetAlarms(ctx *gin.Context) {

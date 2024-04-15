@@ -54,6 +54,12 @@ func (svc *Account) UpdateUserByID(id int, user *models.User) error {
 	return err
 }
 
+// func (svc *Account) UpdateUserByID(id int, updateMap map[string]interface{}) error {
+
+// 	_, err := svc.db.Engine.ID(id).Update(user)
+// 	return err
+// }
+
 func (svc *Account) getUser(user *models.User) (bool, error) {
 	if user.ID != 0 {
 		has, err := svc.db.Engine.ID(user.ID).Get(user)
@@ -134,6 +140,7 @@ func (svc *Account) GetUserExistInfo(user *models.User) (bool, string, error) {
 	}
 	return false, "", nil
 }
+
 func (svc *Account) IsUserIDExist(userID int) (bool, error) {
 	return svc.db.Engine.ID(userID).Exist(&models.User{})
 }

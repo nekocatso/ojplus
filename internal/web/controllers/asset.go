@@ -43,7 +43,8 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 		return
 	}
 	asset := form.Model
-	asset.CreatorID = GetUserIDByContext(ctx)
+	userID := GetUserIDByContext(ctx)
+	asset.CreatorID = userID
 	has, hasMessage, err := ctrl.svc.GetAssetExistInfo(asset)
 	if err != nil {
 		log.Println(err)
@@ -98,6 +99,14 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 		}
 	}
 	response(ctx, 201, map[string]int{"assetID": asset.ID})
+	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+		Module:  "资产管理",
+		Type:    "新增",
+		Content: asset.Name,
+	})
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func (ctrl *Asset) UpdateAsset(ctx *gin.Context) {
@@ -146,11 +155,11 @@ func (ctrl *Asset) UpdateAsset(ctx *gin.Context) {
 		return
 	}
 	// 更新数据
-	// err = ctrl.svc.UpdateAsset(form.UpdateMap)
-	// if err != nil {
-	// 	response(ctx, 500, nil)
-	// 	return
-	// }
+	err = ctrl.svc.UpdateAsset(assetID, form.UpdateMap)
+	if err != nil {
+		response(ctx, 500, nil)
+		return
+	}
 	if form.Users != nil {
 		userIDs := append(form.Users, userID)
 		err := ctrl.svc.BindUsers(assetID, userIDs)
@@ -175,6 +184,19 @@ func (ctrl *Asset) UpdateAsset(ctx *gin.Context) {
 		}
 	}
 	response(ctx, 200, nil)
+	asset, err := ctrl.svc.GetAssetByID(assetID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+		Module:  "资产管理",
+		Type:    "编辑",
+		Content: asset.Name,
+	})
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func (ctrl *Asset) GetAssets(ctx *gin.Context) {
@@ -330,22 +352,13 @@ func (ctrl *Asset) GetAssetsByRuleID(ctx *gin.Context) {
 		response(ctx, 40001, nil)
 		return
 	}
-	assets, err := ctrl.svc.GetAssetsByRuleID(ruleID)
 	userID := GetUserIDByContext(ctx)
-	accessAssets := []*models.Asset{}
-	for _, asset := range assets {
-		access, err := ctrl.svc.IsAccessAsset(asset.ID, userID)
-		if err != nil {
-			response(ctx, 500, nil)
-			return
-		}
-		if access {
-			accessAssets = append(accessAssets, asset)
-		}
-	}
+	assets, err := ctrl.svc.FindAssets(userID, map[string]interface{}{
+		"ruleID": ruleID,
+	})
 	if err != nil {
 		response(ctx, 500, nil)
 		return
 	}
-	response(ctx, 200, accessAssets)
+	response(ctx, 200, assets)
 }

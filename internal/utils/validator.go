@@ -7,8 +7,8 @@ func IsInteger(s string) bool {
 	return err == nil
 }
 
-func HasDuplicates(arr []interface{}) bool {
-	counter := make(map[interface{}]int)
+func HasDuplicates(arr []int) bool {
+	counter := make(map[int]int)
 	for _, el := range arr {
 		counter[el]++
 		if counter[el] > 1 {

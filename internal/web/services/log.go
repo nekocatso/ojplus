@@ -2,7 +2,6 @@ package services
 
 import (
 	"Alarm/internal/web/models"
-	"fmt"
 
 	"time"
 )
@@ -118,9 +117,9 @@ func (svc *Log) FindUserLogs(userID int, conditions map[string]interface{}) ([]m
 			if err != nil {
 				return nil, err
 			}
-			fmt.Println(len(logs), i)
-			fmt.Println(logs[i].Username)
-			fmt.Println(user.Username)
+			if user == nil {
+				continue
+			}
 			logs[i].Username = user.Username
 			logs[i].Phone = user.Phone
 			uniqueLogs = append(uniqueLogs, logs[i])

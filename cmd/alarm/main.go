@@ -111,6 +111,13 @@ func main() {
 		group.GET("/rule/:id", AuthCtrl.LoginMiddleware, RuleCtrl.GetRuleByID)
 		group.POST("/rule", AuthCtrl.LoginMiddleware, RuleCtrl.CreateRule)
 		group.POST("/rules/query", AuthCtrl.LoginMiddleware, RuleCtrl.SelectRules)
+		group.GET("/rules/:ruleID/:target", AuthCtrl.LoginMiddleware, func(ctx *gin.Context) {
+			if ctx.Param("target") == "assets" {
+				AssetCtrl.GetAssetsByRuleID(ctx)
+			} else {
+				ctx.JSON(404, nil)
+			}
+		})
 
 		group.POST("/alarm", AuthCtrl.LoginMiddleware, AlarmCtrl.CreateAlarm)
 		group.GET("/alarms", AuthCtrl.LoginMiddleware, AlarmCtrl.GetAlarms)

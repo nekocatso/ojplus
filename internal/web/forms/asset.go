@@ -50,6 +50,7 @@ func (form *AssetCreate) check() map[string]string {
 	}
 	checkAddress(result, form.Type, form.Address)
 	checkType(result, form.Type)
+	checkDuplicates(result, form.Rules, "rules")
 	return result
 }
 
@@ -114,7 +115,7 @@ func checkAddress(result map[string]string, typeStr, address string) {
 	}
 }
 
-func checkDuplicates(result map[string]string, arr []interface{}, name string) {
+func checkDuplicates(result map[string]string, arr []int, name string) {
 	if utils.HasDuplicates(arr) {
 		result[name] = "存在重复项"
 	}
