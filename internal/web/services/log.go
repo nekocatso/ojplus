@@ -94,6 +94,24 @@ func (svc *Log) packALarmLog(log *models.AlarmLog) error {
 	return nil
 }
 
+func (svc *Log) CountAlarmLog(conditions map[string]interface{}) (int64, error) {
+	logs := new(models.AlarmLog)
+	queryBuilder := svc.db.Engine.Table(new(models.AlarmLog))
+	for key, value := range conditions {
+		switch key {
+		case "state":
+			queryBuilder = queryBuilder.And("state = ?", value)
+		case "timeBegin":
+			tm := time.Unix(int64(value.(int)), 0).Format("2006-01-02 15:04:05")
+			queryBuilder = queryBuilder.And("created_at >= ?", tm)
+		case "timeEnd":
+			tm := time.Unix(int64(value.(int)), 0).Format("2006-01-02 15:04:05")
+			queryBuilder = queryBuilder.And("created_at <= ?", tm)
+		}
+	}
+	return queryBuilder.Count(&logs)
+}
+
 func (svc *Log) FindUserLogs(userID int, conditions map[string]interface{}) ([]models.UserLog, error) {
 	logs := []models.UserLog{}
 	// 构建查询条件

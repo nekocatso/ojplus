@@ -115,3 +115,30 @@ func (form *UserLogSelect) check() map[string]string {
 	result := make(map[string]string)
 	return result
 }
+
+type AlarmLogInfoSelect struct {
+	TimeBegin  int                    `validate:"required,gt=0"`
+	TimeEnd    int                    `validate:"required,gtefield=TimeBegin"`
+	Conditions map[string]interface{} `validate:"-"`
+}
+
+func NewAlarmLogInfoSelect(ctx *gin.Context) (*AlarmLogInfoSelect, error) {
+	var form *AlarmLogInfoSelect
+	err := ctx.ShouldBind(&form)
+	if err != nil {
+		return nil, err
+	}
+	form.Conditions = make(map[string]interface{})
+	if form.TimeBegin != 0 {
+		form.Conditions["timeBegin"] = form.TimeBegin
+	}
+	if form.TimeEnd != 0 {
+		form.Conditions["timeEnd"] = form.TimeEnd
+	}
+	return form, nil
+}
+
+func (form *AlarmLogInfoSelect) check() map[string]string {
+	result := make(map[string]string)
+	return result
+}

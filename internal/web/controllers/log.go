@@ -232,3 +232,39 @@ func (ctrl *Log) GetAlarmLogByID(ctx *gin.Context) {
 	}
 	response(ctx, 200, alarmLog)
 }
+
+func (ctrl *Log) GetAlarmLogInfo(ctx *gin.Context) {
+	form, err := forms.NewAlarmLogInfoSelect(ctx)
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	isValid, errorsMap, err := forms.Verify(form)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !isValid {
+		response(ctx, 40002, errorsMap)
+		return
+	}
+	form.Conditions["state"] = 1
+	declineCount, err := ctrl.svc.CountAlarmLog(form.Conditions)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	form.Conditions["state"] = 3
+	recoverCount, err := ctrl.svc.CountAlarmLog(form.Conditions)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	response(ctx, 200, map[string]interface{}{
+		"declineCount": declineCount,
+		"recoverCount": recoverCount,
+	})
+}
