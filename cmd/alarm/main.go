@@ -98,7 +98,7 @@ func main() {
 		group.GET("/assets/info", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetsInfo)
 		group.GET("/asset/:id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetByID)
 		group.GET("/assets/id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetIDs)
-		group.PATCH("/asset/:id", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, AssetCtrl.UpdateAsset)
+		group.PATCH("/asset/:id", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, AssetCtrl.UpdateAssetByID)
 		group.DELETE("/asset/:id", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, AssetCtrl.DeleteAsset)
 		group.GET("/assets/:assetID/:target", AuthCtrl.LoginMiddleware, func(ctx *gin.Context) {
 			if ctx.Param("target") == "users" {
@@ -129,6 +129,7 @@ func main() {
 		group.GET("/alarm/:id", AuthCtrl.LoginMiddleware, AlarmCtrl.GetAlarmByID)
 		group.POST("/alarms/query", AuthCtrl.LoginMiddleware, AlarmCtrl.SelectAlarms)
 		group.DELETE("/alarm/:id", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, AlarmCtrl.DeleteAlarmByID)
+		group.PATCH("/alarm/:id", AuthCtrl.LoginMiddleware, AlarmCtrl.UpdateAlarmByID)
 		group.GET("/alarms/:alarmID/:target", AuthCtrl.LoginMiddleware, func(ctx *gin.Context) {
 			if ctx.Param("target") == "rules" {
 				RuleCtrl.GetRulesByAlarmID(ctx)

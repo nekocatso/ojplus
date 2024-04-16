@@ -78,7 +78,7 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 	}
 }
 
-func (ctrl *Asset) UpdateAsset(ctx *gin.Context) {
+func (ctrl *Asset) UpdateAssetByID(ctx *gin.Context) {
 	// 数据校验
 	assetID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {

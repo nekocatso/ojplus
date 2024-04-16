@@ -72,6 +72,60 @@ func (ctrl *Alarm) CreateAlarm(ctx *gin.Context) {
 	}
 }
 
+func (ctrl *Alarm) UpdateAlarmByID(ctx *gin.Context) {
+	// 数据校验
+	assetID, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	form, err := forms.NewAlarmUpdate(ctx)
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	isValid, errorsMap, err := forms.Verify(form)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !isValid {
+		response(ctx, 40002, errorsMap)
+		return
+	}
+	// 权限校验
+	userID := GetUserIDByContext(ctx)
+	alarm, err := ctrl.svc.GetAlarmByID(assetID)
+	if err != nil {
+		response(ctx, 500, nil)
+		return
+	}
+	if alarm == nil {
+		response(ctx, 404, nil)
+		return
+	}
+	if alarm.CreatorID != userID {
+		response(ctx, 404, nil)
+		return
+	}
+	// 更新数据
+	err = ctrl.svc.UpdateAlarm(assetID, form.UpdateMap)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	response(ctx, 200, nil)
+	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+		Module:  "通知策略",
+		Type:    "编辑",
+		Content: alarm.Name,
+	})
+	if err != nil {
+		log.Println(err)
+	}
+}
 func (ctrl *Alarm) GetAlarms(ctx *gin.Context) {
 	pageStr := ctx.Query("page")
 	pageSizeStr := ctx.Query("pageSize")
@@ -230,4 +284,12 @@ func (ctrl *Alarm) DeleteAlarmByID(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 200, nil)
+	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+		Module:  "通知策略",
+		Type:    "删除",
+		Content: alarm.Name,
+	})
+	if err != nil {
+		log.Println(err)
+	}
 }

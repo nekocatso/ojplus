@@ -68,14 +68,14 @@ func (form *RuleCreate) check() map[string]string {
 }
 
 type RuleUpdate struct {
-	Name         string `validate:"omitempty,max=24"`
-	Note         string `validate:"omitempty,max=256"`
-	Assets       []int  `validate:"omitempty"`
-	AlarmID      int    `validate:"omitempty"`
-	Overtime     int    `validate:"omitempty,gt=100"`
-	Interval     int    `validate:"omitempty,gte=5"`
-	DeclineLimit int    `validate:"omitempty"`
-	RecoverLimit int    `validate:"omitempty"`
+	Name         *string `validate:"omitempty,max=24"`
+	Note         *string `validate:"omitempty,max=256"`
+	Assets       []int   `validate:"omitempty"`
+	AlarmID      int     `validate:"omitempty"`
+	Overtime     int     `validate:"omitempty,gt=100"`
+	Interval     int     `validate:"omitempty,gte=5"`
+	DeclineLimit int     `validate:"omitempty"`
+	RecoverLimit int     `validate:"omitempty"`
 	Info         *typeInfo
 
 	UpdateMap     map[string]interface{} `validate:"-"`
@@ -111,11 +111,11 @@ func NewRuleUpdate(ctx *gin.Context) (*RuleUpdate, error) {
 			form.TCPUpdateMap["disable_ports"] = form.Info.DisablePorts
 		}
 	}
-	if form.Name != "" {
-		form.UpdateMap["name"] = form.Name
+	if form.Name != nil {
+		form.UpdateMap["name"] = *form.Name
 	}
-	if form.Note != "" {
-		form.UpdateMap["note"] = form.Note
+	if form.Note != nil {
+		form.UpdateMap["note"] = *form.Note
 	}
 	if form.AlarmID != 0 {
 		form.UpdateMap["alarm_id"] = form.AlarmID

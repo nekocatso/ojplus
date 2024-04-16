@@ -36,6 +36,46 @@ func (form *AlarmCreate) check() map[string]string {
 	return result
 }
 
+type AlarmUpdate struct {
+	Name      *string                `validate:"omitempty,max=24"`
+	Note      *string                `validate:"omitempty,max=256"`
+	Interval  int                    `validate:"omitempty"`
+	Mails     []string               `validate:"omitempty"`
+	UpdateMap map[string]interface{} `validate:"-"`
+}
+
+func NewAlarmUpdate(ctx *gin.Context) (*AlarmUpdate, error) {
+	var form *AlarmUpdate
+	err := ctx.ShouldBind(&form)
+	if err != nil {
+		return nil, err
+	}
+
+	form.UpdateMap = make(map[string]interface{})
+	if form.Name != nil {
+		form.UpdateMap["name"] = *form.Name
+	}
+	if form.Note != nil {
+		form.UpdateMap["note"] = *form.Note
+	}
+	if form.Interval != 0 {
+		form.UpdateMap["interval"] = form.Interval
+	}
+	if form.Mails != nil {
+		form.UpdateMap["mails"] = form.Mails
+	}
+
+	return form, nil
+}
+
+func (form *AlarmUpdate) check() map[string]string {
+	result := make(map[string]string)
+	if form.Mails != nil && len(form.Mails) == 0 {
+		result["mails"] = "邮件列表不能为空"
+	}
+	return result
+}
+
 type AlarmTemplateSelect struct {
 	Page       int `validate:"required,gt=0"`
 	PageSize   int `validate:"required,gt=0,lte=100"`

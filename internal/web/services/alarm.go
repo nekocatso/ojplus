@@ -27,6 +27,14 @@ func (svc *Alarm) CreateAlarm(alarm *models.AlarmTemplate) error {
 	return err
 }
 
+func (svc *Alarm) UpdateAlarm(alarmID int, updateMap map[string]interface{}) error {
+	_, err := svc.db.Engine.Table(new(models.AlarmTemplate)).ID(alarmID).Update(updateMap)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (svc *Alarm) SetAlarm(alarm *models.AlarmTemplate) (bool, error) {
 	return svc.db.Engine.Get(alarm)
 }

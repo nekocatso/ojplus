@@ -43,9 +43,9 @@ func (form *UserCreate) check() map[string]string {
 }
 
 type UserUpdate struct {
-	Email       string                 `validate:"omitempty,email"`
-	Phone       string                 `validate:"omitempty,number,min=6,max=32"`
-	Note        string                 `validate:"omitempty,max=128"`
+	Email       *string                `validate:"omitempty,email"`
+	Phone       *string                `validate:"omitempty,number,min=6,max=32"`
+	Note        *string                `validate:"omitempty,max=128"`
 	OldPassword string                 `validate:"omitempty,required_with=Password,min=6,max=128"`
 	Password    string                 `validate:"omitempty,min=6,max=128"`
 	IsResetPwd  bool                   `validate:"omitempty"`
@@ -60,21 +60,21 @@ func NewUserUpdate(ctx *gin.Context) (*UserUpdate, error) {
 		return nil, err
 	}
 	form.UpdateMap = map[string]interface{}{}
-	if form.Email != "" {
-		form.UpdateMap["email"] = form.Email
+	if form.Email != nil {
+		form.UpdateMap["email"] = *form.Email
 	}
-	if form.Phone != "" {
-		form.UpdateMap["phone"] = form.Phone
+	if form.Phone != nil {
+		form.UpdateMap["phone"] = *form.Phone
 	}
-	if form.Note != "" {
-		form.UpdateMap["note"] = form.Note
+	if form.Note != nil {
+		form.UpdateMap["note"] = *form.Note
 	}
 	return form, nil
 }
 
 func (form *UserUpdate) check() map[string]string {
 	result := make(map[string]string)
-	if form.Phone != "" && !checkPhone(form.Phone) {
+	if form.Phone != nil && *form.Phone != "" && !checkPhone(*form.Phone) {
 		result["phone"] = "电话号码格式错误"
 	}
 	return result
