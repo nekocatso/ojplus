@@ -42,13 +42,6 @@ func (svc *Asset) CreateAsset(asset *models.Asset, userIDs []int, ruleIDs []int)
 		session.Rollback()
 		return err
 	}
-	has, err := svc.SetAsset(asset)
-	if err != nil {
-		return err
-	}
-	if !has {
-		return errors.New("asset not found")
-	}
 	if len(userIDs) > 0 {
 		err = svc.BindUsers(session, asset.ID, userIDs)
 		if err != nil {

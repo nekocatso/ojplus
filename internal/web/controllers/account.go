@@ -88,7 +88,6 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 	user, err := ctrl.svc.GetUserByID(userID)
 	if err != nil {
 		log.Println(err)
-		log.Println("hi1")
 		response(ctx, 500, nil)
 		return
 	}
@@ -101,7 +100,6 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 	loginer, err := ctrl.svc.GetUserByID(loginerID)
 	if err != nil {
 		log.Println(err)
-		log.Println("hi2")
 		response(ctx, 500, nil)
 		return
 	}
@@ -119,7 +117,6 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 	isValid, errorsMap, err := forms.Verify(form)
 	if err != nil {
 		log.Println(err)
-		log.Println("hi3")
 		response(ctx, 500, nil)
 		return
 	}
@@ -132,8 +129,6 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 		err := ctrl.svc.RestPassword(userID)
 		if err != nil {
 			log.Println(err)
-			log.Println(userID, loginerID)
-			log.Println("hi4")
 			response(ctx, 500, nil)
 			return
 		}
@@ -143,7 +138,6 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 		pass, err := ctrl.svc.VerifyPassword(user.Username, form.OldPassword)
 		if err != nil {
 			log.Println(err)
-			log.Println("hi5")
 			response(ctx, 500, nil)
 			return
 		}
@@ -157,7 +151,6 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 	err = ctrl.svc.UpdateUserByID(userID, form.UpdateMap)
 	if err != nil {
 		log.Println(err)
-		log.Println("hi6")
 		response(ctx, 500, nil)
 		return
 	}

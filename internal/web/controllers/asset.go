@@ -58,7 +58,7 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 	err = ctrl.svc.CreateAsset(asset, form.Users, form.Rules)
 	if err != nil {
 		log.Println(err)
-		response(ctx, 500, nil)
+		response(ctx, 404, nil)
 		return
 	}
 	if merr, ok := err.(*mysql.MySQLError); ok {
