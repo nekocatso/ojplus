@@ -4,7 +4,7 @@ import "time"
 
 type Rule struct {
 	ID           int         `json:"id" xorm:"'id' pk autoincr"`
-	Name         string      `json:"name" xorm:"notnull  unique(name_creator)"`
+	Name         string      `json:"name" xorm:"notnull unique(name_creator)"`
 	Type         string      `json:"type" xorm:"notnull"`
 	CreatorID    int         `json:"-" xorm:"'creator_id' notnull unique(name_creator)"`
 	AlarmID      int         `json:"alarmID" xorm:"'alarm_id' notnull"`
@@ -15,7 +15,7 @@ type Rule struct {
 	Note         *string     `json:"note" xorm:"null"`
 	CreateAt     time.Time   `json:"createAt" xorm:"'created_at' created"`
 	UpdateAt     time.Time   `json:"-" xorm:"'updated_at' updated"`
-	DeleteAt     time.Time   `json:"-" xorm:"deleted"`
+	DeleteAt     time.Time   `json:"-" xorm:"deleted unique(name_creator)"`
 	Creator      *User       `json:"creator" xorm:"-"`
 	AssetNames   []string    `json:"assetNames" xorm:"-"`
 	AssetsCount  int         `json:"assetsCount" xorm:"-"`

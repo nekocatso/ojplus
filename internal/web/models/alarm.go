@@ -11,7 +11,7 @@ type AlarmTemplate struct {
 	Note      *string   `json:"note" xorm:"'note'"`
 	CreatedAt time.Time `json:"createdAt" xorm:"'created_at' created"`
 	UpdatedAt time.Time `json:"-" xorm:"'updated_at' updated"`
-	DeletedAt time.Time `json:"-" xorm:"deleted"`
+	DeletedAt time.Time `json:"-" xorm:"deleted unique(name_creator)"`
 	RuleNames []string  `json:"ruleNames" xorm:"-"`
 }
 
