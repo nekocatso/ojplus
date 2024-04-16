@@ -109,19 +109,15 @@ func (svc *Asset) BindUsers(session *xorm.Session, assetID int, userIDs []int) e
 		return errors.New("asset not found")
 	}
 
-	// 添加创建者 并去重
+	// 创建一个map来存储唯一的userIDs
 	userIDsMap := make(map[int]bool)
 	userIDsMap[asset.CreatorID] = true
 	for _, userID := range userIDs {
 		userIDsMap[userID] = true
 	}
-	uniqueUserIDs := make([]int, 0, len(userIDsMap))
-	for userID := range userIDsMap {
-		uniqueUserIDs = append(uniqueUserIDs, userID)
-	}
 
 	existingUserIDs := []int{}
-	session.Table("asset_user").Cols("user_id").Where("asset_id = ?", assetID).Find(existingUserIDs)
+	session.Table("asset_user").Cols("user_id").Where("asset_id = ?", assetID).Find(&existingUserIDs)
 
 	var toAdd, toDelete []int
 	existingUserIDMap := make(map[int]bool)
@@ -129,14 +125,21 @@ func (svc *Asset) BindUsers(session *xorm.Session, assetID int, userIDs []int) e
 	for _, userID := range existingUserIDs {
 		existingUserIDMap[userID] = true
 	}
-	for userID := range uniqueUserIDs {
-		toAdd = append(toAdd, userID)
+
+	// 比较新增的userIDs和已有的userIDs，找出新增的和需要删除的
+	for userID := range userIDsMap {
+		if !existingUserIDMap[userID] {
+			toAdd = append(toAdd, userID)
+		}
 	}
+
 	for _, userID := range existingUserIDs {
 		if !userIDsMap[userID] {
 			toDelete = append(toDelete, userID)
 		}
 	}
+
+	// 删除多余的关联
 	if len(toDelete) > 0 {
 		_, err = session.In("user_id", toDelete).Delete(&models.AssetUser{})
 		if err != nil {
@@ -144,6 +147,8 @@ func (svc *Asset) BindUsers(session *xorm.Session, assetID int, userIDs []int) e
 			return err
 		}
 	}
+
+	// 添加新增的关联
 	for _, userID := range toAdd {
 		exists, err := session.ID(userID).Exist(&models.User{})
 		if err != nil {

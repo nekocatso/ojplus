@@ -209,3 +209,22 @@ func (ctrl *Log) SelectUserLogs(ctx *gin.Context) {
 	data["logs"] = userLogs[start:end]
 	response(ctx, 200, data)
 }
+
+func (ctrl *Log) GetAlarmLogByID(ctx *gin.Context) {
+	alarmLogID, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	if alarmLogID <= 0 {
+		response(ctx, 40002, nil)
+		return
+	}
+	alarmLog, err := ctrl.svc.GetAlarmLogByID(alarmLogID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	response(ctx, 200, alarmLog)
+}

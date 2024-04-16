@@ -2,6 +2,7 @@ package services
 
 import (
 	"Alarm/internal/web/models"
+	"errors"
 
 	"time"
 )
@@ -96,6 +97,8 @@ func (svc *Log) FindUserLogs(userID int, conditions map[string]interface{}) ([]m
 	// svc.db.Engine.ShowSQL(true)
 	queryBuilder := svc.db.Engine.Table("user_log").Alias("log")
 	queryBuilder = queryBuilder.Join("LEFT", "user", "log.user_id = user.id")
+	queryBuilder = queryBuilder.And("log.user_id = user.id")
+	queryBuilder = queryBuilder.Or("user.role >= 30")
 	for key, value := range conditions {
 		switch key {
 		case "username":
@@ -155,4 +158,23 @@ func (svc *Log) packUserLog(log *models.UserLog, user *models.UserInfo) error {
 	log.Username = user.Username
 	log.Phone = user.Phone
 	return nil
+}
+
+func (svc *Log) GetAlarmLogByID(alarmLogID int) (*models.AlarmLog, error) {
+	alarmLog := new(models.AlarmLog)
+	has, err := svc.db.Engine.ID(alarmLogID).Get(alarmLog)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, errors.New("alarmLog not found")
+	}
+	if err := svc.packALarmLog(alarmLog); err != nil {
+		return nil, err
+	}
+	return alarmLog, nil
+}
+
+func (svc *Log) GetUserByID(userID int) (*models.UserInfo, error) {
+	return GetUserByID(svc.db.Engine, userID)
 }
