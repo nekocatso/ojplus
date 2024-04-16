@@ -43,13 +43,13 @@ func (svc *Account) DeleteUser(user *models.User) error {
 }
 
 func (svc *Account) UpdateUserByID(userID int, updateMap map[string]interface{}) error {
-	_, err := svc.db.Engine.Table("user").ID(userID).Update(updateMap)
+	_, err := svc.db.Engine.Table(new(models.User)).ID(userID).Update(updateMap)
 	return err
 }
 
 func (svc *Account) RestPassword(userID int) error {
 	password := svc.global.Gin.Account.DefaultPassword
-	_, err := svc.db.Engine.Table("user").ID(userID).Update(map[string]interface{}{"password": password})
+	_, err := svc.db.Engine.Table(new(models.User)).ID(userID).Update(map[string]interface{}{"password": password})
 	return err
 }
 

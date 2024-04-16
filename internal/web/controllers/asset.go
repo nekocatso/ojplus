@@ -5,7 +5,6 @@ import (
 	"Alarm/internal/web/logs"
 	"Alarm/internal/web/models"
 	"Alarm/internal/web/services"
-	"fmt"
 	"log"
 	"strconv"
 
@@ -56,7 +55,7 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 		return
 	}
 	// 创建资产
-	err = ctrl.svc.CreateAsset(asset)
+	err = ctrl.svc.CreateAsset(asset, form.Users, form.Rules)
 	if err != nil {
 		log.Println(err)
 		response(ctx, 500, nil)
@@ -65,36 +64,6 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 	if merr, ok := err.(*mysql.MySQLError); ok {
 		if merr.Number == 1062 {
 			response(ctx, 40901, nil)
-			return
-		}
-	}
-	// 绑定用户或规则
-	err = ctrl.svc.GetAssetInfo(asset)
-	if err != nil || asset.ID == 0 {
-		log.Println(err)
-		response(ctx, 500, nil)
-		return
-	}
-	if form.Users != nil {
-		userIDs := append(form.Users, asset.CreatorID)
-		err := ctrl.svc.BindUsers(asset.ID, userIDs)
-		if err != nil {
-			fmt.Println(err)
-			response(ctx, 400, nil)
-			return
-		}
-	}
-	if form.Rules != nil {
-		err = ctrl.svc.BindRules(asset.ID, form.Rules)
-		if merr, ok := err.(*mysql.MySQLError); ok {
-			if merr.Number == 1062 {
-				response(ctx, 40901, nil)
-				return
-			}
-		}
-		if err != nil {
-			log.Println(err)
-			response(ctx, 400, nil)
 			return
 		}
 	}
@@ -155,33 +124,10 @@ func (ctrl *Asset) UpdateAsset(ctx *gin.Context) {
 		return
 	}
 	// 更新数据
-	err = ctrl.svc.UpdateAsset(assetID, form.UpdateMap)
+	err = ctrl.svc.UpdateAsset(assetID, form.UpdateMap, form.Users, form.Rules)
 	if err != nil {
 		response(ctx, 500, nil)
 		return
-	}
-	if form.Users != nil {
-		userIDs := append(form.Users, userID)
-		err := ctrl.svc.BindUsers(assetID, userIDs)
-		if err != nil {
-			fmt.Println(err)
-			response(ctx, 400, nil)
-			return
-		}
-	}
-	if form.Rules != nil {
-		err = ctrl.svc.BindRules(assetID, form.Rules)
-		if merr, ok := err.(*mysql.MySQLError); ok {
-			if merr.Number == 1062 {
-				response(ctx, 40901, nil)
-				return
-			}
-		}
-		if err != nil {
-			log.Println(err)
-			response(ctx, 400, nil)
-			return
-		}
 	}
 	response(ctx, 200, nil)
 	asset, err := ctrl.svc.GetAssetByID(assetID)

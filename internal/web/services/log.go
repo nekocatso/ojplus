@@ -60,20 +60,34 @@ func (svc *Log) FindALarmLogs(userID int, conditions map[string]interface{}) ([]
 	for i := range logs {
 		if !processedIDs[logs[i].ID] {
 			processedIDs[logs[i].ID] = true
-			asset, err := GetAssetByID(svc.db.Engine, logs[i].AssetID)
+			err := svc.packALarmLog(&logs[i])
 			if err != nil {
 				return nil, err
 			}
-			logs[i].AssetName = asset.Name
-			rule, err := GetRuleByID(svc.db.Engine, logs[i].RuleID)
-			if err != nil {
-				return nil, err
-			}
-			logs[i].RuleName = rule.Name
 			uniqueLogs = append(uniqueLogs, logs[i])
 		}
 	}
 	return uniqueLogs, nil
+}
+
+func (svc *Log) packALarmLog(log *models.AlarmLog) error {
+	asset, err := GetAssetByID(svc.db.Engine, log.AssetID)
+	if err != nil {
+		return err
+	}
+	log.AssetName = asset.Name
+	rule, err := GetRuleByID(svc.db.Engine, log.RuleID)
+	if err != nil {
+		return err
+	}
+	log.RuleName = rule.Name
+	log.RuleType = rule.Type
+	creator, err := GetUserByID(svc.db.Engine, rule.CreatorID)
+	if err != nil {
+		return err
+	}
+	log.Admin = creator.Name
+	return nil
 }
 
 func (svc *Log) FindUserLogs(userID int, conditions map[string]interface{}) ([]models.UserLog, error) {
@@ -127,10 +141,18 @@ func (svc *Log) FindUserLogs(userID int, conditions map[string]interface{}) ([]m
 			if user == nil {
 				continue
 			}
-			logs[i].Username = user.Username
-			logs[i].Phone = user.Phone
+			err = svc.packUserLog(&logs[i], user)
+			if err != nil {
+				return nil, err
+			}
 			uniqueLogs = append(uniqueLogs, logs[i])
 		}
 	}
 	return uniqueLogs, nil
+}
+
+func (svc *Log) packUserLog(log *models.UserLog, user *models.UserInfo) error {
+	log.Username = user.Username
+	log.Phone = user.Phone
+	return nil
 }

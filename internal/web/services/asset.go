@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"xorm.io/xorm"
 )
 
 type Asset struct {
@@ -23,44 +25,39 @@ func NewAsset(cfg map[string]interface{}) *Asset {
 	}
 }
 
-// 添加资产
-func (svc *Asset) CreateAsset(asset *models.Asset) error {
-	// 在数据库中插入资产
-	_, err := svc.db.Engine.Insert(asset)
-	return err
+func (svc *Asset) SetAsset(asset *models.Asset) (bool, error) {
+	return svc.db.Engine.Get(asset)
 }
 
-func (svc *Asset) BindUsers(assetID int, userIDs []int) error {
+// 添加资产
+func (svc *Asset) CreateAsset(asset *models.Asset, userIDs []int, ruleIDs []int) error {
 	session := svc.db.Engine.NewSession()
 	defer session.Close()
 	err := session.Begin()
 	if err != nil {
 		return err
 	}
-	// 解除已有关联
-	_, err = session.Where("asset_id = ?", assetID).Delete(&models.AssetUser{})
+	_, err = session.Insert(asset)
 	if err != nil {
 		session.Rollback()
 		return err
 	}
-	// 关联新的用户
-	for _, userID := range userIDs {
-		user := &models.User{ID: userID}
-		exists, err := session.Exist(user)
+	has, err := svc.SetAsset(asset)
+	if err != nil {
+		return err
+	}
+	if !has {
+		return errors.New("asset not found")
+	}
+	if len(userIDs) > 0 {
+		err = svc.BindUsers(session, asset.ID, userIDs)
 		if err != nil {
 			session.Rollback()
 			return err
 		}
-		if !exists {
-			session.Rollback()
-			return fmt.Errorf("user with ID %d does not exist", userID)
-		}
-
-		assetUser := &models.AssetUser{
-			AssetID: assetID,
-			UserID:  userID,
-		}
-		_, err = session.Insert(assetUser)
+	}
+	if len(ruleIDs) > 0 {
+		err = svc.BindRules(session, asset.ID, ruleIDs)
 		if err != nil {
 			session.Rollback()
 			return err
@@ -72,19 +69,86 @@ func (svc *Asset) BindUsers(assetID int, userIDs []int) error {
 		session.Rollback()
 		return err
 	}
-	return err
+	return nil
 }
 
-func (svc *Asset) BindRules(assetID int, ruleIDs []int) error {
+func (svc *Asset) UpdateAsset(assetID int, updateMap map[string]interface{}, userIDs []int, ruleIDs []int) error {
 	session := svc.db.Engine.NewSession()
 	defer session.Close()
 	err := session.Begin()
 	if err != nil {
 		return err
 	}
+	_, err = session.Table("asset").ID(assetID).Update(updateMap)
+	if err != nil {
+		return err
+	}
+	if len(userIDs) > 0 {
+		err = svc.BindUsers(session, assetID, userIDs)
+		if err != nil {
+			session.Rollback()
+			return err
+		}
+	}
+	if len(ruleIDs) > 0 {
+		err = svc.BindRules(session, assetID, ruleIDs)
+		if err != nil {
+			session.Rollback()
+			return err
+		}
+	}
+	// 提交事务
+	err = session.Commit()
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	return nil
+}
+
+func (svc *Asset) BindUsers(session *xorm.Session, assetID int, userIDs []int) error {
+	asset := &models.Asset{}
+	has, err := session.ID(assetID).Get(asset)
+	if err != nil {
+		return err
+	}
+	if !has {
+		return errors.New("asset not found")
+	}
+	userIDsMap := make(map[int]bool)
+	userIDsMap[asset.CreatorID] = true
+	for _, userID := range userIDs {
+		userIDsMap[userID] = true
+	}
+	uniqueUserIDs := make([]int, 0, len(userIDsMap))
+	for userID := range userIDsMap {
+		uniqueUserIDs = append(uniqueUserIDs, userID)
+	}
+	for _, userID := range uniqueUserIDs {
+		exists, err := session.ID(userID).Exist(&models.User{})
+		if err != nil {
+			return err
+		}
+		if !exists {
+			return fmt.Errorf("user with ID %d does not exist", userID)
+		}
+		assetUser := &models.AssetUser{
+			AssetID: assetID,
+			UserID:  userID,
+		}
+		_, err = session.Insert(assetUser)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (svc *Asset) BindRules(session *xorm.Session, assetID int, ruleIDs []int) error {
 	// 获取当前asset已绑定的rule.id
 	var existingRuleIDs []int
-	err = session.Table("asset_rule").Cols("rule_id").Where("asset_id = ?", assetID).Find(&existingRuleIDs)
+	err := session.Table("asset_rule").Cols("rule_id").Where("asset_id = ?", assetID).Find(&existingRuleIDs)
 	if err != nil {
 		session.Rollback()
 		return err
@@ -111,7 +175,6 @@ func (svc *Asset) BindRules(assetID int, ruleIDs []int) error {
 			toDelete = append(toDelete, ruleID)
 		}
 	}
-
 	// 删除多余的关联
 	if len(toDelete) > 0 {
 		_, err = session.In("rule_id", toDelete).Delete(&models.AssetRule{})
@@ -120,7 +183,6 @@ func (svc *Asset) BindRules(assetID int, ruleIDs []int) error {
 			return err
 		}
 	}
-
 	// 添加新增的关联
 	for _, ruleID := range toAdd {
 		rule := &models.Rule{ID: ruleID}
@@ -133,7 +195,6 @@ func (svc *Asset) BindRules(assetID int, ruleIDs []int) error {
 			session.Rollback()
 			return fmt.Errorf("rule with ID %d does not exist", ruleID)
 		}
-
 		assetRule := &models.AssetRule{
 			AssetID: assetID,
 			RuleID:  ruleID,
@@ -163,7 +224,6 @@ func (svc *Asset) GetAssetInfo(asset *models.Asset) error {
 	return nil
 }
 
-// 根据 ID 获取资产
 func (svc *Asset) GetAssetByID(id int) (*models.Asset, error) {
 	asset := &models.Asset{}
 	// 从数据库中根据 ID 查询资产
@@ -181,17 +241,6 @@ func (svc *Asset) GetAssetByID(id int) (*models.Asset, error) {
 	return asset, nil
 }
 
-// 更新资产
-func (svc *Asset) UpdateAsset(assetID int, updateMap map[string]interface{}) error {
-	// 更新数据库中的资产信息
-	_, err := svc.db.Engine.Table("asset").ID(assetID).Update(updateMap)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// 删除资产
 func (svc *Asset) DeleteAsset(asset *models.Asset) error {
 	// 逻辑删除资产
 	_, err := svc.db.Engine.ID(asset.ID).Delete()

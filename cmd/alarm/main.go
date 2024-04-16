@@ -20,13 +20,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	// Mysql Init
 	db, err := models.NewDatabase(globalConfig.Gin.Mysql)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	//Redis Init
 	cache, err := models.NewCache(globalConfig.Gin.Redis)
 	if err != nil {

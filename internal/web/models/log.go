@@ -12,6 +12,8 @@ type AlarmLog struct {
 	CreatedAt time.Time `json:"createdAt" xorm:"'created_at' created"`
 	AssetName string    `json:"assetName" xorm:"-"`
 	RuleName  string    `json:"ruleName" xorm:"-"`
+	Admin     string    `json:"admin" xorm:"-"`
+	RuleType  string    `json:"ruleType" xorm:"-"`
 }
 
 type UserLog struct {

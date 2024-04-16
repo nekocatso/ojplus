@@ -2,6 +2,7 @@ package services
 
 import (
 	"Alarm/internal/web/models"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -74,18 +75,26 @@ func (svc *Alarm) FindAlarms(userID int, conditions map[string]interface{}) ([]m
 	// 去重
 	seen := make(map[int]bool)
 	uniqueAlarms := []models.AlarmTemplate{}
-	for _, alarm := range alarms {
-		if !seen[alarm.ID] {
-			seen[alarm.ID] = true
-
-			alarm.RuleNames, err = svc.GetRuleNames(alarm.ID)
+	for i := range alarms {
+		if !seen[alarms[i].ID] {
+			seen[alarms[i].ID] = true
+			err := svc.packAlarm(&alarms[i])
 			if err != nil {
 				return nil, err
 			}
-			uniqueAlarms = append(uniqueAlarms, alarm)
+			uniqueAlarms = append(uniqueAlarms, alarms[i])
 		}
 	}
 	return uniqueAlarms, nil
+}
+
+func (svc *Alarm) packAlarm(alarm *models.AlarmTemplate) error {
+	var err error
+	alarm.RuleNames, err = svc.GetRuleNames(alarm.ID)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (svc *Alarm) DeleteAlarm(alarmID int) error {
@@ -101,6 +110,18 @@ func (svc *Alarm) IsAccessAlarm(alarmID int, userID int) (bool, error) {
 	queryBuilder = queryBuilder.Where("asset_user.user_id = ?", userID)
 	queryBuilder = queryBuilder.Or("alarm.creator_id = ?", userID)
 	return queryBuilder.ID(alarmID).Exist(&models.AlarmTemplate{})
+}
+
+func (svc *Alarm) GetRule(alarmID int) (*models.Rule, error) {
+	var rule *models.Rule
+	has, err := svc.db.Engine.Where("alarm_id = ?", alarmID).Get(&rule)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, errors.New("rule not found")
+	}
+	return rule, nil
 }
 
 func (svc *Alarm) GetRuleNames(alarmID int) ([]string, error) {

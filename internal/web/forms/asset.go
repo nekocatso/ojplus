@@ -75,11 +75,17 @@ func NewAssetUpdate(ctx *gin.Context) (*AssetUpdate, error) {
 	} else {
 		state = -1
 	}
-	form.UpdateMap = map[string]interface{}{
-		"name":  form.Name,
-		"note":  form.Note,
-		"state": state,
+	form.UpdateMap = map[string]interface{}{}
+	if form.Name != nil {
+		form.UpdateMap["name"] = *form.Name
 	}
+	if form.Note != nil {
+		form.UpdateMap["note"] = *form.Note
+	}
+	if state != 0 {
+		form.UpdateMap["state"] = state
+	}
+
 	return form, nil
 }
 
