@@ -49,6 +49,7 @@ type UserUpdate struct {
 	OldPassword string                 `validate:"omitempty,required_with=Password,min=6,max=128"`
 	Password    string                 `validate:"omitempty,min=6,max=128"`
 	IsResetPwd  bool                   `validate:"omitempty"`
+	IsActive    int                    `validate:"omitempty"`
 	UpdateMap   map[string]interface{} `validate:"-"`
 }
 
@@ -67,9 +68,6 @@ func NewUserUpdate(ctx *gin.Context) (*UserUpdate, error) {
 	}
 	if form.Note != "" {
 		form.UpdateMap["note"] = form.Note
-	}
-	if form.Password != "" {
-		form.UpdateMap["password"] = form.Password
 	}
 	return form, nil
 }

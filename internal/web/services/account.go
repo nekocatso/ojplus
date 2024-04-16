@@ -160,10 +160,32 @@ func (svc *Account) VerifyPassword(username string, password string) (bool, erro
 }
 
 func (svc *Account) DeleteUserByID(userID int) error {
-	_, err := svc.db.Engine.ID(userID).Delete(new(models.User))
+	session := svc.db.Engine.NewSession()
+	defer session.Close()
+	err := session.Begin()
 	if err != nil {
 		return err
 	}
-	svc.db.Engine.Where("user_id = ?", userID).Delete(new(models.AssetUser))
-	return err
+	// var user *models.User
+	// _, err = session.ID(userID).Get(user)
+	// if err != nil {
+	// 	session.Rollback()
+	// 	return err
+	// }
+	// user.Name = "注销用户"
+	_, err = session.ID(userID).Delete(new(models.User))
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	_, err = session.Where("user_id = ?", userID).Delete(new(models.AssetUser))
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	err = session.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
 }

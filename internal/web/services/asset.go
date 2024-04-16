@@ -400,7 +400,7 @@ func (svc *Asset) GetUserByID(userID int) (*models.User, error) {
 }
 
 func (svc *Asset) DeleteAsset(assetID int) error {
-	_, err := svc.db.Engine.ID(assetID).Where("1=1").Delete()
+	_, err := svc.db.Engine.ID(assetID).Delete()
 	if err != nil {
 		return err
 	}

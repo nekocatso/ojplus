@@ -124,13 +124,18 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 		response(ctx, 40002, errorsMap)
 		return
 	}
-	// 重置密码的处理
-	if form.IsResetPwd && loginer.Role >= 30 {
-		err := ctrl.svc.RestPassword(userID)
-		if err != nil {
-			log.Println(err)
-			response(ctx, 500, nil)
-			return
+	// 超管权限
+	if loginer.Role >= 30 {
+		if form.IsResetPwd {
+			err := ctrl.svc.RestPassword(userID)
+			if err != nil {
+				log.Println(err)
+				response(ctx, 500, nil)
+				return
+			}
+		}
+		if form.IsActive != 0 {
+			form.UpdateMap["is_active"] = form.IsActive > 0
 		}
 	}
 	// 修改密码的处理
