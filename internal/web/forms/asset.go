@@ -91,7 +91,7 @@ func NewAssetUpdate(ctx *gin.Context) (*AssetUpdate, error) {
 
 func (form *AssetUpdate) check() map[string]string {
 	result := make(map[string]string)
-	if form.Enable > 0 && len(form.Rules) == 0 {
+	if form.Enable > 0 && form.Rules != nil && len(form.Rules) == 0 {
 		result["state"] = "未绑定规则时无法启用监测"
 	}
 	// checkAddress(result, form.Type, form.Address)

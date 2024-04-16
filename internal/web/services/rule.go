@@ -78,25 +78,74 @@ func (svc *Rule) CreateTCPRule(rule *models.Rule, tcpInfo *models.TCPInfo) error
 	return err
 }
 
-func (svc *Rule) SetRule(rule *models.Rule) (bool, error) {
-	return svc.db.Engine.Get(rule)
-}
-
-func (svc *Rule) BindAssets(ruleID int, assetIDs []int, userID int) error {
+func (svc *Rule) BindAssets(ruleID int, userID int, assetIDs []int) error {
 	session := svc.db.Engine.NewSession()
 	defer session.Close()
+
 	err := session.Begin()
 	if err != nil {
 		return err
 	}
-	// 解除已有关联
+
+	// 去重
+	assetIDsMap := make(map[int]bool)
+	for _, assetID := range assetIDs {
+		assetIDsMap[assetID] = true
+	}
+	uniqueAssetIDs := make([]int, 0, len(assetIDsMap))
+	for assetID := range assetIDsMap {
+		uniqueAssetIDs = append(uniqueAssetIDs, assetID)
+	}
+
+	// 删除已有关联
 	_, err = session.And("rule_id = ?", ruleID).Delete(&models.AssetRule{})
 	if err != nil {
 		session.Rollback()
 		return err
 	}
-	// 关联新的资产
-	for _, assetID := range assetIDs {
+
+	// 获取已绑定的资产ID
+	var existingAssetIDs []int
+	err = session.Table("asset_rule").Cols("asset_id").Where("rule_id = ?", ruleID).Find(&existingAssetIDs)
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+
+	// 比较新增的assetIDs和已有的assetIDs，找出新增的和需要删除的
+	var toAdd, toDelete []int
+	existingAssetIDMap := make(map[int]bool)
+	for _, assetID := range existingAssetIDs {
+		existingAssetIDMap[assetID] = true
+	}
+	for _, assetID := range uniqueAssetIDs {
+		if !existingAssetIDMap[assetID] {
+			toAdd = append(toAdd, assetID)
+		}
+	}
+	for _, assetID := range existingAssetIDs {
+		flag := true
+		for _, item := range uniqueAssetIDs {
+			if item == assetID {
+				flag = false
+			}
+		}
+		if flag {
+			toDelete = append(toDelete, assetID)
+		}
+	}
+
+	// 删除多余的关联
+	if len(toDelete) > 0 {
+		_, err = session.In("asset_id", toDelete).Delete(&models.AssetRule{})
+		if err != nil {
+			session.Rollback()
+			return err
+		}
+	}
+
+	// 添加新增的关联
+	for _, assetID := range toAdd {
 		asset := &models.Asset{ID: assetID}
 		exists, err := session.Exist(asset)
 		if err != nil {
@@ -118,13 +167,15 @@ func (svc *Rule) BindAssets(ruleID int, assetIDs []int, userID int) error {
 			return err
 		}
 	}
+
 	// 提交事务
 	err = session.Commit()
 	if err != nil {
 		session.Rollback()
 		return err
 	}
-	return err
+
+	return nil
 }
 
 func (svc *Rule) GetRuleByID(ruleID, userID int) (*models.Rule, error) {
@@ -213,6 +264,10 @@ func (svc *Rule) FindRules(userID int, conditions map[string]interface{}) ([]mod
 	return uniqueRules, nil
 }
 
+func (svc *Rule) SetRule(rule *models.Rule) (bool, error) {
+	return svc.db.Engine.Get(rule)
+}
+
 func (svc *Rule) packRule(rule *models.Rule, userID int) error {
 	var err error
 	rule.Creator, err = GetUserByID(svc.db.Engine, rule.CreatorID)
@@ -289,3 +344,7 @@ func (svc *Rule) IsAccessAsset(assetID int, userID int) (bool, error) {
 func (svc *Rule) GetUserByID(userID int) (*models.UserInfo, error) {
 	return GetUserByID(svc.db.Engine, userID)
 }
+
+// func (svc *Rule) UpdateRuleByID(ruleID int) error {
+
+// }

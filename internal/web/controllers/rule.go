@@ -77,7 +77,7 @@ func (ctrl *Rule) CreateRule(ctx *gin.Context) {
 		return
 	}
 	if ruleForm.Assets != nil {
-		err := ctrl.svc.BindAssets(rule.ID, ruleForm.Assets, userID)
+		err := ctrl.svc.BindAssets(rule.ID, userID, ruleForm.Assets)
 		if err != nil {
 			log.Println(err)
 			response(ctx, 400, nil)
@@ -216,6 +216,7 @@ func (ctrl *Rule) GetRulesByAssetID(ctx *gin.Context) {
 	}
 	response(ctx, 200, rules)
 }
+
 func (ctrl *Rule) GetRulesByAlarmID(ctx *gin.Context) {
 	// 数据校验
 	alarmID, err := strconv.Atoi(ctx.Param("alarmID"))

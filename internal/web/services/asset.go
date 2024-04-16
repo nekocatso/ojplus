@@ -76,14 +76,14 @@ func (svc *Asset) UpdateAsset(assetID int, updateMap map[string]interface{}, use
 	if err != nil {
 		return err
 	}
-	if len(userIDs) > 0 {
+	if userIDs != nil {
 		err = svc.BindUsers(session, assetID, userIDs)
 		if err != nil {
 			session.Rollback()
 			return err
 		}
 	}
-	if len(ruleIDs) > 0 {
+	if ruleIDs != nil {
 		err = svc.BindRules(session, assetID, ruleIDs)
 		if err != nil {
 			session.Rollback()
