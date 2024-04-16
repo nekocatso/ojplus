@@ -166,19 +166,13 @@ func (svc *Account) DeleteUserByID(userID int) error {
 	if err != nil {
 		return err
 	}
-	// var user *models.User
-	// _, err = session.ID(userID).Get(user)
-	// if err != nil {
-	// 	session.Rollback()
-	// 	return err
-	// }
-	// user.Name = "注销用户"
 	_, err = session.ID(userID).Delete(new(models.User))
 	if err != nil {
 		session.Rollback()
 		return err
 	}
-	_, err = session.Where("user_id = ?", userID).Delete(new(models.AssetUser))
+	superAdminID := svc.global.Gin.Account.SuperAdminID
+	_, err = session.Where("user_id = ?", userID).Update(map[string]int{"user_id": superAdminID})
 	if err != nil {
 		session.Rollback()
 		return err

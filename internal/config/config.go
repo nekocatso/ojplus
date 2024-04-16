@@ -33,6 +33,7 @@ type Token struct {
 }
 
 type Account struct {
+	SuperAdminID    int
 	DefaultPassword string
 }
 
