@@ -2,7 +2,6 @@ package services
 
 import (
 	"Alarm/internal/web/models"
-	"errors"
 
 	"time"
 )
@@ -167,7 +166,7 @@ func (svc *Log) GetAlarmLogByID(alarmLogID int) (*models.AlarmLog, error) {
 		return nil, err
 	}
 	if !has {
-		return nil, errors.New("alarmLog not found")
+		return nil, nil
 	}
 	if err := svc.packALarmLog(alarmLog); err != nil {
 		return nil, err

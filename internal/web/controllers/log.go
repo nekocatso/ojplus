@@ -226,5 +226,9 @@ func (ctrl *Log) GetAlarmLogByID(ctx *gin.Context) {
 		response(ctx, 500, nil)
 		return
 	}
+	if alarmLog == nil {
+		response(ctx, 404, nil)
+		return
+	}
 	response(ctx, 200, alarmLog)
 }

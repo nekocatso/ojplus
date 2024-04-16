@@ -133,6 +133,7 @@ func main() {
 		})
 
 		group.GET("/log/alarms", AuthCtrl.LoginMiddleware, LogCtrl.GetAlarmLogs)
+		group.GET("/log/alarm/:id", AuthCtrl.LoginMiddleware, LogCtrl.GetAlarmLogByID)
 		group.POST("/log/alarms/query", AuthCtrl.LoginMiddleware, LogCtrl.SelectAlarmLogs)
 		group.GET("/log/users", AuthCtrl.LoginMiddleware, LogCtrl.GetUserLogs)
 		group.POST("/log/users/query", AuthCtrl.LoginMiddleware, LogCtrl.SelectUserLogs)

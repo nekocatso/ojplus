@@ -276,10 +276,7 @@ func (svc *Asset) GetAssetByID(id int) (*models.Asset, error) {
 	if !has {
 		return nil, errors.New("Asset not found")
 	}
-	asset.RuleNames, err = svc.GetRuleNames(asset.ID)
-	if err != nil {
-		return nil, err
-	}
+	svc.packAsset(asset)
 	return asset, nil
 }
 
