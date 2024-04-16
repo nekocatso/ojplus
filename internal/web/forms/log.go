@@ -16,7 +16,7 @@ type AlarmLogConditions struct {
 	RuleID          int    `validate:"omitempty"`
 	RuleType        string `validate:"omitempty"`
 	State           int    `validate:"omitempty,oneof=1 2 3"`
-	AssetCreator    int    `validate:"omitempty"`
+	Admin           int    `validate:"omitempty"`
 	CreateTimeBegin int    `validate:"required_with=CreateTimeEnd,gte=0"`
 	CreateTimeEnd   int    `validate:"required_with=CreateTimeBegin,gtefield=CreateTimeBegin"`
 }
@@ -43,8 +43,8 @@ func NewAlarmLogSelect(ctx *gin.Context) (*AlarmLogSelect, error) {
 	if form.Query.State != 0 {
 		form.Conditions["state"] = form.Query.State
 	}
-	if form.Query.AssetCreator != 0 {
-		form.Conditions["assetCreator"] = form.Query.AssetCreator
+	if form.Query.Admin != 0 {
+		form.Conditions["admin"] = form.Query.Admin
 	}
 	if form.Query.CreateTimeBegin != 0 {
 		form.Conditions["createTimeBegin"] = form.Query.CreateTimeBegin

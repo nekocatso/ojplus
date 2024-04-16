@@ -39,7 +39,7 @@ func (svc *Log) FindALarmLogs(userID int, conditions map[string]interface{}) ([]
 			queryBuilder = queryBuilder.And("rule.type = ?", value)
 		case "state":
 			queryBuilder = queryBuilder.And("log.state = ?", value)
-		case "assetCreator":
+		case "admin":
 			queryBuilder = queryBuilder.And("asset.creator_id = ?", value)
 		case "createTimeBegin":
 			tm := time.Unix(int64(value.(int)), 0).Format("2006-01-02 15:04:05")

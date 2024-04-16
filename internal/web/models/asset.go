@@ -9,7 +9,7 @@ type Asset struct {
 	Address   string    `json:"address" xorm:"notnull unique"`
 	Note      *string   `json:"note" xorm:"null"`
 	State     int       `json:"state" xorm:"default(0) notnull"`
-	CreatorID int       `json:"-" xorm:"'creator_id' notnull unique(name_creator)"`
+	CreatorID int       `json:"creatorID" xorm:"'creator_id' notnull unique(name_creator)"`
 	CreatedAt time.Time `json:"createdAt" xorm:"'created_at' created"`
 	UpdatedAt time.Time `json:"-" xorm:"'updated_at' updated"`
 	DeletedAt time.Time `json:"-" xorm:"deleted"`
