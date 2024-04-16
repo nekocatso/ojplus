@@ -327,7 +327,7 @@ func (ctrl *Rule) GetRuleByID(ctx *gin.Context) {
 	response(ctx, 200, rule)
 }
 
-func (ctrl *Rule) DeleteRule(ctx *gin.Context) {
+func (ctrl *Rule) DeleteRuleByID(ctx *gin.Context) {
 	// 数据校验
 	ruleID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
@@ -342,6 +342,7 @@ func (ctrl *Rule) DeleteRule(ctx *gin.Context) {
 	userID := GetUserIDByContext(ctx)
 	rule, err := ctrl.svc.GetRuleByID(ruleID, userID)
 	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}
@@ -354,7 +355,7 @@ func (ctrl *Rule) DeleteRule(ctx *gin.Context) {
 		return
 	}
 	// 数据处理
-	err = ctrl.svc.DeleteRule(ruleID)
+	err = ctrl.svc.DeleteRuleByID(ruleID)
 	if err != nil {
 		log.Println(err)
 		response(ctx, 500, nil)

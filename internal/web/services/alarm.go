@@ -4,6 +4,7 @@ import (
 	"Alarm/internal/web/models"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -31,19 +32,19 @@ func (svc *Alarm) SetAlarm(alarm *models.AlarmTemplate) (bool, error) {
 }
 
 func (svc *Alarm) GetAlarmByID(alarmID int) (*models.AlarmTemplate, error) {
-	var alarm models.AlarmTemplate
-	has, err := svc.db.Engine.ID(alarmID).Get(&alarm)
+	alarm := new(models.AlarmTemplate)
+	has, err := svc.db.Engine.ID(alarmID).Get(alarm)
 	if err != nil {
 		return nil, err
 	}
 	if !has {
 		return nil, fmt.Errorf("alarm with ID %d does not exist", alarmID)
 	}
-	alarm.RuleNames, err = svc.GetRuleNames(alarm.ID)
+	err = svc.packAlarm(alarm)
 	if err != nil {
 		return nil, err
 	}
-	return &alarm, nil
+	return alarm, nil
 }
 
 func (svc *Alarm) FindAlarms(userID int, conditions map[string]interface{}) ([]models.AlarmTemplate, error) {
@@ -97,11 +98,6 @@ func (svc *Alarm) packAlarm(alarm *models.AlarmTemplate) error {
 	return nil
 }
 
-func (svc *Alarm) DeleteAlarm(alarmID int) error {
-	_, err := svc.db.Engine.ID(alarmID).Delete(&models.AlarmTemplate{})
-	return err
-}
-
 func (svc *Alarm) IsAccessAlarm(alarmID int, userID int) (bool, error) {
 	queryBuilder := svc.db.Engine.Table("alarm_template").Alias("alarm")
 	queryBuilder = queryBuilder.Join("LEFT", "rule", "rule.alarm_id = alarm.id")
@@ -135,4 +131,35 @@ func (svc *Alarm) GetRuleNames(alarmID int) ([]string, error) {
 
 func (svc *Alarm) GetUserByID(userID int) (*models.User, error) {
 	return GetUserByID(svc.db.Engine, userID)
+}
+
+func (svc *Alarm) DeleteAlarmByID(alarmID int) error {
+	session := svc.db.Engine.NewSession()
+	defer session.Close()
+	err := session.Begin()
+	if err != nil {
+		return err
+	}
+	_, err = session.ID(alarmID).Delete(new(models.AlarmTemplate))
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	var enableAssets []models.AssetRule
+	queryBuilder := svc.db.Engine.Table("asset_rule")
+	queryBuilder = queryBuilder.Join("LEFT", "asset", "asset.id = asset_rule.asset_id").And("asset.state > 0")
+	queryBuilder = queryBuilder.Join("LEFT", "rule", "rule.id = asset_rule.rule_id").And("rule.alarm_id = ?", alarmID)
+	err = queryBuilder.Find(&enableAssets)
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	for _, enableAsset := range enableAssets {
+		log.Printf("Ctrl Signal: Update %d\n", enableAsset.ID)
+	}
+	err = session.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
 }

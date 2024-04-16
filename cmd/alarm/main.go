@@ -115,7 +115,7 @@ func main() {
 		group.POST("/rule", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, RuleCtrl.CreateRule)
 		group.POST("/rules/query", AuthCtrl.LoginMiddleware, RuleCtrl.SelectRules)
 		group.PATCH("/rule/:id", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, RuleCtrl.UpdateRuleByID)
-		group.DELETE("/rule/:id", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, RuleCtrl.DeleteRule)
+		group.DELETE("/rule/:id", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, RuleCtrl.DeleteRuleByID)
 		group.GET("/rules/:ruleID/:target", AuthCtrl.LoginMiddleware, func(ctx *gin.Context) {
 			if ctx.Param("target") == "assets" {
 				AssetCtrl.GetAssetsByRuleID(ctx)
@@ -128,6 +128,7 @@ func main() {
 		group.GET("/alarms", AuthCtrl.LoginMiddleware, AlarmCtrl.GetAlarms)
 		group.GET("/alarm/:id", AuthCtrl.LoginMiddleware, AlarmCtrl.GetAlarmByID)
 		group.POST("/alarms/query", AuthCtrl.LoginMiddleware, AlarmCtrl.SelectAlarms)
+		group.DELETE("/alarm/:id", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, AlarmCtrl.DeleteAlarmByID)
 		group.GET("/alarms/:alarmID/:target", AuthCtrl.LoginMiddleware, func(ctx *gin.Context) {
 			if ctx.Param("target") == "rules" {
 				RuleCtrl.GetRulesByAlarmID(ctx)

@@ -365,7 +365,7 @@ func (svc *Rule) GetUserByID(userID int) (*models.User, error) {
 	return GetUserByID(svc.db.Engine, userID)
 }
 
-func (svc *Rule) DeleteRule(ruleID int) error {
+func (svc *Rule) DeleteRuleByID(ruleID int) error {
 	session := svc.db.Engine.NewSession()
 	defer session.Close()
 	err := session.Begin()

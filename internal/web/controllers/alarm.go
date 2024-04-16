@@ -194,3 +194,40 @@ func (ctrl *Alarm) GetAlarmByID(ctx *gin.Context) {
 	}
 	response(ctx, 200, alarm)
 }
+
+func (ctrl *Alarm) DeleteAlarmByID(ctx *gin.Context) {
+	// 数据校验
+	alarmID, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	if alarmID <= 0 {
+		response(ctx, 40002, nil)
+		return
+	}
+	// 权限校验
+	userID := GetUserIDByContext(ctx)
+	alarm, err := ctrl.svc.GetAlarmByID(alarmID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if alarm == nil {
+		response(ctx, 404, nil)
+		return
+	}
+	if alarm.CreatorID != userID {
+		response(ctx, 404, nil)
+		return
+	}
+	// 数据处理
+	err = ctrl.svc.DeleteAlarmByID(alarmID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	response(ctx, 200, nil)
+}

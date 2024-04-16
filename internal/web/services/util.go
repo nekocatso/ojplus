@@ -41,3 +41,15 @@ func GetRuleByID(engine *xorm.Engine, id int) (*models.Rule, error) {
 	}
 	return rule, nil
 }
+
+func GetAlarmTemplateByID(engine *xorm.Engine, id int) (*models.AlarmTemplate, error) {
+	alarmTemplate := new(models.AlarmTemplate)
+	has, err := engine.ID(id).Get(alarmTemplate)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, nil
+	}
+	return alarmTemplate, nil
+}
