@@ -164,7 +164,7 @@ func (svc *Account) DeleteUserByID(userID int) error {
 	if err != nil {
 		return err
 	}
-	// AddUUIDToUniqueFields(user)
+	AddUUIDToUniqueFields(user)
 	_, err = svc.db.Engine.Delete(user)
 	return err
 }

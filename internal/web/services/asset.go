@@ -267,26 +267,15 @@ func (svc *Asset) GetAssetInfo(asset *models.Asset) error {
 }
 
 func (svc *Asset) GetAssetByID(id int) (*models.Asset, error) {
-	asset := &models.Asset{}
-	// 从数据库中根据 ID 查询资产
-	has, err := svc.db.Engine.ID(id).Get(asset)
+	asset, err := GetAssetByID(svc.db.Engine, id)
 	if err != nil {
 		return nil, err
 	}
-	if !has {
+	if asset == nil {
 		return nil, errors.New("Asset not found")
 	}
 	svc.packAsset(asset)
 	return asset, nil
-}
-
-func (svc *Asset) DeleteAsset(asset *models.Asset) error {
-	// 逻辑删除资产
-	_, err := svc.db.Engine.ID(asset.ID).Delete()
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (svc *Asset) GetAssetExistInfo(asset *models.Asset) (bool, string, error) {
@@ -408,4 +397,18 @@ func (svc *Asset) GetRuleNames(assetID int) ([]string, error) {
 
 func (svc *Asset) GetUserByID(userID int) (*models.UserInfo, error) {
 	return GetUserByID(svc.db.Engine, userID)
+}
+
+func (svc *Asset) DeleteAsset(assetID int) error {
+	asset, err := svc.GetAssetByID(assetID)
+	if err != nil {
+		return err
+	}
+	AddUUIDToUniqueFields(asset)
+	// 逻辑删除资产
+	_, err = svc.db.Engine.ID(assetID).Delete()
+	if err != nil {
+		return err
+	}
+	return nil
 }
