@@ -96,50 +96,48 @@ func NewRuleUpdate(ctx *gin.Context) (*RuleUpdate, error) {
 
 	if form.Info != nil {
 		if form.Info.Mode != 0 {
-			form.PingUpdateMap["Mode"] = form.Info.Mode
+			form.PingUpdateMap["mode"] = form.Info.Mode
 		}
 		if form.Info.LatencyLimit != 0 {
-			form.PingUpdateMap["LatencyLimit"] = form.Info.LatencyLimit
+			form.PingUpdateMap["latency_limit"] = form.Info.LatencyLimit
 		}
 		if form.Info.LostLimit != 0 {
-			form.PingUpdateMap["LostLimit"] = form.Info.LostLimit
+			form.PingUpdateMap["lost_limit"] = form.Info.LostLimit
 		}
 	}
 	if form.Info != nil {
-		if len(form.Info.EnablePorts) > 0 {
-			form.TCPUpdateMap["EnablePorts"] = form.Info.EnablePorts
-		}
-		if len(form.Info.DisablePorts) > 0 {
-			form.TCPUpdateMap["DisablePorts"] = form.Info.DisablePorts
+		if len(form.Info.EnablePorts) > 0 || len(form.Info.DisablePorts) > 0 {
+			form.TCPUpdateMap["enable_ports"] = form.Info.EnablePorts
+			form.TCPUpdateMap["disable_ports"] = form.Info.DisablePorts
 		}
 	}
 	if form.Name != "" {
-		form.UpdateMap["Name"] = form.Name
+		form.UpdateMap["name"] = form.Name
 	}
 	if form.Note != "" {
-		form.UpdateMap["Note"] = form.Note
+		form.UpdateMap["note"] = form.Note
 	}
 	if form.AlarmID != 0 {
-		form.UpdateMap["AlarmID"] = form.AlarmID
+		form.UpdateMap["alarm_id"] = form.AlarmID
 	}
 	if form.Overtime != 0 {
-		form.UpdateMap["Overtime"] = form.Overtime
+		form.UpdateMap["overtime"] = form.Overtime
 	}
 	if form.Interval != 0 {
-		form.UpdateMap["Interval"] = form.Interval
+		form.UpdateMap["interval"] = form.Interval
 	}
 	if form.DeclineLimit != 0 {
-		form.UpdateMap["DeclineLimit"] = form.DeclineLimit
+		form.UpdateMap["decline_limit"] = form.DeclineLimit
 	}
 	if form.RecoverLimit != 0 {
-		form.UpdateMap["RecoverLimit"] = form.RecoverLimit
+		form.UpdateMap["recover_limit"] = form.RecoverLimit
 	}
 	return form, nil
 }
 
 func (form *RuleUpdate) check() map[string]string {
 	result := make(map[string]string)
-	if form.Info.LatencyLimit >= form.Overtime {
+	if form.Info != nil && form.Info.LatencyLimit >= form.Overtime {
 		result["latencyLimit"] = "latencyLimit必须小于overtime"
 	}
 	return result

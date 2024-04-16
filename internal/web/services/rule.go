@@ -98,6 +98,10 @@ func (svc *Rule) UpdateRuleByID(ruleID int, ruleUpdateMap, pingInfoUpdateMap, tc
 			return err
 		}
 	}
+	err = session.Commit()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -194,13 +198,12 @@ func (svc *Rule) BindAssets(session *xorm.Session, ruleID int, assetIDs []int) e
 }
 
 func (svc *Rule) GetRuleByID(ruleID, userID int) (*models.Rule, error) {
-	rule := new(models.Rule)
-	has, err := svc.db.Engine.ID(ruleID).Get(rule)
+	rule, err := GetRuleByID(svc.db.Engine, ruleID)
 	if err != nil {
 		return nil, err
 	}
-	if !has {
-		return nil, fmt.Errorf("rule with ID %d does not exist", ruleID)
+	if rule == nil {
+		return nil, errors.New("rule not found")
 	}
 	svc.packRule(rule, userID)
 	return rule, nil
@@ -369,27 +372,22 @@ func (svc *Rule) DeleteRule(ruleID int) error {
 	if err != nil {
 		return err
 	}
-	_, err = session.ID(ruleID).Delete(new(models.Asset))
-	if err != nil {
-		session.Rollback()
-		return err
-	}
-	_, err = session.Where("asset_id = ?", ruleID).Delete(new(models.AssetUser))
+	_, err = session.ID(ruleID).Delete(new(models.Rule))
 	if err != nil {
 		session.Rollback()
 		return err
 	}
 	var enableAssets []models.AssetRule
-	svc.db.Engine.Where("asset_id = ?", ruleID).Join("LEFT", "asset", "asset.id = asset_rule.asset_id").Find(&enableAssets)
+	svc.db.Engine.Where("rule_id = ?", ruleID).Join("LEFT", "asset", "asset.id = asset_rule.asset_id").And("asset.state > 0").Find(&enableAssets)
 	for _, enableAsset := range enableAssets {
 		log.Printf("Ctrl Signal: Stop %d\n", enableAsset.ID)
 	}
-	_, err = session.Where("asset_id = ?", ruleID).Delete(new(models.AssetRule))
+	_, err = session.Where("rule_id = ?", ruleID).Delete(new(models.AssetRule))
 	if err != nil {
 		session.Rollback()
 		return err
 	}
-	_, err = session.Where("asset_id = ?", ruleID).Delete(new(models.AlarmLog))
+	_, err = session.Where("rule_id = ?", ruleID).Delete(new(models.AlarmLog))
 	if err != nil {
 		session.Rollback()
 		return err

@@ -110,16 +110,18 @@ func (ctrl *Asset) UpdateAsset(ctx *gin.Context) {
 		response(ctx, 40002, errorsMap)
 		return
 	}
-
 	// 权限校验
 	userID := GetUserIDByContext(ctx)
-	access, err := ctrl.svc.IsAccessAsset(assetID, userID)
+	asset, err := ctrl.svc.GetAssetByID(assetID)
 	if err != nil {
-		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}
-	if !access {
+	if asset == nil {
+		response(ctx, 404, nil)
+		return
+	}
+	if asset.CreatorID != userID {
 		response(ctx, 404, nil)
 		return
 	}
@@ -131,11 +133,6 @@ func (ctrl *Asset) UpdateAsset(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 200, nil)
-	asset, err := ctrl.svc.GetAssetByID(assetID)
-	if err != nil {
-		log.Println(err)
-		return
-	}
 	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
 		Module:  "资产管理",
 		Type:    "编辑",
@@ -324,13 +321,16 @@ func (ctrl *Asset) DeleteAsset(ctx *gin.Context) {
 	}
 	// 权限校验
 	userID := GetUserIDByContext(ctx)
-	access, err := ctrl.svc.IsAccessAsset(assetID, userID)
+	asset, err := ctrl.svc.GetAssetByID(assetID)
 	if err != nil {
-		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}
-	if !access {
+	if asset == nil {
+		response(ctx, 404, nil)
+		return
+	}
+	if asset.CreatorID != userID {
 		response(ctx, 404, nil)
 		return
 	}

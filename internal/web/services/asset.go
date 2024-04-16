@@ -416,7 +416,7 @@ func (svc *Asset) DeleteAsset(assetID int) error {
 		return err
 	}
 	var enableAssets []models.AssetRule
-	svc.db.Engine.Where("asset_id = ?", assetID).Join("LEFT", "asset", "asset.id = asset_rule.asset_id").Find(&enableAssets)
+	svc.db.Engine.Where("asset_id = ?", assetID).Join("LEFT", "asset", "asset.id = asset_rule.asset_id").And("asset.state > 0").Find(&enableAssets)
 	for _, enableAsset := range enableAssets {
 		log.Printf("Ctrl Signal: Stop %d\n", enableAsset.ID)
 	}

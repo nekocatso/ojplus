@@ -81,25 +81,25 @@ func main() {
 	// --Router Init
 	group := engine.Group("/api")
 	{
-		group.POST("/register", AccountCtrl.CreateUser)
+		group.POST("/register", AccountCtrl.CreateUser, AuthCtrl.LoginMiddleware, AuthCtrl.SuperAdminMiddleware)
 		group.POST("/users/query", AuthCtrl.LoginMiddleware, AccountCtrl.SelectUsers)
 		group.GET("/users", AuthCtrl.LoginMiddleware, AccountCtrl.GetUsers)
 		group.GET("/user/:id", AuthCtrl.LoginMiddleware, AccountCtrl.GetUserByID)
-		group.PATCH("/user/:id", AuthCtrl.LoginMiddleware, AccountCtrl.UpdateUser)
-		group.DELETE("/user/:id", AuthCtrl.LoginMiddleware, AccountCtrl.DeleteUser)
+		group.PATCH("/user/:id", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, AccountCtrl.UpdateUser)
+		group.DELETE("/user/:id", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, AccountCtrl.DeleteUser)
 
 		group.GET("/authtest", AuthCtrl.LoginMiddleware, AuthCtrl.Test)
 		group.POST("/login", AuthCtrl.Login)
 		group.POST("/token", AuthCtrl.Refresh)
 
-		group.POST("/asset", AuthCtrl.LoginMiddleware, AssetCtrl.CreateAsset)
+		group.POST("/asset", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, AssetCtrl.CreateAsset)
 		group.POST("/assets/query", AuthCtrl.LoginMiddleware, AssetCtrl.SelectAssets)
 		group.GET("/assets", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssets)
 		group.GET("/assets/info", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetsInfo)
 		group.GET("/asset/:id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetByID)
 		group.GET("/assets/id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetIDs)
-		group.PATCH("/asset/:id", AuthCtrl.LoginMiddleware, AssetCtrl.UpdateAsset)
-		group.DELETE("/asset/:id", AuthCtrl.LoginMiddleware, AssetCtrl.DeleteAsset)
+		group.PATCH("/asset/:id", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, AssetCtrl.UpdateAsset)
+		group.DELETE("/asset/:id", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, AssetCtrl.DeleteAsset)
 		group.GET("/assets/:assetID/:target", AuthCtrl.LoginMiddleware, func(ctx *gin.Context) {
 			if ctx.Param("target") == "users" {
 				AccountCtrl.GetUsersByAssetID(ctx)
@@ -112,10 +112,10 @@ func main() {
 
 		group.GET("/rules", AuthCtrl.LoginMiddleware, RuleCtrl.GetRules)
 		group.GET("/rule/:id", AuthCtrl.LoginMiddleware, RuleCtrl.GetRuleByID)
-		group.POST("/rule", AuthCtrl.LoginMiddleware, RuleCtrl.CreateRule)
+		group.POST("/rule", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, RuleCtrl.CreateRule)
 		group.POST("/rules/query", AuthCtrl.LoginMiddleware, RuleCtrl.SelectRules)
-		group.PATCH("/rule/:id", AuthCtrl.LoginMiddleware, RuleCtrl.UpdateRuleByID)
-		group.DELETE("/rule/:id", AuthCtrl.LoginMiddleware, RuleCtrl.DeleteRule)
+		group.PATCH("/rule/:id", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, RuleCtrl.UpdateRuleByID)
+		group.DELETE("/rule/:id", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, RuleCtrl.DeleteRule)
 		group.GET("/rules/:ruleID/:target", AuthCtrl.LoginMiddleware, func(ctx *gin.Context) {
 			if ctx.Param("target") == "assets" {
 				AssetCtrl.GetAssetsByRuleID(ctx)
@@ -124,7 +124,7 @@ func main() {
 			}
 		})
 
-		group.POST("/alarm", AuthCtrl.LoginMiddleware, AlarmCtrl.CreateAlarm)
+		group.POST("/alarm", AuthCtrl.LoginMiddleware, AuthCtrl.AdminMiddleware, AlarmCtrl.CreateAlarm)
 		group.GET("/alarms", AuthCtrl.LoginMiddleware, AlarmCtrl.GetAlarms)
 		group.GET("/alarm/:id", AuthCtrl.LoginMiddleware, AlarmCtrl.GetAlarmByID)
 		group.POST("/alarms/query", AuthCtrl.LoginMiddleware, AlarmCtrl.SelectAlarms)

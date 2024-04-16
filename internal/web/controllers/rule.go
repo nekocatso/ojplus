@@ -98,6 +98,21 @@ func (ctrl *Rule) UpdateRuleByID(ctx *gin.Context) {
 		response(ctx, 40002, errorsMap)
 		return
 	}
+	// 权限校验
+	userID := GetUserIDByContext(ctx)
+	rule, err := ctrl.svc.GetRuleByID(ruleID, userID)
+	if err != nil {
+		response(ctx, 500, nil)
+		return
+	}
+	if rule == nil {
+		response(ctx, 404, nil)
+		return
+	}
+	if rule.CreatorID != userID {
+		response(ctx, 404, nil)
+	}
+	//更新数据
 	err = ctrl.svc.UpdateRuleByID(ruleID, form.UpdateMap, form.PingUpdateMap, form.TCPUpdateMap, form.Assets)
 	if err != nil {
 		log.Println(err)
@@ -325,13 +340,16 @@ func (ctrl *Rule) DeleteRule(ctx *gin.Context) {
 	}
 	// 权限校验
 	userID := GetUserIDByContext(ctx)
-	access, err := ctrl.svc.IsAccessRule(ruleID, userID)
+	rule, err := ctrl.svc.GetRuleByID(ruleID, userID)
 	if err != nil {
-		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}
-	if !access {
+	if rule == nil {
+		response(ctx, 404, nil)
+		return
+	}
+	if rule.CreatorID != userID {
 		response(ctx, 404, nil)
 		return
 	}
