@@ -69,6 +69,14 @@ func (ctrl *Rule) CreateRule(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 201, map[string]interface{}{"ruleID": rule.ID})
+	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+		Module:  "监控规则",
+		Type:    "新增",
+		Content: rule.Name,
+	})
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func (ctrl *Rule) UpdateRuleByID(ctx *gin.Context) {
@@ -120,6 +128,14 @@ func (ctrl *Rule) UpdateRuleByID(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 200, nil)
+	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+		Module:  "监控规则",
+		Type:    "编辑",
+		Content: rule.Name,
+	})
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func (ctrl *Rule) GetRules(ctx *gin.Context) {
@@ -362,4 +378,12 @@ func (ctrl *Rule) DeleteRuleByID(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 200, nil)
+	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+		Module:  "监控规则",
+		Type:    "删除",
+		Content: rule.Name,
+	})
+	if err != nil {
+		log.Println(err)
+	}
 }

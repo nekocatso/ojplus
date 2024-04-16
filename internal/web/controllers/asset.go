@@ -342,6 +342,14 @@ func (ctrl *Asset) DeleteAsset(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 200, nil)
+	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+		Module:  "资产管理",
+		Type:    "删除",
+		Content: asset.Name,
+	})
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func (ctrl *Asset) GetAssetsInfo(ctx *gin.Context) {
