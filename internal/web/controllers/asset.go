@@ -220,6 +220,7 @@ func (ctrl *Asset) GetAssetByID(ctx *gin.Context) {
 		return
 	}
 	if !access {
+		log.Println("")
 		response(ctx, 404, nil)
 		return
 	}

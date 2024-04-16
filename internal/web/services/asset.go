@@ -5,6 +5,7 @@ import (
 	"Alarm/internal/web/models"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"xorm.io/xorm"
@@ -42,12 +43,10 @@ func (svc *Asset) CreateAsset(asset *models.Asset, userIDs []int, ruleIDs []int)
 		session.Rollback()
 		return err
 	}
-	if len(userIDs) > 0 {
-		err = svc.BindUsers(session, asset.ID, userIDs)
-		if err != nil {
-			session.Rollback()
-			return err
-		}
+	err = svc.BindUsers(session, asset.ID, userIDs)
+	if err != nil {
+		session.Rollback()
+		return err
 	}
 	if len(ruleIDs) > 0 {
 		err = svc.BindRules(session, asset.ID, ruleIDs)
@@ -400,7 +399,38 @@ func (svc *Asset) GetUserByID(userID int) (*models.User, error) {
 }
 
 func (svc *Asset) DeleteAsset(assetID int) error {
-	_, err := svc.db.Engine.ID(assetID).Delete()
+	session := svc.db.Engine.NewSession()
+	defer session.Close()
+	err := session.Begin()
+	if err != nil {
+		return err
+	}
+	_, err = session.ID(assetID).Delete(new(models.Asset))
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	_, err = session.Where("asset_id = ?", assetID).Delete(new(models.AssetUser))
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	var enableAssets []models.AssetRule
+	svc.db.Engine.Where("asset_id = ?", assetID).Join("LEFT", "asset", "asset.id = asset_rule.asset_id").Find(&enableAssets)
+	for _, enableAsset := range enableAssets {
+		log.Printf("Ctrl Signal: Stop %d\n", enableAsset.ID)
+	}
+	_, err = session.Where("asset_id = ?", assetID).Delete(new(models.AssetRule))
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	_, err = session.Where("asset_id = ?", assetID).Delete(new(models.AlarmLog))
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	err = session.Commit()
 	if err != nil {
 		return err
 	}

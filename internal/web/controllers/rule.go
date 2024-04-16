@@ -42,10 +42,9 @@ func (ctrl *Rule) CreateRule(ctx *gin.Context) {
 		response(ctx, 40002, errorsMap)
 		return
 	}
+	// 权限校验
 	rule := ruleForm.Model
 	userID := GetUserIDByContext(ctx)
-	rule.CreatorID = userID
-	// 权限校验
 	for _, asset := range ruleForm.Assets {
 		access, err := ctrl.svc.IsAccessAsset(asset, userID)
 		if err != nil {
@@ -57,16 +56,9 @@ func (ctrl *Rule) CreateRule(ctx *gin.Context) {
 			return
 		}
 	}
-	rule.AlarmID = ruleForm.AlarmID
 	// 创建规则
-	if rule.Type == "ping" {
-		err = ctrl.svc.CreatePingRule(rule, ruleForm.PingInfo)
-	} else if rule.Type == "tcp" {
-		err = ctrl.svc.CreateTCPRule(rule, ruleForm.TCPInfo)
-	} else {
-		response(ctx, 40002, nil)
-		return
-	}
+	rule.CreatorID = userID
+	err = ctrl.svc.CreateRule(rule, ruleForm.PingInfo, ruleForm.TCPInfo, ruleForm.Assets)
 	if merr, ok := err.(*mysql.MySQLError); ok {
 		if merr.Number == 1062 {
 			response(ctx, 40901, nil)
@@ -75,14 +67,6 @@ func (ctrl *Rule) CreateRule(ctx *gin.Context) {
 	} else if err != nil {
 		response(ctx, 500, nil)
 		return
-	}
-	if ruleForm.Assets != nil {
-		err := ctrl.svc.BindAssets(rule.ID, userID, ruleForm.Assets)
-		if err != nil {
-			log.Println(err)
-			response(ctx, 400, nil)
-			return
-		}
 	}
 	response(ctx, 201, map[string]interface{}{"ruleID": rule.ID})
 }
@@ -300,4 +284,37 @@ func (ctrl *Rule) GetRuleByID(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 200, rule)
+}
+
+func (ctrl *Rule) DeleteRule(ctx *gin.Context) {
+	// 数据校验
+	ruleID, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	if ruleID <= 0 {
+		response(ctx, 40002, nil)
+		return
+	}
+	// 权限校验
+	userID := GetUserIDByContext(ctx)
+	access, err := ctrl.svc.IsAccessRule(ruleID, userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !access {
+		response(ctx, 404, nil)
+		return
+	}
+	// 数据处理
+	err = ctrl.svc.DeleteRule(ruleID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	response(ctx, 200, nil)
 }

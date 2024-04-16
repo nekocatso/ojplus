@@ -172,7 +172,7 @@ func (svc *Account) DeleteUserByID(userID int) error {
 		return err
 	}
 	superAdminID := svc.global.Gin.Account.SuperAdminID
-	_, err = session.Where("user_id = ?", userID).Update(map[string]int{"user_id": superAdminID})
+	_, err = session.Table("asset_user").Where("user_id = ?", userID).Update(map[string]int{"user_id": superAdminID})
 	if err != nil {
 		session.Rollback()
 		return err

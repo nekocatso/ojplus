@@ -75,13 +75,17 @@ func (svc *Log) packALarmLog(log *models.AlarmLog) error {
 	if err != nil {
 		return err
 	}
-	log.AssetName = asset.Name
+	if asset != nil {
+		log.AssetName = asset.Name
+	}
 	rule, err := GetRuleByID(svc.db.Engine, log.RuleID)
 	if err != nil {
 		return err
 	}
-	log.RuleName = rule.Name
-	log.RuleType = rule.Type
+	if rule != nil {
+		log.RuleName = rule.Name
+		log.RuleType = rule.Type
+	}
 	creator, err := GetUserByID(svc.db.Engine, rule.CreatorID)
 	if err != nil {
 		return err

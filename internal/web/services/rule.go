@@ -4,7 +4,10 @@ import (
 	"Alarm/internal/web/models"
 	"errors"
 	"fmt"
+	"log"
 	"time"
+
+	"xorm.io/xorm"
 )
 
 type Rule struct {
@@ -21,64 +24,7 @@ func NewRule(cfg map[string]interface{}) *Rule {
 	}
 }
 
-func (svc *Rule) CreateRule(rule *models.Rule) error {
-	if rule.AlarmID != 0 {
-		has, err := svc.db.Engine.ID(rule.AlarmID).Exist(&models.AlarmTemplate{})
-		if err != nil {
-			return err
-		}
-		if !has {
-			return fmt.Errorf("alarm %d not found", rule.AlarmID)
-		}
-	}
-	_, err := svc.db.Engine.Insert(rule)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (svc *Rule) CreatePingRule(rule *models.Rule, pingInfo *models.PingInfo) error {
-	err := svc.CreateRule(rule)
-	if err != nil {
-		return err
-	}
-	has, err := svc.SetRule(rule)
-	if err != nil {
-		return err
-	}
-	if !has || rule.ID == 0 {
-		return errors.New("rule create error")
-	}
-	pingInfo.ID = rule.ID
-	_, err = svc.db.Engine.Insert(pingInfo)
-	if err != nil {
-		return err
-	}
-	return err
-}
-
-func (svc *Rule) CreateTCPRule(rule *models.Rule, tcpInfo *models.TCPInfo) error {
-	err := svc.CreateRule(rule)
-	if err != nil {
-		return err
-	}
-	has, err := svc.SetRule(rule)
-	if err != nil {
-		return err
-	}
-	if !has || rule.ID == 0 {
-		return errors.New("rule create error")
-	}
-	tcpInfo.ID = rule.ID
-	_, err = svc.db.Engine.Insert(tcpInfo)
-	if err != nil {
-		return err
-	}
-	return err
-}
-
-func (svc *Rule) BindAssets(ruleID int, userID int, assetIDs []int) error {
+func (svc *Rule) CreateRule(rule *models.Rule, pingInfo *models.PingInfo, tcpInfo *models.TCPInfo, assetIDs []int) error {
 	session := svc.db.Engine.NewSession()
 	defer session.Close()
 
@@ -87,6 +33,44 @@ func (svc *Rule) BindAssets(ruleID int, userID int, assetIDs []int) error {
 		return err
 	}
 
+	if rule.AlarmID != 0 {
+		has, err := session.ID(rule.AlarmID).Exist(&models.AlarmTemplate{})
+		if err != nil {
+			return err
+		}
+		if !has {
+			return fmt.Errorf("alarm %d not found", rule.AlarmID)
+		}
+	}
+	_, err = session.Insert(rule)
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	if rule.Type == "ping" {
+		pingInfo.ID = rule.ID
+		_, err = session.Insert(pingInfo)
+	} else if rule.Type == "tcp" {
+		tcpInfo.ID = rule.ID
+		_, err = session.Insert(tcpInfo)
+	} else {
+		return errors.New("not ping or tcp")
+	}
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	if len(assetIDs) > 0 {
+		err = svc.BindAssets(session, rule.ID, assetIDs)
+		if err != nil {
+			session.Rollback()
+			return err
+		}
+	}
+	return nil
+}
+
+func (svc *Rule) BindAssets(session *xorm.Session, ruleID int, assetIDs []int) error {
 	// 去重
 	assetIDsMap := make(map[int]bool)
 	for _, assetID := range assetIDs {
@@ -98,7 +82,7 @@ func (svc *Rule) BindAssets(ruleID int, userID int, assetIDs []int) error {
 	}
 
 	// 删除已有关联
-	_, err = session.And("rule_id = ?", ruleID).Delete(&models.AssetRule{})
+	_, err := session.And("rule_id = ?", ruleID).Delete(&models.AssetRule{})
 	if err != nil {
 		session.Rollback()
 		return err
@@ -345,6 +329,41 @@ func (svc *Rule) GetUserByID(userID int) (*models.User, error) {
 	return GetUserByID(svc.db.Engine, userID)
 }
 
-// func (svc *Rule) UpdateRuleByID(ruleID int) error {
-
-// }
+func (svc *Rule) DeleteRule(ruleID int) error {
+	session := svc.db.Engine.NewSession()
+	defer session.Close()
+	err := session.Begin()
+	if err != nil {
+		return err
+	}
+	_, err = session.ID(ruleID).Delete(new(models.Asset))
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	_, err = session.Where("asset_id = ?", ruleID).Delete(new(models.AssetUser))
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	var enableAssets []models.AssetRule
+	svc.db.Engine.Where("asset_id = ?", ruleID).Join("LEFT", "asset", "asset.id = asset_rule.asset_id").Find(&enableAssets)
+	for _, enableAsset := range enableAssets {
+		log.Printf("Ctrl Signal: Stop %d\n", enableAsset.ID)
+	}
+	_, err = session.Where("asset_id = ?", ruleID).Delete(new(models.AssetRule))
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	_, err = session.Where("asset_id = ?", ruleID).Delete(new(models.AlarmLog))
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	err = session.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+}

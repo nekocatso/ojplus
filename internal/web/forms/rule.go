@@ -45,6 +45,7 @@ func NewRuleCreate(ctx *gin.Context) (*RuleCreate, error) {
 		DeclineLimit: form.DeclineLimit,
 		RecoverLimit: form.RecoverLimit,
 		Note:         form.Note,
+		AlarmID:      form.AlarmID,
 	}
 	form.PingInfo = &models.PingInfo{
 		Mode:         form.Info.Mode,
