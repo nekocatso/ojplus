@@ -71,6 +71,42 @@ func (ctrl *Rule) CreateRule(ctx *gin.Context) {
 	response(ctx, 201, map[string]interface{}{"ruleID": rule.ID})
 }
 
+func (ctrl *Rule) UpdateRuleByID(ctx *gin.Context) {
+	// 数据校验
+	ruleID, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	if ruleID <= 0 {
+		response(ctx, 40002, nil)
+		return
+	}
+	form, err := forms.NewRuleUpdate(ctx)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 40001, nil)
+		return
+	}
+	isValid, errorsMap, err := forms.Verify(form)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !isValid {
+		response(ctx, 40002, errorsMap)
+		return
+	}
+	err = ctrl.svc.UpdateRuleByID(ruleID, form.UpdateMap, form.PingUpdateMap, form.TCPUpdateMap, form.Assets)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	response(ctx, 200, nil)
+}
+
 func (ctrl *Rule) GetRules(ctx *gin.Context) {
 	userID := GetUserIDByContext(ctx)
 	rules, err := ctrl.svc.FindRules(userID, nil)
@@ -214,16 +250,6 @@ func (ctrl *Rule) GetRulesByAlarmID(ctx *gin.Context) {
 	}
 	// 权限校验
 	userID := GetUserIDByContext(ctx)
-	access, err := ctrl.svc.IsAccessAsset(alarmID, userID)
-	if err != nil {
-		log.Println(err)
-		response(ctx, 500, nil)
-		return
-	}
-	if !access {
-		response(ctx, 404, nil)
-		return
-	}
 	rules, err := ctrl.svc.FindRules(userID, map[string]interface{}{
 		"alarmID": alarmID,
 	})

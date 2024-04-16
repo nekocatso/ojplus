@@ -98,11 +98,7 @@ func (svc *Account) FindUsers(conditions map[string]interface{}) ([]models.User,
 	if err != nil {
 		return nil, err
 	}
-	var usersInfo []models.User
-	for _, user := range users {
-		usersInfo = append(usersInfo, user)
-	}
-	return usersInfo, nil
+	return users, nil
 }
 
 func (svc *Account) GetUserExistInfo(user *models.User) (bool, string, error) {

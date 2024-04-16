@@ -70,6 +70,37 @@ func (svc *Rule) CreateRule(rule *models.Rule, pingInfo *models.PingInfo, tcpInf
 	return nil
 }
 
+func (svc *Rule) UpdateRuleByID(ruleID int, ruleUpdateMap, pingInfoUpdateMap, tcpInfoUpdateMap map[string]interface{}, assetIDs []int) error {
+	session := svc.db.Engine.NewSession()
+	defer session.Close()
+
+	err := session.Begin()
+	if err != nil {
+		return err
+	}
+	rule, err := GetRuleByID(svc.db.Engine, ruleID)
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	session.Table(new(models.Rule)).ID(ruleID).Update(ruleUpdateMap)
+	if rule.Type == "ping" {
+		session.Table(new(models.PingInfo)).ID(ruleID).Update(pingInfoUpdateMap)
+	} else if rule.Type == "tcp" {
+		session.Table(new(models.TCPInfo)).ID(ruleID).Update(tcpInfoUpdateMap)
+	} else {
+		return errors.New("not ping or tcp")
+	}
+	if len(assetIDs) > 0 {
+		err = svc.BindAssets(session, rule.ID, assetIDs)
+		if err != nil {
+			session.Rollback()
+			return err
+		}
+	}
+	return nil
+}
+
 func (svc *Rule) BindAssets(session *xorm.Session, ruleID int, assetIDs []int) error {
 	// 去重
 	assetIDsMap := make(map[int]bool)
@@ -267,13 +298,15 @@ func (svc *Rule) packRule(rule *models.Rule, userID int) error {
 	if err != nil || rule.Info == nil {
 		return err
 	}
-	rule.AssetNames, err = svc.GetAssetNames(rule.ID, userID)
-	if err != nil {
-		return err
-	}
 	rule.AssetsCount, err = svc.GetAssetCount(rule.ID)
 	if err != nil {
 		return err
+	}
+	if userID > 0 {
+		rule.AssetNames, err = svc.GetAssetNames(rule.ID, userID)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

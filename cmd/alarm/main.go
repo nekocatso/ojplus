@@ -95,6 +95,7 @@ func main() {
 		group.POST("/asset", AuthCtrl.LoginMiddleware, AssetCtrl.CreateAsset)
 		group.POST("/assets/query", AuthCtrl.LoginMiddleware, AssetCtrl.SelectAssets)
 		group.GET("/assets", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssets)
+		group.GET("/assets/info", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetsInfo)
 		group.GET("/asset/:id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetByID)
 		group.GET("/assets/id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetIDs)
 		group.PATCH("/asset/:id", AuthCtrl.LoginMiddleware, AssetCtrl.UpdateAsset)
@@ -113,6 +114,7 @@ func main() {
 		group.GET("/rule/:id", AuthCtrl.LoginMiddleware, RuleCtrl.GetRuleByID)
 		group.POST("/rule", AuthCtrl.LoginMiddleware, RuleCtrl.CreateRule)
 		group.POST("/rules/query", AuthCtrl.LoginMiddleware, RuleCtrl.SelectRules)
+		group.PATCH("/rule/:id", AuthCtrl.LoginMiddleware, RuleCtrl.UpdateRuleByID)
 		group.DELETE("/rule/:id", AuthCtrl.LoginMiddleware, RuleCtrl.DeleteRule)
 		group.GET("/rules/:ruleID/:target", AuthCtrl.LoginMiddleware, func(ctx *gin.Context) {
 			if ctx.Param("target") == "assets" {

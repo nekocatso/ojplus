@@ -1,7 +1,6 @@
 package services
 
 import (
-	"Alarm/internal/pkg/listenerpool"
 	"Alarm/internal/web/models"
 	"errors"
 	"fmt"
@@ -12,10 +11,10 @@ import (
 )
 
 type Asset struct {
-	db       *models.Database
-	cache    *models.Cache
-	listener *listenerpool.ListenerPool
-	cfg      map[string]interface{}
+	db    *models.Database
+	cache *models.Cache
+	// listener *listenerpool.ListenerPool
+	cfg map[string]interface{}
 }
 
 func NewAsset(cfg map[string]interface{}) *Asset {
@@ -23,6 +22,7 @@ func NewAsset(cfg map[string]interface{}) *Asset {
 		db:    cfg["db"].(*models.Database),
 		cache: cfg["cache"].(*models.Cache),
 		cfg:   cfg,
+		// listener: cfg["listener"].(*listenerpool.ListenerPool),
 	}
 }
 
@@ -435,4 +435,22 @@ func (svc *Asset) DeleteAsset(assetID int) error {
 		return err
 	}
 	return nil
+}
+
+func (svc *Asset) CountAsset(userID int, conditions map[string]interface{}) (int64, error) {
+	assets := new(models.Asset)
+	queryBuilder := svc.db.Engine.Table(new(models.Asset))
+	queryBuilder = queryBuilder.Join("LEFT", "asset_user", "asset.id = asset_user.asset_id")
+	queryBuilder = queryBuilder.Where("asset_user.user_id = ? OR asset.creator_id = ?", userID, userID)
+	for key, value := range conditions {
+		switch key {
+		case "enable":
+			if value.(bool) {
+				queryBuilder = queryBuilder.And("state > 0")
+			} else {
+				queryBuilder = queryBuilder.And("state < 0")
+			}
+		}
+	}
+	return queryBuilder.Count(&assets)
 }

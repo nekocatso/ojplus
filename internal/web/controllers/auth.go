@@ -71,6 +71,7 @@ func (ctrl *Auth) AdminMiddleware(ctx *gin.Context) {
 	}
 	ctx.Next()
 }
+
 func (ctrl *Auth) SuperAdminMiddleware(ctx *gin.Context) {
 	userID := GetUserIDByContext(ctx)
 	user, err := ctrl.svc.GetUserByID(userID)
@@ -112,7 +113,7 @@ func (ctrl *Auth) Login(ctx *gin.Context) {
 		return
 	}
 	if !pass {
-		response(ctx, 401, nil)
+		responseWithMessage(ctx, "用户名或密码错误", 401, nil)
 		return
 	}
 	//获取用户信息
@@ -120,6 +121,10 @@ func (ctrl *Auth) Login(ctx *gin.Context) {
 	if err != nil {
 		log.Println(err)
 		response(ctx, 500, nil)
+		return
+	}
+	if !user.IsActive {
+		responseWithMessage(ctx, "账户处于禁用状态", 401, nil)
 		return
 	}
 	//生成Token

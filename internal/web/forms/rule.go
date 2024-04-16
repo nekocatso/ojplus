@@ -6,6 +6,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type typeInfo struct {
+	Mode         int    `validate:"required_with=LatencyLimit LostLimit"`
+	LatencyLimit int    `validate:"omitempty,gt=0"`
+	LostLimit    int    `validate:"omitempty,gt=0"`
+	EnablePorts  string `validate:"omitempty,max=128"`
+	DisablePorts string `validate:"omitempty,max=128"`
+}
+
 type RuleCreate struct {
 	Name         string  `validate:"required,max=24"`
 	Type         string  `validate:"required,max=12"`
@@ -21,14 +29,6 @@ type RuleCreate struct {
 	Model    *models.Rule     `validate:"-"`
 	PingInfo *models.PingInfo `validate:"-"`
 	TCPInfo  *models.TCPInfo  `validate:"-"`
-}
-
-type typeInfo struct {
-	Mode         int    `validate:"required_with=LatencyLimit LostLimit"`
-	LatencyLimit int    `validate:"omitempty,gt=0"`
-	LostLimit    int    `validate:"omitempty,gt=0"`
-	EnablePorts  string `validate:"omitempty,max=128"`
-	DisablePorts string `validate:"omitempty,max=128"`
 }
 
 func NewRuleCreate(ctx *gin.Context) (*RuleCreate, error) {
@@ -57,10 +57,87 @@ func NewRuleCreate(ctx *gin.Context) (*RuleCreate, error) {
 		DisablePorts: form.Info.DisablePorts,
 	}
 	return form, nil
-
 }
 
 func (form *RuleCreate) check() map[string]string {
+	result := make(map[string]string)
+	if form.Info.LatencyLimit >= form.Overtime {
+		result["latencyLimit"] = "latencyLimit必须小于overtime"
+	}
+	return result
+}
+
+type RuleUpdate struct {
+	Name         string `validate:"omitempty,max=24"`
+	Note         string `validate:"omitempty,max=256"`
+	Assets       []int  `validate:"omitempty"`
+	AlarmID      int    `validate:"omitempty"`
+	Overtime     int    `validate:"omitempty,gt=100"`
+	Interval     int    `validate:"omitempty,gte=5"`
+	DeclineLimit int    `validate:"omitempty"`
+	RecoverLimit int    `validate:"omitempty"`
+	Info         *typeInfo
+
+	UpdateMap     map[string]interface{} `validate:"-"`
+	PingUpdateMap map[string]interface{} `validate:"-"`
+	TCPUpdateMap  map[string]interface{} `validate:"-"`
+}
+
+func NewRuleUpdate(ctx *gin.Context) (*RuleUpdate, error) {
+	var form *RuleUpdate
+	err := ctx.ShouldBind(&form)
+	if err != nil {
+		return nil, err
+	}
+
+	form.UpdateMap = make(map[string]interface{})
+	form.PingUpdateMap = make(map[string]interface{})
+	form.TCPUpdateMap = make(map[string]interface{})
+
+	if form.Info != nil {
+		if form.Info.Mode != 0 {
+			form.PingUpdateMap["Mode"] = form.Info.Mode
+		}
+		if form.Info.LatencyLimit != 0 {
+			form.PingUpdateMap["LatencyLimit"] = form.Info.LatencyLimit
+		}
+		if form.Info.LostLimit != 0 {
+			form.PingUpdateMap["LostLimit"] = form.Info.LostLimit
+		}
+	}
+	if form.Info != nil {
+		if len(form.Info.EnablePorts) > 0 {
+			form.TCPUpdateMap["EnablePorts"] = form.Info.EnablePorts
+		}
+		if len(form.Info.DisablePorts) > 0 {
+			form.TCPUpdateMap["DisablePorts"] = form.Info.DisablePorts
+		}
+	}
+	if form.Name != "" {
+		form.UpdateMap["Name"] = form.Name
+	}
+	if form.Note != "" {
+		form.UpdateMap["Note"] = form.Note
+	}
+	if form.AlarmID != 0 {
+		form.UpdateMap["AlarmID"] = form.AlarmID
+	}
+	if form.Overtime != 0 {
+		form.UpdateMap["Overtime"] = form.Overtime
+	}
+	if form.Interval != 0 {
+		form.UpdateMap["Interval"] = form.Interval
+	}
+	if form.DeclineLimit != 0 {
+		form.UpdateMap["DeclineLimit"] = form.DeclineLimit
+	}
+	if form.RecoverLimit != 0 {
+		form.UpdateMap["RecoverLimit"] = form.RecoverLimit
+	}
+	return form, nil
+}
+
+func (form *RuleUpdate) check() map[string]string {
 	result := make(map[string]string)
 	if form.Info.LatencyLimit >= form.Overtime {
 		result["latencyLimit"] = "latencyLimit必须小于overtime"

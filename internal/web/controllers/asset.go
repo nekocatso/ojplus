@@ -343,3 +343,25 @@ func (ctrl *Asset) DeleteAsset(ctx *gin.Context) {
 	}
 	response(ctx, 200, nil)
 }
+
+func (ctrl *Asset) GetAssetsInfo(ctx *gin.Context) {
+	userID := GetUserIDByContext(ctx)
+	conditions := make(map[string]interface{})
+	assetCount, err := ctrl.svc.CountAsset(userID, conditions)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	conditions["enable"] = true
+	assetEnableCount, err := ctrl.svc.CountAsset(userID, conditions)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	response(ctx, 200, map[string]interface{}{
+		"assetCount":  assetCount,
+		"enableCount": assetEnableCount,
+	})
+}
