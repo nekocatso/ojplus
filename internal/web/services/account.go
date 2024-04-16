@@ -158,3 +158,13 @@ func (svc *Account) VerifyPassword(username string, password string) (bool, erro
 	}
 	return has, nil
 }
+
+func (svc *Account) DeleteUserByID(userID int) error {
+	user, err := svc.GetUserByID(userID)
+	if err != nil {
+		return err
+	}
+	// AddUUIDToUniqueFields(user)
+	_, err = svc.db.Engine.Delete(user)
+	return err
+}

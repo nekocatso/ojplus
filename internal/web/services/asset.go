@@ -72,7 +72,7 @@ func (svc *Asset) UpdateAsset(assetID int, updateMap map[string]interface{}, use
 	if err != nil {
 		return err
 	}
-	_, err = session.Table("asset").ID(assetID).Update(updateMap)
+	_, err = session.Table(new(models.Asset)).ID(assetID).Update(updateMap)
 	if err != nil {
 		return err
 	}
@@ -108,6 +108,8 @@ func (svc *Asset) BindUsers(session *xorm.Session, assetID int, userIDs []int) e
 	if !has {
 		return errors.New("asset not found")
 	}
+
+	// 添加创建者 并去重
 	userIDsMap := make(map[int]bool)
 	userIDsMap[asset.CreatorID] = true
 	for _, userID := range userIDs {
@@ -117,12 +119,39 @@ func (svc *Asset) BindUsers(session *xorm.Session, assetID int, userIDs []int) e
 	for userID := range userIDsMap {
 		uniqueUserIDs = append(uniqueUserIDs, userID)
 	}
-	for _, userID := range uniqueUserIDs {
+
+	existingUserIDs := []int{}
+	session.Table("asset_user").Cols("user_id").Where("asset_id = ?", assetID).Find(existingUserIDs)
+
+	var toAdd, toDelete []int
+	existingUserIDMap := make(map[int]bool)
+
+	for _, userID := range existingUserIDs {
+		existingUserIDMap[userID] = true
+	}
+	for userID := range uniqueUserIDs {
+		toAdd = append(toAdd, userID)
+	}
+	for _, userID := range existingUserIDs {
+		if !userIDsMap[userID] {
+			toDelete = append(toDelete, userID)
+		}
+	}
+	if len(toDelete) > 0 {
+		_, err = session.In("user_id", toDelete).Delete(&models.AssetUser{})
+		if err != nil {
+			session.Rollback()
+			return err
+		}
+	}
+	for _, userID := range toAdd {
 		exists, err := session.ID(userID).Exist(&models.User{})
 		if err != nil {
+			session.Rollback()
 			return err
 		}
 		if !exists {
+			session.Rollback()
 			return fmt.Errorf("user with ID %d does not exist", userID)
 		}
 		assetUser := &models.AssetUser{
@@ -131,14 +160,29 @@ func (svc *Asset) BindUsers(session *xorm.Session, assetID int, userIDs []int) e
 		}
 		_, err = session.Insert(assetUser)
 		if err != nil {
+			session.Rollback()
 			return err
 		}
 	}
 
+	err = session.Commit()
+	if err != nil {
+		session.Rollback()
+		return err
+	}
 	return nil
 }
 
 func (svc *Asset) BindRules(session *xorm.Session, assetID int, ruleIDs []int) error {
+	// 去重
+	ruleIDsMap := make(map[int]bool)
+	for _, ruleID := range ruleIDs {
+		ruleIDsMap[ruleID] = true
+	}
+	uniqueRuleIDs := make([]int, 0, len(ruleIDsMap))
+	for ruleID := range ruleIDsMap {
+		uniqueRuleIDs = append(uniqueRuleIDs, ruleID)
+	}
 	// 获取当前asset已绑定的rule.id
 	var existingRuleIDs []int
 	err := session.Table("asset_rule").Cols("rule_id").Where("asset_id = ?", assetID).Find(&existingRuleIDs)
@@ -152,14 +196,14 @@ func (svc *Asset) BindRules(session *xorm.Session, assetID int, ruleIDs []int) e
 	for _, ruleID := range existingRuleIDs {
 		existingRuleIDMap[ruleID] = true
 	}
-	for _, ruleID := range ruleIDs {
+	for _, ruleID := range uniqueRuleIDs {
 		if !existingRuleIDMap[ruleID] {
 			toAdd = append(toAdd, ruleID)
 		}
 	}
 	for _, ruleID := range existingRuleIDs {
 		flag := true
-		for _, item := range ruleIDs {
+		for _, item := range uniqueRuleIDs {
 			if item == ruleID {
 				flag = false
 			}

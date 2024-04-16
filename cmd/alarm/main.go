@@ -86,16 +86,18 @@ func main() {
 		group.GET("/users", AuthCtrl.LoginMiddleware, AccountCtrl.GetUsers)
 		group.GET("/user/:id", AuthCtrl.LoginMiddleware, AccountCtrl.GetUserByID)
 		group.PATCH("/user/:id", AuthCtrl.LoginMiddleware, AccountCtrl.UpdateUser)
+		group.DELETE("/user/:id", AuthCtrl.LoginMiddleware, AccountCtrl.DeleteUser)
 
 		group.GET("/authtest", AuthCtrl.LoginMiddleware, AuthCtrl.Test)
 		group.POST("/login", AuthCtrl.Login)
 		group.POST("/token", AuthCtrl.Refresh)
 
+		group.POST("/asset", AuthCtrl.LoginMiddleware, AssetCtrl.CreateAsset)
+		group.POST("/assets/query", AuthCtrl.LoginMiddleware, AssetCtrl.SelectAssets)
 		group.GET("/assets", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssets)
 		group.GET("/asset/:id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetByID)
 		group.GET("/assets/id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetIDs)
-		group.POST("/asset", AuthCtrl.LoginMiddleware, AssetCtrl.CreateAsset)
-		group.POST("/assets/query", AuthCtrl.LoginMiddleware, AssetCtrl.SelectAssets)
+		group.PATCH("/asset/:id", AuthCtrl.LoginMiddleware, AssetCtrl.UpdateAsset)
 		group.GET("/assets/:assetID/:target", AuthCtrl.LoginMiddleware, func(ctx *gin.Context) {
 			if ctx.Param("target") == "users" {
 				AccountCtrl.GetUserIDsByAssetID(ctx)

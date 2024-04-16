@@ -307,3 +307,45 @@ func (ctrl *Account) GetUserIDsByAssetID(ctx *gin.Context) {
 	}
 	response(ctx, 200, users)
 }
+
+func (ctrl *Account) DeleteUser(ctx *gin.Context) {
+	// 数据校验
+	userID, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	if userID <= 0 {
+		response(ctx, 40002, nil)
+		return
+	}
+	has, err := ctrl.svc.IsUserIDExist(userID)
+	if err != nil {
+		response(ctx, 500, nil)
+		log.Println(err)
+		return
+	}
+	if !has {
+		response(ctx, 404, nil)
+		return
+	}
+	loginerID := GetUserIDByContext(ctx)
+	loginer, err := ctrl.svc.GetUserByID(loginerID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if userID != loginerID && loginer.Role < 30 {
+		log.Println(userID, loginerID, loginer.Role)
+		response(ctx, 404, nil)
+		return
+	}
+	err = ctrl.svc.DeleteUserByID(userID)
+	if err != nil {
+		response(ctx, 500, nil)
+		log.Println(err)
+		return
+	}
+	response(ctx, 200, nil)
+}

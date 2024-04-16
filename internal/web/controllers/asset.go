@@ -126,6 +126,7 @@ func (ctrl *Asset) UpdateAsset(ctx *gin.Context) {
 	// 更新数据
 	err = ctrl.svc.UpdateAsset(assetID, form.UpdateMap, form.Users, form.Rules)
 	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}
