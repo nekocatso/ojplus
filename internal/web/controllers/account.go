@@ -270,21 +270,20 @@ func (ctrl *Account) GetUserByID(ctx *gin.Context) {
 		response(ctx, 40002, nil)
 		return
 	}
-	var userInfo *models.UserInfo
-	userInfo, err = ctrl.svc.GetUserByID(id)
+	user, err := ctrl.svc.GetUserByID(id)
 	if err != nil {
 		response(ctx, 500, nil)
 		log.Println(err)
 		return
 	}
-	if userInfo == nil || userInfo.ID == 0 {
+	if user == nil || user.ID == 0 {
 		response(ctx, 404, nil)
 		return
 	}
-	response(ctx, 200, userInfo)
+	response(ctx, 200, user)
 }
 
-func (ctrl *Account) GetUserIDsByAssetID(ctx *gin.Context) {
+func (ctrl *Account) GetUsersByAssetID(ctx *gin.Context) {
 	assetID, err := strconv.Atoi(ctx.Param("assetID"))
 	if err != nil {
 		response(ctx, 40001, nil)
@@ -294,8 +293,7 @@ func (ctrl *Account) GetUserIDsByAssetID(ctx *gin.Context) {
 		response(ctx, 40002, nil)
 		return
 	}
-	var users []int
-	users, err = ctrl.svc.GetUserIDsByAssetID(assetID)
+	users, err := ctrl.svc.GetUsersByAssetID(assetID)
 	if err != nil {
 		response(ctx, 500, nil)
 		log.Println(err)
@@ -321,8 +319,9 @@ func (ctrl *Account) DeleteUser(ctx *gin.Context) {
 	}
 	has, err := ctrl.svc.IsUserIDExist(userID)
 	if err != nil {
-		response(ctx, 500, nil)
 		log.Println(err)
+		log.Println("hi1")
+		response(ctx, 500, nil)
 		return
 	}
 	if !has {
@@ -333,6 +332,7 @@ func (ctrl *Account) DeleteUser(ctx *gin.Context) {
 	loginer, err := ctrl.svc.GetUserByID(loginerID)
 	if err != nil {
 		log.Println(err)
+		log.Println("hi2")
 		response(ctx, 500, nil)
 		return
 	}
@@ -343,8 +343,9 @@ func (ctrl *Account) DeleteUser(ctx *gin.Context) {
 	}
 	err = ctrl.svc.DeleteUserByID(userID)
 	if err != nil {
-		response(ctx, 500, nil)
 		log.Println(err)
+		log.Println("hi3")
+		response(ctx, 500, nil)
 		return
 	}
 	response(ctx, 200, nil)

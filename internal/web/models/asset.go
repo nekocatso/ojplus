@@ -13,7 +13,7 @@ type Asset struct {
 	CreatedAt time.Time `json:"createdAt" xorm:"'created_at' created"`
 	UpdatedAt time.Time `json:"-" xorm:"'updated_at' updated"`
 	DeletedAt time.Time `json:"-" xorm:"deleted"`
-	Creator   *UserInfo `json:"creator" xorm:"-"`
+	Creator   *User     `json:"creator" xorm:"-"`
 	RuleNames []string  `json:"ruleNames" xorm:"-"`
 }
 

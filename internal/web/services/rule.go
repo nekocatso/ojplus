@@ -341,7 +341,7 @@ func (svc *Rule) IsAccessAsset(assetID int, userID int) (bool, error) {
 	return svc.db.Engine.Where("asset_id = ? AND user_id = ?", assetID, userID).Exist(&models.AssetUser{})
 }
 
-func (svc *Rule) GetUserByID(userID int) (*models.UserInfo, error) {
+func (svc *Rule) GetUserByID(userID int) (*models.User, error) {
 	return GetUserByID(svc.db.Engine, userID)
 }
 

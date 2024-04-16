@@ -395,18 +395,12 @@ func (svc *Asset) GetRuleNames(assetID int) ([]string, error) {
 	return rules, nil
 }
 
-func (svc *Asset) GetUserByID(userID int) (*models.UserInfo, error) {
+func (svc *Asset) GetUserByID(userID int) (*models.User, error) {
 	return GetUserByID(svc.db.Engine, userID)
 }
 
 func (svc *Asset) DeleteAsset(assetID int) error {
-	asset, err := svc.GetAssetByID(assetID)
-	if err != nil {
-		return err
-	}
-	AddUUIDToUniqueFields(asset)
-	// 逻辑删除资产
-	_, err = svc.db.Engine.ID(assetID).Delete()
+	_, err := svc.db.Engine.ID(assetID).Where("1=1").Delete()
 	if err != nil {
 		return err
 	}

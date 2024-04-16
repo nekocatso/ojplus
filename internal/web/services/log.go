@@ -153,7 +153,7 @@ func (svc *Log) FindUserLogs(userID int, conditions map[string]interface{}) ([]m
 	return uniqueLogs, nil
 }
 
-func (svc *Log) packUserLog(log *models.UserLog, user *models.UserInfo) error {
+func (svc *Log) packUserLog(log *models.UserLog, user *models.User) error {
 	log.Username = user.Username
 	log.Phone = user.Phone
 	return nil
@@ -174,6 +174,6 @@ func (svc *Log) GetAlarmLogByID(alarmLogID int) (*models.AlarmLog, error) {
 	return alarmLog, nil
 }
 
-func (svc *Log) GetUserByID(userID int) (*models.UserInfo, error) {
+func (svc *Log) GetUserByID(userID int) (*models.User, error) {
 	return GetUserByID(svc.db.Engine, userID)
 }

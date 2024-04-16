@@ -16,7 +16,7 @@ type Rule struct {
 	CreateAt     time.Time   `json:"createAt" xorm:"'created_at' created"`
 	UpdateAt     time.Time   `json:"-" xorm:"'updated_at' updated"`
 	DeleteAt     time.Time   `json:"-" xorm:"deleted"`
-	Creator      *UserInfo   `json:"creator" xorm:"-"`
+	Creator      *User       `json:"creator" xorm:"-"`
 	AssetNames   []string    `json:"assetNames" xorm:"-"`
 	AssetsCount  int         `json:"assetsCount" xorm:"-"`
 	Info         interface{} `json:"info" xorm:"-"`

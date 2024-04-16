@@ -98,9 +98,10 @@ func main() {
 		group.GET("/asset/:id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetByID)
 		group.GET("/assets/id", AuthCtrl.LoginMiddleware, AssetCtrl.GetAssetIDs)
 		group.PATCH("/asset/:id", AuthCtrl.LoginMiddleware, AssetCtrl.UpdateAsset)
+		group.DELETE("/asset/:id", AuthCtrl.LoginMiddleware, AssetCtrl.DeleteAsset)
 		group.GET("/assets/:assetID/:target", AuthCtrl.LoginMiddleware, func(ctx *gin.Context) {
 			if ctx.Param("target") == "users" {
-				AccountCtrl.GetUserIDsByAssetID(ctx)
+				AccountCtrl.GetUsersByAssetID(ctx)
 			} else if ctx.Param("target") == "rules" {
 				RuleCtrl.GetRulesByAssetID(ctx)
 			} else {

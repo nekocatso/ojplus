@@ -67,11 +67,11 @@ func (svc *Account) getUser(user *models.User) (bool, error) {
 	return svc.db.Engine.Cols("id", "username", "email", "phone").Get(user)
 }
 
-func (svc *Account) GetUserByID(id int) (*models.UserInfo, error) {
+func (svc *Account) GetUserByID(id int) (*models.User, error) {
 	return GetUserByID(svc.db.Engine, id)
 }
 
-func (svc *Account) FindUsers(conditions map[string]interface{}) ([]models.UserInfo, error) {
+func (svc *Account) FindUsers(conditions map[string]interface{}) ([]models.User, error) {
 	var users []models.User
 	queryBuilder := svc.db.Engine.Table("user")
 	for key, value := range conditions {
@@ -98,9 +98,9 @@ func (svc *Account) FindUsers(conditions map[string]interface{}) ([]models.UserI
 	if err != nil {
 		return nil, err
 	}
-	var usersInfo []models.UserInfo
+	var usersInfo []models.User
 	for _, user := range users {
-		usersInfo = append(usersInfo, *user.GetInfo())
+		usersInfo = append(usersInfo, user)
 	}
 	return usersInfo, nil
 }
@@ -138,13 +138,13 @@ func (svc *Account) IsUserIDExist(userID int) (bool, error) {
 	return svc.db.Engine.ID(userID).Exist(&models.User{})
 }
 
-func (svc *Account) GetUserIDsByAssetID(assetID int) ([]int, error) {
-	var userIDs []int
-	err := svc.db.Engine.Table("asset_user").Cols("user_id").Where("asset_id =?", assetID).Find(&userIDs)
+func (svc *Account) GetUsersByAssetID(assetID int) ([]models.User, error) {
+	var users []models.User
+	err := svc.db.Engine.Join("LEFT", "asset_user", "asset_user.user_id = user.id").Where("asset_user.asset_id = ?", assetID).Find(&users)
 	if err != nil {
 		return nil, err
 	}
-	return userIDs, nil
+	return users, nil
 }
 
 func (svc *Account) VerifyPassword(username string, password string) (bool, error) {
@@ -160,11 +160,10 @@ func (svc *Account) VerifyPassword(username string, password string) (bool, erro
 }
 
 func (svc *Account) DeleteUserByID(userID int) error {
-	user, err := svc.GetUserByID(userID)
+	_, err := svc.db.Engine.ID(userID).Delete(new(models.User))
 	if err != nil {
 		return err
 	}
-	AddUUIDToUniqueFields(user)
-	_, err = svc.db.Engine.Delete(user)
+	svc.db.Engine.Where("user_id = ?", userID).Delete(new(models.AssetUser))
 	return err
 }

@@ -93,7 +93,7 @@ type UserSelect struct {
 	Page       int `validate:"required,gt=0"`
 	PageSize   int `validate:"required,gt=0,lte=100"`
 	Query      *UserConditions
-	Model      *models.UserInfo       `validate:"-"`
+	Model      *models.User           `validate:"-"`
 	Conditions map[string]interface{} `validate:"-"`
 }
 
@@ -116,7 +116,7 @@ func NewUserSelect(ctx *gin.Context) (*UserSelect, error) {
 	if form.Query == nil {
 		form.Query = &UserConditions{}
 	}
-	form.Model = &models.UserInfo{
+	form.Model = &models.User{
 		Username: form.Query.Username,
 		Name:     form.Query.Name,
 	}

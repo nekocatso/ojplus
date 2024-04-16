@@ -312,7 +312,7 @@ func (ctrl *Asset) GetAssetsByRuleID(ctx *gin.Context) {
 
 func (ctrl *Asset) DeleteAsset(ctx *gin.Context) {
 	// 数据校验
-	assetID, err := strconv.Atoi(ctx.Param("assetID"))
+	assetID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		response(ctx, 40001, nil)
 		return
@@ -325,6 +325,7 @@ func (ctrl *Asset) DeleteAsset(ctx *gin.Context) {
 	userID := GetUserIDByContext(ctx)
 	access, err := ctrl.svc.IsAccessAsset(assetID, userID)
 	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}
@@ -335,6 +336,7 @@ func (ctrl *Asset) DeleteAsset(ctx *gin.Context) {
 	// 数据处理
 	err = ctrl.svc.DeleteAsset(assetID)
 	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}

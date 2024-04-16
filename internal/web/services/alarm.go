@@ -133,6 +133,6 @@ func (svc *Alarm) GetRuleNames(alarmID int) ([]string, error) {
 	return rules, nil
 }
 
-func (svc *Alarm) GetUserByID(userID int) (*models.UserInfo, error) {
+func (svc *Alarm) GetUserByID(userID int) (*models.User, error) {
 	return GetUserByID(svc.db.Engine, userID)
 }

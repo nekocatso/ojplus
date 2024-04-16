@@ -89,16 +89,16 @@ func (svc *Auth) VerifyPassword(username string, password string) (bool, error) 
 	return has, nil
 }
 
-func (svc *Auth) GetUserByUsername(username string) (*models.UserInfo, error) {
+func (svc *Auth) GetUserByUsername(username string) (*models.User, error) {
 	user := &models.User{Username: username}
 	_, err := svc.db.Engine.Get(user)
 	if err != nil {
 		return nil, err
 	}
-	userInfo := user.GetInfo()
+	userInfo := user
 	return userInfo, nil
 }
 
-func (svc *Auth) GetUserByID(userID int) (*models.UserInfo, error) {
+func (svc *Auth) GetUserByID(userID int) (*models.User, error) {
 	return GetUserByID(svc.db.Engine, userID)
 }
