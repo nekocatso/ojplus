@@ -274,7 +274,7 @@ func (ctrl *Rule) GetRuleByID(ctx *gin.Context) {
 		return
 	}
 	// 获取数据
-	rule, err := ctrl.svc.GetRuleByID(ruleID)
+	rule, err := ctrl.svc.GetRuleByID(ruleID, userID)
 	if err != nil {
 		log.Println(err)
 		response(ctx, 500, nil)

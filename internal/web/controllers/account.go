@@ -128,7 +128,7 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 		return
 	}
 	// 重置密码的处理
-	if form.IsResetPwd && user.Role >= 30 {
+	if form.IsResetPwd && loginer.Role >= 30 {
 		err := ctrl.svc.RestPassword(userID)
 		if err != nil {
 			log.Println(err)

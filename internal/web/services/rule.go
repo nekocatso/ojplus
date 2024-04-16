@@ -127,7 +127,7 @@ func (svc *Rule) BindAssets(ruleID int, assetIDs []int, userID int) error {
 	return err
 }
 
-func (svc *Rule) GetRuleByID(ruleID int) (*models.Rule, error) {
+func (svc *Rule) GetRuleByID(ruleID, userID int) (*models.Rule, error) {
 	rule := new(models.Rule)
 	has, err := svc.db.Engine.ID(ruleID).Get(rule)
 	if err != nil {
@@ -136,6 +136,7 @@ func (svc *Rule) GetRuleByID(ruleID int) (*models.Rule, error) {
 	if !has {
 		return nil, fmt.Errorf("rule with ID %d does not exist", ruleID)
 	}
+	svc.packRule(rule, userID)
 	return rule, nil
 }
 
