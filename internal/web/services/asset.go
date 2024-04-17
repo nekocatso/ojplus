@@ -81,10 +81,12 @@ func (svc *Asset) UpdateAsset(assetID int, updateMap map[string]interface{}, use
 		session.Rollback()
 		return err
 	}
-	err = svc.BindRules(session, assetID, ruleIDs)
-	if err != nil {
-		session.Rollback()
-		return err
+	if len(ruleIDs) > 0 {
+		err = svc.BindRules(session, assetID, ruleIDs)
+		if err != nil {
+			session.Rollback()
+			return err
+		}
 	}
 	// 提交事务
 	err = session.Commit()

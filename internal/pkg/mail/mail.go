@@ -93,20 +93,24 @@ func (mp *MailPool) SendMail(subject string, to []string, Cc []string, Bcc []str
 	m.SetHeader("Subject", subject)
 
 	// 添加收件人
-	for _, t := range to {
+	/* for _, t := range to {
 		m.SetHeader("To", t)
-	}
+	} */
 
 	// 添加抄送人
-	for _, c := range Cc {
+	/* for _, c := range Cc {
 		m.SetHeader("Cc", c)
-	}
+	} */
 
 	// 添加密送人
-	for _, b := range Bcc {
+	/* for _, b := range Bcc {
 		m.SetHeader("Bcc", b)
-	}
-
+	} */
+	m.SetHeaders(map[string][]string{
+		"To":  to,
+		"Cc":  Cc,
+		"Bcc": Bcc,
+	})
 	// 设置邮件正文，采用HTML格式
 	m.SetBody("text/html", message)
 

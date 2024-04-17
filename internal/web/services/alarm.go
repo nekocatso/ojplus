@@ -1,6 +1,7 @@
 package services
 
 import (
+	"Alarm/internal/pkg/listenerpool"
 	"Alarm/internal/web/models"
 	"errors"
 	"fmt"
@@ -9,16 +10,18 @@ import (
 )
 
 type Alarm struct {
-	db    *models.Database
-	cache *models.Cache
-	cfg   map[string]interface{}
+	db       *models.Database
+	cache    *models.Cache
+	cfg      map[string]interface{}
+	listener *listenerpool.ListenerPool
 }
 
 func NewAlarm(cfg map[string]interface{}) *Alarm {
 	return &Alarm{
-		db:    cfg["db"].(*models.Database),
-		cache: cfg["cache"].(*models.Cache),
-		cfg:   cfg,
+		db:       cfg["db"].(*models.Database),
+		cache:    cfg["cache"].(*models.Cache),
+		cfg:      cfg,
+		listener: cfg["listener"].(*listenerpool.ListenerPool),
 	}
 }
 
@@ -45,6 +48,16 @@ func (svc *Alarm) UpdateAlarm(alarmID int, updateMap map[string]interface{}) err
 	_, err := svc.db.Engine.ID(alarmID).Update(alarm)
 	if err != nil {
 		return err
+	}
+	assetRules, err := svc.GetAssetRuleByAlarmID(alarmID)
+	if err != nil {
+		return err
+	}
+	for _, assetRule := range assetRules {
+		err := svc.listener.Listen(assetRule.ID)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -187,5 +200,24 @@ func (svc *Alarm) DeleteAlarmByID(alarmID int) error {
 	if err != nil {
 		return err
 	}
+	assetRules, err := svc.GetAssetRuleByAlarmID(alarmID)
+	if err != nil {
+		return err
+	}
+	for _, assetRule := range assetRules {
+		err := svc.listener.Listen(assetRule.ID)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func (svc *Alarm) GetAssetRuleByAlarmID(alarmID int) ([]models.AssetRule, error) {
+	var assetRules []models.AssetRule
+	err := svc.db.Engine.Table("asset_rule").Where("rule_id IN (SELECT id FROM rule WHERE alarm_id = ?)", alarmID).Find(&assetRules)
+	if err != nil {
+		return nil, err
+	}
+	return assetRules, nil
 }
