@@ -28,7 +28,21 @@ func (svc *Alarm) CreateAlarm(alarm *models.AlarmTemplate) error {
 }
 
 func (svc *Alarm) UpdateAlarm(alarmID int, updateMap map[string]interface{}) error {
-	_, err := svc.db.Engine.Table(new(models.AlarmTemplate)).ID(alarmID).Update(updateMap)
+	alarm := new(models.AlarmTemplate)
+	svc.db.Engine.ID(alarmID).Get(alarm)
+	if updateMap["name"] != nil {
+		alarm.Name = *updateMap["name"].(*string)
+	}
+	if updateMap["note"] != nil {
+		alarm.Note = updateMap["note"].(*string)
+	}
+	if updateMap["interval"] != 0 {
+		alarm.Interval = updateMap["interval"].(int)
+	}
+	if updateMap["mails"] != nil {
+		alarm.Mails = updateMap["mails"].([]string)
+	}
+	_, err := svc.db.Engine.ID(alarmID).Update(alarm)
 	if err != nil {
 		return err
 	}

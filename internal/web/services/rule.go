@@ -1,6 +1,7 @@
 package services
 
 import (
+	"Alarm/internal/pkg/listenerpool"
 	"Alarm/internal/web/models"
 	"errors"
 	"fmt"
@@ -11,16 +12,18 @@ import (
 )
 
 type Rule struct {
-	db    *models.Database
-	cache *models.Cache
-	cfg   map[string]interface{}
+	db       *models.Database
+	cache    *models.Cache
+	cfg      map[string]interface{}
+	listener *listenerpool.ListenerPool
 }
 
 func NewRule(cfg map[string]interface{}) *Rule {
 	return &Rule{
-		db:    cfg["db"].(*models.Database),
-		cache: cfg["cache"].(*models.Cache),
-		cfg:   cfg,
+		db:       cfg["db"].(*models.Database),
+		cache:    cfg["cache"].(*models.Cache),
+		cfg:      cfg,
+		listener: cfg["listener"].(*listenerpool.ListenerPool),
 	}
 }
 
@@ -102,6 +105,16 @@ func (svc *Rule) UpdateRuleByID(ruleID int, ruleUpdateMap, pingInfoUpdateMap, tc
 	if err != nil {
 		return err
 	}
+	var linstenAssetRules []models.AssetRule
+	svc.db.Engine.Where("rule_id = ?", ruleID).Find(&linstenAssetRules)
+	for _, listenAssetRule := range linstenAssetRules {
+		err := svc.listener.Listen(listenAssetRule.ID)
+		if err != nil {
+			session.Rollback()
+			return err
+		}
+		log.Printf("Linsten Signal: %d\n", listenAssetRule.ID)
+	}
 	return nil
 }
 
@@ -132,7 +145,7 @@ func (svc *Rule) BindAssets(session *xorm.Session, ruleID int, assetIDs []int) e
 	}
 
 	// 比较新增的assetIDs和已有的assetIDs，找出新增的和需要删除的
-	var toAdd, toDelete []int
+	var toAdd, toDel []int
 	existingAssetIDMap := make(map[int]bool)
 	for _, assetID := range existingAssetIDs {
 		existingAssetIDMap[assetID] = true
@@ -150,13 +163,13 @@ func (svc *Rule) BindAssets(session *xorm.Session, ruleID int, assetIDs []int) e
 			}
 		}
 		if flag {
-			toDelete = append(toDelete, assetID)
+			toDel = append(toDel, assetID)
 		}
 	}
 
 	// 删除多余的关联
-	if len(toDelete) > 0 {
-		_, err = session.In("asset_id", toDelete).Delete(&models.AssetRule{})
+	if len(toDel) > 0 {
+		_, err = session.In("asset_id", toDel).Delete(&models.AssetRule{})
 		if err != nil {
 			session.Rollback()
 			return err
@@ -186,14 +199,12 @@ func (svc *Rule) BindAssets(session *xorm.Session, ruleID int, assetIDs []int) e
 			return err
 		}
 	}
-
 	// 提交事务
 	err = session.Commit()
 	if err != nil {
 		session.Rollback()
 		return err
 	}
-
 	return nil
 }
 
@@ -377,11 +388,6 @@ func (svc *Rule) DeleteRuleByID(ruleID int) error {
 		session.Rollback()
 		return err
 	}
-	var enableAssets []models.AssetRule
-	svc.db.Engine.Where("rule_id = ?", ruleID).Join("LEFT", "asset", "asset.id = asset_rule.asset_id").And("asset.state > 0").Find(&enableAssets)
-	for _, enableAsset := range enableAssets {
-		log.Printf("Ctrl Signal: Stop %d\n", enableAsset.ID)
-	}
 	_, err = session.Where("rule_id = ?", ruleID).Delete(new(models.AssetRule))
 	if err != nil {
 		session.Rollback()
@@ -395,6 +401,16 @@ func (svc *Rule) DeleteRuleByID(ruleID int) error {
 	err = session.Commit()
 	if err != nil {
 		return err
+	}
+	var linstenAssetRules []models.AssetRule
+	svc.db.Engine.Where("rule_id = ?", ruleID).Find(&linstenAssetRules)
+	for _, listenAssetRule := range linstenAssetRules {
+		err := svc.listener.Listen(listenAssetRule.ID)
+		if err != nil {
+			session.Rollback()
+			return err
+		}
+		log.Printf("Linsten Signal: %d\n", listenAssetRule.ID)
 	}
 	return nil
 }

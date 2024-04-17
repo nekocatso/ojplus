@@ -54,10 +54,10 @@ func NewAlarmUpdate(ctx *gin.Context) (*AlarmUpdate, error) {
 
 	form.UpdateMap = make(map[string]interface{})
 	if form.Name != nil {
-		form.UpdateMap["name"] = *form.Name
+		form.UpdateMap["name"] = form.Name
 	}
 	if form.Note != nil {
-		form.UpdateMap["note"] = *form.Note
+		form.UpdateMap["note"] = form.Note
 	}
 	if form.Interval != 0 {
 		form.UpdateMap["interval"] = form.Interval

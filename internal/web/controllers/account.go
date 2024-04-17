@@ -61,6 +61,7 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 	} else if err != nil {
 		log.Println(err)
 		response(ctx, 500, nil)
+		return
 	}
 	response(ctx, 201, map[string]int{"userID": user.ID})
 	err = ctrl.logger.SaveUserLog(ctx, user, &logs.UserLog{

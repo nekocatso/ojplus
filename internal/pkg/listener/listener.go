@@ -46,10 +46,10 @@ func NewListener(url string, rcp *models.Cache, Id int, Rule map[int]rule.Rule) 
 		return nil, errors.New("rcp is nil")
 	}
 	if Id == 0 {
-		return nil, errors.New("Id is 0")
+		return nil, errors.New("id is 0")
 	}
 	if Rule == nil {
-		return nil, errors.New("Rule is nil")
+		return nil, errors.New("rule is nil")
 	}
 
 	var L Listener
@@ -151,7 +151,7 @@ func (L Listener) Listening() (err error) {
 
 func (L Listener) deal(body []byte) {
 	// 打印接收到的消息体内容
-	log.Println(string(body))
+	// log.Println(string(body))
 
 	var res map[string]interface{} // 定义一个map用于存储解析后的JSON数据
 

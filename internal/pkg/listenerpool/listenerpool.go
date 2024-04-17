@@ -115,12 +115,12 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 		if err != nil {
 			return nil, err // 若查询失败，则返回错误信息
 		}
-		log.Println(ar)
+		// log.Println(ar)
 		// 遍历资产关联的规则，根据规则类型（Ping或TCP）创建相应的监听器
 		for _, j := range ar {
 			p := models.PingInfo{} // 查询Ping规则详细信息
 			flag, err := lp.db.Engine.Where("id = ?", j.RuleID).Get(&p)
-			log.Println(j.RuleID, "ping ", flag)
+			// log.Println(j.RuleID, "ping ", flag)
 			if err != nil {
 				return nil, err // 若查询失败，则返回错误信息
 			}
@@ -133,7 +133,7 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 
 			t := models.TCPInfo{} // 查询TCP规则详细信息
 			flag, err = lp.db.Engine.Where("id = ?", j.RuleID).Get(&t)
-			log.Println(j.RuleID, "tcp ", flag)
+			// log.Println(j.RuleID, "tcp ", flag)
 			if err != nil {
 
 				return nil, err // 若查询失败，则返回错误信息
@@ -146,7 +146,7 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 			}
 		}
 	}
-	log.Println("rule built end")
+	// log.Println("rule built end")
 	// 根据最大监听器数量创建并启动监听器实例，添加到监听器列表
 	for i := 0; i < lp.MaxListener; i++ {
 		li, err := listener.NewListener("amqp://user:mkjsix7@172.16.0.15:5672/", lp.RedisClientPool, i+1, lp.Rule)
@@ -157,7 +157,7 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 		lp.ListenerList = append(lp.ListenerList, li)
 	}
 
-	log.Println("newListenerpool ok")
+	// log.Println("newListenerpool ok")
 	return lp, nil // 初始化成功，返回新建的监听器池实例和nil错误信息
 }
 
@@ -183,6 +183,9 @@ func (p *ListenerPool) AddPing(id int) error {
 	if _, err := p.db.Engine.Where("id = ?", ar.AssetID).Get(&a); err != nil {
 		return err // 获取Asset失败，则返回错误信息
 	}
+	if a.State < 0 {
+		return nil
+	}
 
 	// 从数据库中获取与AssetRule关联的Rule记录
 	r := models.Rule{}
@@ -204,7 +207,7 @@ func (p *ListenerPool) AddPing(id int) error {
 		return err // 构造或发送消息失败，则返回错误信息
 	}
 	p.cSendQ.SendMessage(m) // 发送消息至C++端
-	log.Println(string(m))  // 打印发送的消息内容
+	// log.Println(string(m))  // 打印发送的消息内容
 
 	// 循环等待接收C++端返回的执行结果
 	control := make(chan bool)
@@ -259,6 +262,9 @@ func (p *ListenerPool) AddTCP(id int) error {
 	if _, err := p.db.Engine.Where("id = ?", ar.AssetID).Get(&a); err != nil {
 		return err // 获取Asset失败，则返回错误信息
 	}
+	if a.State < 0 {
+		return nil
+	}
 
 	// 从数据库中获取与AssetRule关联的Rule记录
 	r := models.Rule{}
@@ -295,7 +301,7 @@ func (p *ListenerPool) AddTCP(id int) error {
 		Control:        "continuous",                               // 控制类型，固定为"continuous"
 		Config:         []any{"telnet", r.Overtime, 1, r.Interval}, // 配置参数，包括Telnet命令、超时时间、重试次数、间隔时间
 	})
-	fmt.Println(string(m)) // 打印发送的消息内容
+	//fmt.Println(string(m)) // 打印发送的消息内容
 	if err != nil {
 		return err // 构造失败，则返回错误信息
 	}
@@ -506,7 +512,7 @@ func (p *ListenerPool) Close() error {
 		Config:         []any{},                              // 空配置参数列表，因停止所有任务无需特定配置
 		Control:        "continuous",                         // 控制类型，固定为"continuous"
 	})
-	log.Println(string(m)) // 打印发送的消息内容
+	// log.Println(string(m)) // 打印发送的消息内容
 	if err != nil {
 		log.Println(err) // 构造或发送消息失败，打印错误信息
 	}
@@ -542,7 +548,7 @@ func (p *ListenerPool) Close() error {
 				for _, v := range p.ListenerList {
 					v.Close() // 关闭单个监听器
 				}
-				log.Println("close all") // 输出关闭所有资源的日志信息
+				// log.Println("close all") // 输出关闭所有资源的日志信息
 				return nil
 			} else {
 				return errors.New("add tcp failed") // 若执行结果状态不是成功或关联ID不匹配，则返回添加失败的错误信息
@@ -554,4 +560,59 @@ func (p *ListenerPool) Close() error {
 		}
 	}
 
+}
+
+func (p *ListenerPool) Listen(assetRuleID int) error {
+	// 从数据库中获取与监听任务ID关联的AssetRule记录
+	assetRule := new(models.AssetRule)
+	has, err := p.db.Engine.ID(assetRuleID).Get(&assetRule)
+	if err != nil {
+		return err
+	}
+	if !has {
+		return errors.New("assetRule not found") // 获取AssetRule失败，则返回错误信息
+	}
+	// 从数据库中获取与AssetRule关联的Asset记录
+	var asset *models.Asset
+	if has, err = p.db.Engine.Where("id = ?", assetRule.AssetID).Get(asset); err != nil {
+		return err // 获取Asset失败，则返回错误信息
+	}
+	if !has {
+		asset = &models.Asset{}
+	}
+	// 从数据库中获取与AssetRule关联的Rule记录
+	var rule *models.Rule
+	if has, err = p.db.Engine.Where("id = ?", assetRule.RuleID).Get(rule); err != nil {
+		return err // 获取Rule失败，则返回错误信息
+	}
+	if !has {
+		rule = &models.Rule{}
+	}
+
+	nowState := asset.State > 0
+	oldState := p.Rule[assetRuleID] == nil
+	ruleType := rule.Type
+	if ruleType == "ping" {
+		if nowState && oldState {
+			return p.UpdatePing(assetRuleID)
+		} else if nowState && !oldState {
+			return p.AddPing(assetRuleID)
+		} else if !nowState && oldState {
+			return p.DelPing(assetRuleID)
+		} else {
+			return nil
+		}
+	} else if ruleType == "tcp" {
+		if nowState && oldState {
+			return p.UpdateTCP(assetRuleID)
+		} else if nowState && !oldState {
+			return p.AddTCP(assetRuleID)
+		} else if !nowState && oldState {
+			return p.DelTCP(assetRuleID)
+		} else {
+			return nil
+		}
+	} else {
+		return errors.New("not ping or tcp")
+	}
 }

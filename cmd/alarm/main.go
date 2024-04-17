@@ -47,29 +47,26 @@ func main() {
 	// Gin Init
 	engine := gin.Default()
 
-	// mailBox := []mail.MailBox{}
-	// for _, mailConfig := range globalConfig.Listener.Mails {
-	// 	mailBox = append(mailBox, mail.MailBox{
-	// 		Name:     mailConfig.Name,
-	// 		Password: mailConfig.Password,
-	// 		Host:     mailConfig.Host,
-	// 		Port:     mailConfig.Port,
-	// 	})
-	// }
-	mailBox := []mail.MailBox{{
-		Name:     "yangquanmailtest@163.com",
-		Password: "APQJNHKHMXPGRFVO",
-		Host:     "smtp.163.com",
-		Port:     25,
-	}}
+	mailBox := []mail.MailBox{}
+	for _, mailConfig := range globalConfig.Listener.Mails {
+		mailBox = append(mailBox, mail.MailBox{
+			Name:     mailConfig.Name,
+			Password: mailConfig.Password,
+			Host:     mailConfig.Host,
+			Port:     mailConfig.Port,
+		})
+	}
 	// Mail Init
 	mail, err := mail.NewMailPool(mailBox)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// ListeningPool Init
-	listener, err := listenerpool.NewListenerPool(db, cache, mail, "amqp://user:mkjsix7@172.16.0.15:5672/")
-	if err != nil {
+	listener, err := listenerpool.NewListenerPool(db, cache, mail, "amqp://user:mkjsix7@1.12.250.106:5672/")
+	// var listener *listenerpool.ListenerPool
+	if err.Error() == "communication with cpp timed out" {
+		log.Println(err)
+	} else if err != nil {
 		log.Fatal(err)
 	}
 	// --Controller Init
@@ -97,7 +94,7 @@ func main() {
 	// --Router Init
 	group := engine.Group("/api")
 	{
-		group.POST("/register", AccountCtrl.CreateUser, AuthCtrl.LoginMiddleware, AuthCtrl.SuperAdminMiddleware)
+		group.POST("/register", AuthCtrl.LoginMiddleware, AuthCtrl.SuperAdminMiddleware, AccountCtrl.CreateUser)
 		group.POST("/users/query", AuthCtrl.LoginMiddleware, AccountCtrl.SelectUsers)
 		group.GET("/users", AuthCtrl.LoginMiddleware, AccountCtrl.GetUsers)
 		group.GET("/user/:id", AuthCtrl.LoginMiddleware, AccountCtrl.GetUserByID)

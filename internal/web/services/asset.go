@@ -196,7 +196,7 @@ func (svc *Asset) BindRules(session *xorm.Session, assetID int, ruleIDs []int) e
 		return err
 	}
 	// 比较新增和已有的ruleIDs，找出新增的和需要删除的
-	var toAdd, toDelete []int
+	var toAdd, toDel []int
 	existingRuleIDMap := make(map[int]bool)
 	for _, ruleID := range existingRuleIDs {
 		existingRuleIDMap[ruleID] = true
@@ -214,12 +214,12 @@ func (svc *Asset) BindRules(session *xorm.Session, assetID int, ruleIDs []int) e
 			}
 		}
 		if flag {
-			toDelete = append(toDelete, ruleID)
+			toDel = append(toDel, ruleID)
 		}
 	}
 	// 删除多余的关联
-	if len(toDelete) > 0 {
-		_, err = session.In("rule_id", toDelete).Delete(&models.AssetRule{})
+	if len(toDel) > 0 {
+		_, err = session.In("rule_id", toDel).Delete(&models.AssetRule{})
 		if err != nil {
 			session.Rollback()
 			return err
@@ -246,7 +246,12 @@ func (svc *Asset) BindRules(session *xorm.Session, assetID int, ruleIDs []int) e
 			session.Rollback()
 			return err
 		}
-		svc.listener.AddPing(assetRule.ID)
+		err = svc.listener.AddPing(assetRule.ID)
+		if err != nil {
+			session.Rollback()
+			return err
+		}
+		log.Printf("Ctrl Signal: Add %d\n", assetRule.ID)
 	}
 
 	// 提交事务
@@ -254,6 +259,17 @@ func (svc *Asset) BindRules(session *xorm.Session, assetID int, ruleIDs []int) e
 	if err != nil {
 		session.Rollback()
 		return err
+	}
+	listenAssetRules := []int{}
+	listenAssetRules = append(listenAssetRules, toAdd...)
+	listenAssetRules = append(listenAssetRules, toDel...)
+	for _, delAssetRule := range listenAssetRules {
+		err = svc.listener.Listen(delAssetRule)
+		if err != nil {
+			session.Rollback()
+			return err
+		}
+		log.Printf("Listen Signal: %d\n", delAssetRule)
 	}
 	return nil
 }
@@ -420,7 +436,11 @@ func (svc *Asset) DeleteAsset(assetID int) error {
 	var enableAssetRules []models.AssetRule
 	svc.db.Engine.Where("asset_id = ?", assetID).Join("LEFT", "asset", "asset.id = asset_rule.asset_id").And("asset.state > 0").Find(&enableAssetRules)
 	for _, enableAssetRule := range enableAssetRules {
-		svc.listener.DelPing(enableAssetRule.ID)
+		err := svc.listener.DelPing(enableAssetRule.ID)
+		if err != nil {
+			session.Rollback()
+			return err
+		}
 		log.Printf("Ctrl Signal: Stop %d\n", enableAssetRule.ID)
 	}
 	_, err = session.Where("asset_id = ?", assetID).Delete(new(models.AssetRule))
