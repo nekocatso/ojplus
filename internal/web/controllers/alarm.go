@@ -49,7 +49,7 @@ func (ctrl *Alarm) CreateAlarm(ctx *gin.Context) {
 		response(ctx, 500, nil)
 		return
 	}
-	if user != nil {
+	if user == nil {
 		response(ctx, 404, nil)
 		return
 	}
@@ -112,12 +112,13 @@ func (ctrl *Alarm) UpdateAlarmByID(ctx *gin.Context) {
 		response(ctx, 500, nil)
 		return
 	}
-	if user != nil {
+	if user == nil {
 		response(ctx, 404, nil)
 		return
 	}
 	alarm, err := ctrl.svc.GetAlarmByID(assetID)
 	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}
@@ -146,6 +147,7 @@ func (ctrl *Alarm) UpdateAlarmByID(ctx *gin.Context) {
 		log.Println(err)
 	}
 }
+
 func (ctrl *Alarm) GetAlarms(ctx *gin.Context) {
 	pageStr := ctx.Query("page")
 	pageSizeStr := ctx.Query("pageSize")
@@ -288,7 +290,7 @@ func (ctrl *Alarm) DeleteAlarmByID(ctx *gin.Context) {
 		response(ctx, 500, nil)
 		return
 	}
-	if user != nil {
+	if user == nil {
 		response(ctx, 404, nil)
 		return
 	}

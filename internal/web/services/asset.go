@@ -1,6 +1,7 @@
 package services
 
 import (
+	"Alarm/internal/pkg/listenerpool"
 	"Alarm/internal/web/models"
 	"errors"
 	"fmt"
@@ -11,18 +12,18 @@ import (
 )
 
 type Asset struct {
-	db    *models.Database
-	cache *models.Cache
-	// listener *listenerpool.ListenerPool
-	cfg map[string]interface{}
+	db       *models.Database
+	cache    *models.Cache
+	listener *listenerpool.ListenerPool
+	cfg      map[string]interface{}
 }
 
 func NewAsset(cfg map[string]interface{}) *Asset {
 	return &Asset{
-		db:    cfg["db"].(*models.Database),
-		cache: cfg["cache"].(*models.Cache),
-		cfg:   cfg,
-		// listener: cfg["listener"].(*listenerpool.ListenerPool),
+		db:       cfg["db"].(*models.Database),
+		cache:    cfg["cache"].(*models.Cache),
+		cfg:      cfg,
+		listener: cfg["listener"].(*listenerpool.ListenerPool),
 	}
 }
 
@@ -245,6 +246,7 @@ func (svc *Asset) BindRules(session *xorm.Session, assetID int, ruleIDs []int) e
 			session.Rollback()
 			return err
 		}
+		svc.listener.AddPing(assetRule.ID)
 	}
 
 	// 提交事务
@@ -415,10 +417,11 @@ func (svc *Asset) DeleteAsset(assetID int) error {
 		session.Rollback()
 		return err
 	}
-	var enableAssets []models.AssetRule
-	svc.db.Engine.Where("asset_id = ?", assetID).Join("LEFT", "asset", "asset.id = asset_rule.asset_id").And("asset.state > 0").Find(&enableAssets)
-	for _, enableAsset := range enableAssets {
-		log.Printf("Ctrl Signal: Stop %d\n", enableAsset.ID)
+	var enableAssetRules []models.AssetRule
+	svc.db.Engine.Where("asset_id = ?", assetID).Join("LEFT", "asset", "asset.id = asset_rule.asset_id").And("asset.state > 0").Find(&enableAssetRules)
+	for _, enableAssetRule := range enableAssetRules {
+		svc.listener.DelPing(enableAssetRule.ID)
+		log.Printf("Ctrl Signal: Stop %d\n", enableAssetRule.ID)
 	}
 	_, err = session.Where("asset_id = ?", assetID).Delete(new(models.AssetRule))
 	if err != nil {

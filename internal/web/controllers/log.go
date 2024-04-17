@@ -142,7 +142,7 @@ func (ctrl *Log) CreateUserLog(ctx *gin.Context) {
 		response(ctx, 500, nil)
 		return
 	}
-	if user != nil {
+	if user == nil {
 		response(ctx, 404, nil)
 		return
 	}

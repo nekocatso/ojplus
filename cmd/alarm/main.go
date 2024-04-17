@@ -2,6 +2,8 @@ package main
 
 import (
 	"Alarm/internal/config"
+	"Alarm/internal/pkg/listenerpool"
+	"Alarm/internal/pkg/mail"
 	"Alarm/internal/web/controllers"
 	"Alarm/internal/web/models"
 	"crypto/x509"
@@ -45,17 +47,33 @@ func main() {
 	// Gin Init
 	engine := gin.Default()
 
+	// mailBox := []mail.MailBox{}
+	// for _, mailConfig := range globalConfig.Listener.Mails {
+	// 	mailBox = append(mailBox, mail.MailBox{
+	// 		Name:     mailConfig.Name,
+	// 		Password: mailConfig.Password,
+	// 		Host:     mailConfig.Host,
+	// 		Port:     mailConfig.Port,
+	// 	})
+	// }
+	mailBox := []mail.MailBox{{
+		Name:     "yangquanmailtest@163.com",
+		Password: "APQJNHKHMXPGRFVO",
+		Host:     "smtp.163.com",
+		Port:     25,
+	}}
 	// Mail Init
-	// mail, err := mail.NewMailPool([]string{"yangquanmailtest@163.com"}, []string{"APQJNHKHMXPGRFVO"}, []string{"smtp.163.com"}, []int{25})
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// // ListeningPool Init
-	// listener, err := listenerpool.NewListenerPool(db, cache, mail, "amqp://user:mkjsix7@172.16.0.15:5672/")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	listener := 0
+	mail, err := mail.NewMailPool(mailBox)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// ListeningPool Init
+	log.Println("1")
+	listener, err := listenerpool.NewListenerPool(db, cache, mail, "amqp://user:mkjsix7@172.16.0.15:5672/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("2")
 	// --Controller Init
 	ctrlConfig := map[string]interface{}{
 		"db":       db,

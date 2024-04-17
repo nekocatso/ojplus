@@ -51,7 +51,7 @@ func (ctrl *Rule) CreateRule(ctx *gin.Context) {
 		response(ctx, 500, nil)
 		return
 	}
-	if user != nil {
+	if user == nil {
 		response(ctx, 404, nil)
 		return
 	}
@@ -124,7 +124,7 @@ func (ctrl *Rule) UpdateRuleByID(ctx *gin.Context) {
 		response(ctx, 500, nil)
 		return
 	}
-	if user != nil {
+	if user == nil {
 		response(ctx, 404, nil)
 		return
 	}
@@ -382,7 +382,7 @@ func (ctrl *Rule) DeleteRuleByID(ctx *gin.Context) {
 		response(ctx, 500, nil)
 		return
 	}
-	if user != nil {
+	if user == nil {
 		response(ctx, 404, nil)
 		return
 	}

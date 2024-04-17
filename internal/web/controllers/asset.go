@@ -49,7 +49,7 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 		response(ctx, 500, nil)
 		return
 	}
-	if user != nil {
+	if user == nil {
 		response(ctx, 404, nil)
 		return
 	}
@@ -128,7 +128,7 @@ func (ctrl *Asset) UpdateAssetByID(ctx *gin.Context) {
 		response(ctx, 500, nil)
 		return
 	}
-	if user != nil {
+	if user == nil {
 		response(ctx, 404, nil)
 		return
 	}
@@ -237,7 +237,6 @@ func (ctrl *Asset) GetAssetByID(ctx *gin.Context) {
 		return
 	}
 	if !access {
-		log.Println("")
 		response(ctx, 404, nil)
 		return
 	}
@@ -347,7 +346,7 @@ func (ctrl *Asset) DeleteAsset(ctx *gin.Context) {
 		response(ctx, 500, nil)
 		return
 	}
-	if user != nil {
+	if user == nil {
 		response(ctx, 404, nil)
 		return
 	}

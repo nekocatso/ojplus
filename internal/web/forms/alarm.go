@@ -21,9 +21,10 @@ func NewAlarmCreate(ctx *gin.Context) (*AlarmCreate, error) {
 		return nil, err
 	}
 	form.Model = &models.AlarmTemplate{
-		Name:  form.Name,
-		Note:  form.Note,
-		Mails: form.Mails,
+		Name:     form.Name,
+		Note:     form.Note,
+		Mails:    form.Mails,
+		Interval: form.Interval,
 	}
 	return form, nil
 }

@@ -17,6 +17,7 @@ type Gin struct {
 	Token   *Token
 	Account *Account
 }
+
 type Mysql struct {
 	DSN string
 }
@@ -39,14 +40,14 @@ type Account struct {
 
 // Listener
 type Listener struct {
-	Mail *Mail
+	Mails []Mail
 }
 
 type Mail struct {
-	Name     []string
-	Password []string
-	Host     []string
-	Port     []int
+	Name     string
+	Password string
+	Host     string
+	Port     int
 }
 
 func NewConfig(configPath, configName string) (*Global, error) {

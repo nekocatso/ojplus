@@ -45,7 +45,8 @@ func NewConnection(url string) (*Connection, error) {
 
 	// 使用amqp.Dial函数尝试与AMQP服务器建立连接
 	var err error
-	c.Connection, err = amqp.Dial(url)
+
+	c.Connection, err = amqp.DialConfig(url, amqp.Config{})
 
 	// 如果建立连接时发生错误，则返回nil的Connection指针和错误信息
 	if err != nil {

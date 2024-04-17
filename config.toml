@@ -14,3 +14,10 @@ token.refreshValidity = 172800 # 2天
 
 account.superAdminID = 1
 account.defaultPassword = "dc483e80a7a0bd9ef71d8cf973673924"
+
+[listener]
+[[mails]]
+name = "yangquanmailtest@163.com"
+password = "APQJNHKHMXPGRFVO"
+host = "smtp.163.com"
+port = 25
