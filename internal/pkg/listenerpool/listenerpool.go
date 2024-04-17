@@ -95,6 +95,30 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 	if err != nil {
 		return nil, err // 若声明队列失败，则返回错误信息
 	}
+	// 构造并向C++端发送停止所有监听任务的请求消息
+	m, err := json.Marshal(listener.Request{
+		Type:           "request",
+		Action:         "stop_all",                           // 行动类型，固定为"stop_all"
+		Target:         []string{},                           // 空目标列表，因停止所有任务无需特定目标
+		Correlation_id: fmt.Sprintf("%d", 0),                 // 关联ID，使用0表示停止所有任务
+		Timestamp:      fmt.Sprintf("%d", time.Now().Unix()), // 时间戳，当前时间的Unix时间戳
+		Config:         []any{},                              // 空配置参数列表，因停止所有任务无需特定配置
+		Control:        "continuous",                         // 控制类型，固定为"continuous"
+	})
+	// log.Println(string(m)) // 打印发送的消息内容
+	if err != nil {
+		log.Println(err) // 构造或发送消息失败，打印错误信息
+	}
+	err = lp.cSendQ.SendMessage(m) // 发送消息至C++端
+	if err != nil {
+		return nil, err // 发送失败，则返回错误信息
+	}
+	// 循环等待接收C++端返回的执行结果
+	control := make(chan bool)
+	go func() {
+		time.Sleep(time.Second)
+		close(control)
+	}()
 	// 初始化规则映射表
 	lp.Rule = make(map[int]rule.Rule)
 
@@ -149,7 +173,7 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 	// log.Println("rule built end")
 	// 根据最大监听器数量创建并启动监听器实例，添加到监听器列表
 	for i := 0; i < lp.MaxListener; i++ {
-		li, err := listener.NewListener("amqp://user:mkjsix7@172.16.0.15:5672/", lp.RedisClientPool, i+1, lp.Rule)
+		li, err := listener.NewListener(url, lp.RedisClientPool, i+1, lp.Rule)
 		if err != nil {
 			return nil, err // 若创建监听器失败，则返回错误信息
 		}
@@ -234,9 +258,8 @@ func (p *ListenerPool) AddPing(id int) error {
 
 			}
 		case <-control:
-			return errors.New("communication with cpp timed out")
+			return errors.New("addping communication with cpp timed out")
 		}
-
 	}
 }
 
@@ -337,7 +360,7 @@ func (p *ListenerPool) AddTCP(id int) error {
 				return errors.New("add tcp failed") // 若执行结果状态不是成功或关联ID不匹配，则返回添加失败的错误信息
 			}
 		case <-control:
-			return errors.New("communication with cpp timed out")
+			return errors.New("add tcp communication with cpp timed out")
 		}
 	}
 }
@@ -395,7 +418,7 @@ func (p *ListenerPool) DelPing(id int) error {
 				return errors.New("add tcp failed") // 若执行结果状态不是成功或关联ID不匹配，则返回添加失败的错误信息
 			}
 		case <-control:
-			return errors.New("communication with cpp timed out")
+			return errors.New("del ping communication with cpp timed out")
 		}
 	}
 }
@@ -453,7 +476,7 @@ func (p *ListenerPool) DelTCP(id int) error {
 				return errors.New("add tcp failed") // 若执行结果状态不是成功或关联ID不匹配，则返回添加失败的错误信息
 			}
 		case <-control:
-			return errors.New("communication with cpp timed out")
+			return errors.New("del tcp communication with cpp timed out")
 		}
 	}
 }
@@ -556,7 +579,7 @@ func (p *ListenerPool) Close() error {
 			}
 
 		case <-control:
-			return errors.New("communication with cpp timed out")
+			return errors.New("close communication with cpp timed out")
 		}
 	}
 
@@ -564,11 +587,12 @@ func (p *ListenerPool) Close() error {
 
 func (p *ListenerPool) Listen(assetRuleID int) error {
 	if p == nil {
-		return errors.New("listenerPooll not init")
+		return nil
+		// return errors.New("listenerPooll not init")
 	}
 	// 从数据库中获取与监听任务ID关联的AssetRule记录
 	assetRule := new(models.AssetRule)
-	has, err := p.db.Engine.ID(assetRuleID).Get(&assetRule)
+	has, err := p.db.Engine.ID(assetRuleID).Get(assetRule)
 	if err != nil {
 		return err
 	}
@@ -576,7 +600,7 @@ func (p *ListenerPool) Listen(assetRuleID int) error {
 		return errors.New("assetRule not found") // 获取AssetRule失败，则返回错误信息
 	}
 	// 从数据库中获取与AssetRule关联的Asset记录
-	var asset *models.Asset
+	asset := new(models.Asset)
 	if has, err = p.db.Engine.Where("id = ?", assetRule.AssetID).Get(asset); err != nil {
 		return err // 获取Asset失败，则返回错误信息
 	}
@@ -584,7 +608,7 @@ func (p *ListenerPool) Listen(assetRuleID int) error {
 		asset = &models.Asset{}
 	}
 	// 从数据库中获取与AssetRule关联的Rule记录
-	var rule *models.Rule
+	rule := new(models.Rule)
 	if has, err = p.db.Engine.Where("id = ?", assetRule.RuleID).Get(rule); err != nil {
 		return err // 获取Rule失败，则返回错误信息
 	}
@@ -597,20 +621,26 @@ func (p *ListenerPool) Listen(assetRuleID int) error {
 	ruleType := rule.Type
 	if ruleType == "ping" {
 		if nowState && oldState {
+			log.Printf("listen Ping(%d): Update ", assetRuleID)
 			return p.UpdatePing(assetRuleID)
 		} else if nowState && !oldState {
+			log.Printf("listen Ping(%d): Add ", assetRuleID)
 			return p.AddPing(assetRuleID)
 		} else if !nowState && oldState {
+			log.Printf("listen Ping(%d): Del ", assetRuleID)
 			return p.DelPing(assetRuleID)
 		} else {
 			return nil
 		}
 	} else if ruleType == "tcp" {
 		if nowState && oldState {
+			log.Printf("listen TCP(%d): Update ", assetRuleID)
 			return p.UpdateTCP(assetRuleID)
 		} else if nowState && !oldState {
+			log.Printf("listen TCP(%d): Add ", assetRuleID)
 			return p.AddTCP(assetRuleID)
 		} else if !nowState && oldState {
+			log.Printf("listen TCP(%d): Del ", assetRuleID)
 			return p.DelTCP(assetRuleID)
 		} else {
 			return nil

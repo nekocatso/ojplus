@@ -137,7 +137,6 @@ func NewPing(id int, Rcp *models.Cache, mail *mail.MailPool, db *models.Database
 func (p *Ping) Scan() error {
 	// 更新当前扫描时间
 	p.State.time = time.Now()
-
 	// 执行状态判断，返回布尔值表示当前监控状态是否符合预期
 	s, err := p.Jude()
 
@@ -210,7 +209,7 @@ func (p *Ping) Scan() error {
 	}
 
 	// 打印当前正常计数、异常计数和总体状态
-	log.Println(p.State.nor, p.State.abn, p.State.Status)
+	//log.Println(p.State.nor, p.State.abn, p.State.Status)
 
 	// 扫描操作完成，返回nil表示无错误
 	return nil
@@ -227,7 +226,7 @@ func (p *Ping) Scan() error {
 //	error // 错误信息，若判断过程中发生错误则返回相应的错误信息，否则返回nil
 func (p *Ping) Jude() (bool, error) {
 	// 打印开始进行ping操作的信息，包括监控对象地址
-	log.Println("ping", p.address)
+	
 
 	// 通过RCP客户端发送GET请求，获取与correlation_id关联的数据
 	res, err := p.tools.Rcp.Client.Get(fmt.Sprintf("%d", p.State.correlation_id)).Bytes()

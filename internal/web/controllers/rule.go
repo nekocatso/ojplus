@@ -130,6 +130,7 @@ func (ctrl *Rule) UpdateRuleByID(ctx *gin.Context) {
 	}
 	rule, err := ctrl.svc.GetRuleByID(ruleID, userID)
 	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}

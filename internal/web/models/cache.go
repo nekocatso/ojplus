@@ -21,5 +21,8 @@ func NewCache(cfg *config.Redis) (*Cache, error) {
 		Password: cfg.Password,
 		DB:       cfg.DB,
 	})
+	if cache.Client == nil {
+		return nil, errors.New("connect redis error")
+	}
 	return &cache, nil
 }

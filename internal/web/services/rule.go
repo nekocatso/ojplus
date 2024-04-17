@@ -5,7 +5,6 @@ import (
 	"Alarm/internal/web/models"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"xorm.io/xorm"
@@ -70,6 +69,10 @@ func (svc *Rule) CreateRule(rule *models.Rule, pingInfo *models.PingInfo, tcpInf
 			return err
 		}
 	}
+	err = session.Commit()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -113,7 +116,6 @@ func (svc *Rule) UpdateRuleByID(ruleID int, ruleUpdateMap, pingInfoUpdateMap, tc
 			session.Rollback()
 			return err
 		}
-		log.Printf("Linsten Signal: %d\n", listenAssetRule.ID)
 	}
 	return nil
 }
@@ -199,12 +201,6 @@ func (svc *Rule) BindAssets(session *xorm.Session, ruleID int, assetIDs []int) e
 			return err
 		}
 	}
-	// 提交事务
-	err = session.Commit()
-	if err != nil {
-		session.Rollback()
-		return err
-	}
 	return nil
 }
 
@@ -214,7 +210,7 @@ func (svc *Rule) GetRuleByID(ruleID, userID int) (*models.Rule, error) {
 		return nil, err
 	}
 	if rule == nil {
-		return nil, errors.New("rule not found")
+		return nil, nil
 	}
 	svc.packRule(rule, userID)
 	return rule, nil
@@ -410,7 +406,6 @@ func (svc *Rule) DeleteRuleByID(ruleID int) error {
 			session.Rollback()
 			return err
 		}
-		log.Printf("Linsten Signal: %d\n", listenAssetRule.ID)
 	}
 	return nil
 }

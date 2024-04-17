@@ -151,7 +151,7 @@ func (L Listener) Listening() (err error) {
 
 func (L Listener) deal(body []byte) {
 	// 打印接收到的消息体内容
-	// log.Println(string(body))
+	log.Println(string(body))
 
 	var res map[string]interface{} // 定义一个map用于存储解析后的JSON数据
 
@@ -163,11 +163,14 @@ func (L Listener) deal(body []byte) {
 
 	// 将correlation_id转换为int类型
 	id, _ := strconv.Atoi(res["correlation_id"].(string))
-
+	//log.Println(id)
 	// 检查是否存在对应id的规则，如果存在，则执行扫描操作
 	if L.Rule[id] != nil {
 
-		L.Rule[id].Scan()
+		err := L.Rule[id].Scan()
+		if err != nil {
+			log.Println(err)
+		}
 	} else {
 		// 如果不存在对应id的规则，打印日志信息
 		log.Println("rule is nil")

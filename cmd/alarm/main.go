@@ -64,11 +64,15 @@ func main() {
 	// ListeningPool Init
 	listener, err := listenerpool.NewListenerPool(db, cache, mail, "amqp://user:mkjsix7@1.12.250.106:5672/")
 	// var listener *listenerpool.ListenerPool
-	if err.Error() == "communication with cpp timed out" {
-		log.Println(err)
-	} else if err != nil {
-		log.Fatal(err)
+	if err != nil {
+		if err.Error() == "communication with cpp timed out" {
+			log.Println(err)
+			// log.Println(err)
+		} else {
+			log.Fatal(err)
+		}
 	}
+	defer listener.Close()
 	// --Controller Init
 	ctrlConfig := map[string]interface{}{
 		"db":       db,

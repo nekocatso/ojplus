@@ -171,6 +171,7 @@ func NewTcp(id int, Rcp *models.Cache, mail *mail.MailPool, db *models.Database)
 //	error // 执行过程中发生的任何错误；若无错误，则返回nil
 func (p *Tcp) Scan() error {
 	// 更新当前扫描时间
+	//log.Println(p.State.nor, p.State.abn, p.State.Status, p.nowcloseerr)
 	p.State.time = time.Now()
 
 	// 执行状态判断，返回布尔值表示当前监控状态是否符合预期
@@ -270,7 +271,7 @@ func (p *Tcp) Scan() error {
 	}
 	// 打印当前正常计数、异常计数和总体状态
 
-	fmt.Println(p.State.nor, p.State.abn, p.State.Status, p.nowcloseerr)
+	//log.Println(p.State.nor, p.State.abn, p.State.Status, p.interval)
 	// 扫描操作完成，返回nil表示无错误
 	return nil
 }
@@ -379,6 +380,7 @@ func (p *Tcp) Jude() (bool, error) {
 //
 // 返回值：无
 func (p *Tcp) Alarm() {
+	//log.Println("要发邮件",p.alarm_id)
 	// 如果已设置告警ID（表示已配置告警），则进行告警通知
 	if p.alarm_id > 0 {
 		// 根据当前状态构建告警主题、消息及接收人列表
@@ -437,8 +439,12 @@ func (p *Tcp) Alarm() {
 		}
 
 		// 发送告警邮件
-		p.tools.mail.SendMail(subject, to, []string{}, []string{}, message, []string{})
-		fmt.Println("邮件发送")
+		err := p.tools.mail.SendMail(subject, to, []string{}, []string{}, message, []string{})
+		if err != nil {
+			log.Println(err)
+
+		}
+		//fmt.Println("邮件发送")
 	}
 
 	// 保存当前监控状态

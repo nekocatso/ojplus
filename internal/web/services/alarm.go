@@ -143,12 +143,16 @@ func (svc *Alarm) GetRule(alarmID int) (*models.Rule, error) {
 }
 
 func (svc *Alarm) GetRuleNames(alarmID int) ([]string, error) {
-	rules := []string{}
+	rules := []models.Rule{}
 	err := svc.db.Engine.Table("rule").Cols("rule.name").Where("alarm_id = ?", alarmID).Find(&rules)
 	if err != nil {
 		return nil, err
 	}
-	return rules, nil
+	ruleNames := []string{}
+	for _, rule := range rules {
+		ruleNames = append(ruleNames, rule.Name)
+	}
+	return ruleNames, nil
 }
 
 func (svc *Alarm) GetUserByID(userID int) (*models.User, error) {

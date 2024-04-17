@@ -139,6 +139,7 @@ type AssetConditions struct {
 	Name              string `validate:"omitempty"`
 	Type              string `validate:"omitempty"`
 	CreatorID         int    `validate:"omitempty,gt=0"`
+	RuleID            int    `validate:"omitempty,gt=0"`
 	Address           string `validate:"omitempty,max=128"`
 	State             int    `validate:"omitempty,gte=-1,lte=3"`
 	Enable            int    `validate:"omitempty"`
@@ -188,6 +189,9 @@ func NewAssetSelect(ctx *gin.Context) (*AssetSelect, error) {
 	}
 	if form.Query.CreatorID != 0 {
 		form.Conditions["creatorID"] = form.Query.CreatorID
+	}
+	if form.Query.RuleID != 0 {
+		form.Conditions["ruleID"] = form.Query.RuleID
 	}
 	if form.Query.Enable != 0 {
 		form.Conditions["enable"] = form.Query.Enable

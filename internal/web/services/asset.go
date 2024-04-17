@@ -76,19 +76,15 @@ func (svc *Asset) UpdateAsset(assetID int, updateMap map[string]interface{}, use
 	if err != nil {
 		return err
 	}
-	if userIDs != nil {
-		err = svc.BindUsers(session, assetID, userIDs)
-		if err != nil {
-			session.Rollback()
-			return err
-		}
+	err = svc.BindUsers(session, assetID, userIDs)
+	if err != nil {
+		session.Rollback()
+		return err
 	}
-	if ruleIDs != nil {
-		err = svc.BindRules(session, assetID, ruleIDs)
-		if err != nil {
-			session.Rollback()
-			return err
-		}
+	err = svc.BindRules(session, assetID, ruleIDs)
+	if err != nil {
+		session.Rollback()
+		return err
 	}
 	// 提交事务
 	err = session.Commit()
@@ -96,6 +92,7 @@ func (svc *Asset) UpdateAsset(assetID int, updateMap map[string]interface{}, use
 		session.Rollback()
 		return err
 	}
+
 	return nil
 }
 
@@ -168,12 +165,6 @@ func (svc *Asset) BindUsers(session *xorm.Session, assetID int, userIDs []int) e
 			session.Rollback()
 			return err
 		}
-	}
-
-	err = session.Commit()
-	if err != nil {
-		session.Rollback()
-		return err
 	}
 	return nil
 }
@@ -252,13 +243,6 @@ func (svc *Asset) BindRules(session *xorm.Session, assetID int, ruleIDs []int) e
 			return err
 		}
 		log.Printf("Ctrl Signal: Add %d\n", assetRule.ID)
-	}
-
-	// 提交事务
-	err = session.Commit()
-	if err != nil {
-		session.Rollback()
-		return err
 	}
 	listenAssetRules := []int{}
 	listenAssetRules = append(listenAssetRules, toAdd...)
@@ -404,12 +388,16 @@ func (svc *Asset) IsAccessAsset(assetID int, userID int) (bool, error) {
 }
 
 func (svc *Asset) GetRuleNames(assetID int) ([]string, error) {
-	rules := []string{}
+	rules := []models.Rule{}
 	err := svc.db.Engine.Table("rule").Join("INNER", "asset_rule", "rule.id = asset_rule.rule_id").Cols("rule.name").Where("asset_rule.asset_id = ?", assetID).Find(&rules)
 	if err != nil {
 		return nil, err
 	}
-	return rules, nil
+	ruleNames := []string{}
+	for _, rule := range rules {
+		ruleNames = append(ruleNames, rule.Name)
+	}
+	return ruleNames, nil
 }
 
 func (svc *Asset) GetUserByID(userID int) (*models.User, error) {

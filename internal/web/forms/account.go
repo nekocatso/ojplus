@@ -47,6 +47,7 @@ func (form *UserCreate) check() map[string]string {
 type UserUpdate struct {
 	Email       *string                `validate:"omitempty,email"`
 	Phone       *string                `validate:"omitempty,number,min=6,max=32"`
+	Name        *string                `validate:"omitempty,max=24"`
 	Note        *string                `validate:"omitempty,max=128"`
 	OldPassword string                 `validate:"omitempty,required_with=Password,min=6,max=128"`
 	Password    string                 `validate:"omitempty,min=6,max=128"`
@@ -64,6 +65,9 @@ func NewUserUpdate(ctx *gin.Context) (*UserUpdate, error) {
 	form.UpdateMap = map[string]interface{}{}
 	if form.Email != nil {
 		form.UpdateMap["email"] = *form.Email
+	}
+	if form.Name != nil {
+		form.UpdateMap["name"] = *form.Name
 	}
 	if form.Phone != nil {
 		form.UpdateMap["phone"] = *form.Phone
