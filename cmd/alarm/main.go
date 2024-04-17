@@ -68,12 +68,10 @@ func main() {
 		log.Fatal(err)
 	}
 	// ListeningPool Init
-	log.Println("1")
 	listener, err := listenerpool.NewListenerPool(db, cache, mail, "amqp://user:mkjsix7@172.16.0.15:5672/")
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("2")
 	// --Controller Init
 	ctrlConfig := map[string]interface{}{
 		"db":       db,

@@ -75,13 +75,11 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 	lp := &ListenerPool{MaxListener: 2, NumListener: 0, ListenerList: []*listener.Listener{},
 		RedisClientPool: RedisClientPool, db: db, mail: mail} // 创建并初始化监听器池实例
 
-	log.Println("1.1")
 	// 建立与C++端的AMQP连接
 	lp.cConn, err = messagequeue.NewConnection(url)
 	if err != nil {
 		return nil, err // 若建立连接失败，则返回错误信息
 	}
-	log.Println("1.2")
 	// 声明用于接收控制信息执行结果的AMQP消息队列（queue3）并获取其接收通道
 	lp.cGetQ, err = lp.cConn.MessageQueueDeclare("queue3", false, false, false, false, nil)
 	if err != nil {
