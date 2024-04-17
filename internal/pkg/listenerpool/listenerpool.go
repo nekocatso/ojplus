@@ -96,7 +96,6 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 	if err != nil {
 		return nil, err // 若声明队列失败，则返回错误信息
 	}
-
 	// 初始化规则映射表
 	lp.Rule = make(map[int]rule.Rule)
 
@@ -129,7 +128,7 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 			if flag { // 若存在Ping规则，则添加Ping监听器
 				err := lp.AddPing(j.ID)
 				if err != nil {
-					log.Println(err)
+					return nil, err
 				}
 			}
 
@@ -141,7 +140,10 @@ func NewListenerPool(db *models.Database, RedisClientPool *models.Cache, mail *m
 				return nil, err // 若查询失败，则返回错误信息
 			}
 			if flag { // 若存在TCP规则，则添加TCP监听器
-				lp.AddTCP(j.ID)
+				err := lp.AddTCP(j.ID)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
@@ -206,6 +208,11 @@ func (p *ListenerPool) AddPing(id int) error {
 	log.Println(string(m))  // 打印发送的消息内容
 
 	// 循环等待接收C++端返回的执行结果
+	control := make(chan bool)
+	go func() {
+		time.Sleep(time.Second)
+		close(control)
+	}()
 	for {
 		select {
 		case c := <-p.cGetch: // 从控制信息接收通道接收消息
@@ -216,15 +223,18 @@ func (p *ListenerPool) AddPing(id int) error {
 				return err // 反序列化失败，则返回错误信息
 			}
 			fmt.Println(res) // 打印接收到的执行结果
-
 			// 检查执行结果状态和关联ID，若成功且匹配，则添加Ping监听器至规则映射表并返回nil
 			if res.Status == "success" && res.Corrlation_id == fmt.Sprintf("%d", id) {
 				p.Rule[id] = rule.NewPing(id, p.RedisClientPool, p.mail, p.db)
 				return nil
 			} else {
 				return errors.New("add ping failed") // 若执行结果状态不是成功或关联ID不匹配，则返回添加失败的错误信息
+
 			}
+		case <-control:
+			return errors.New("communication with cpp timed out")
 		}
+
 	}
 }
 
@@ -295,6 +305,11 @@ func (p *ListenerPool) AddTCP(id int) error {
 		return err // 发送失败，则返回错误信息
 	}
 	// 循环等待接收C++端返回的执行结果
+	control := make(chan bool)
+	go func() {
+		time.Sleep(time.Second)
+		close(control)
+	}()
 	for {
 		select {
 		case c := <-p.cGetch: // 从控制信息接收通道接收消息
@@ -307,12 +322,17 @@ func (p *ListenerPool) AddTCP(id int) error {
 			fmt.Println(res) // 打印接收到的执行结果
 
 			// 检查执行结果状态和关联ID，若成功且匹配，则添加TCP监听器至规则映射表并返回nil
-			if res.Status == "success" && res.Corrlation_id == fmt.Sprintf("%d", id) {
-				p.Rule[id] = rule.NewTcp(id, p.RedisClientPool, p.mail, p.db)
-				return nil
+			if res.Status == "success" {
+				if res.Corrlation_id == fmt.Sprintf("%d", id) {
+					p.Rule[id] = rule.NewTcp(id, p.RedisClientPool, p.mail, p.db)
+					return nil
+				}
+
 			} else {
 				return errors.New("add tcp failed") // 若执行结果状态不是成功或关联ID不匹配，则返回添加失败的错误信息
 			}
+		case <-control:
+			return errors.New("communication with cpp timed out")
 		}
 	}
 }
@@ -338,24 +358,40 @@ func (p *ListenerPool) DelPing(id int) error {
 	if err != nil {
 		return err // 构造或发送消息失败，则返回错误信息
 	}
-	p.cSendQ.SendMessage(m) // 发送消息至C++端
-
-	// 接收C++端返回的执行结果
-	c := <-p.cGetch // 从控制信息接收通道接收消息
-
-	// 反序列化接收到的消息为RunResult结构体
-	res := listener.RunResult{}
-	if err := json.Unmarshal(c.Body, &res); err != nil {
-		return err // 反序列化失败，则返回错误信息
+	err = p.cSendQ.SendMessage(m) // 发送消息至C++端
+	if err != nil {
+		return err // 发送失败，则返回错误信息
 	}
+	// 循环等待接收C++端返回的执行结果
+	control := make(chan bool)
+	go func() {
+		time.Sleep(time.Second)
+		close(control)
+	}()
+	for {
+		select {
+		case c := <-p.cGetch: // 从控制信息接收通道接收消息
 
-	// 检查执行结果状态和关联ID，若成功且匹配，则更新Ping监听器状态并从规则映射表中移除，然后返回nil
-	if res.Status == "success" && res.Corrlation_id == fmt.Sprintf("%d", id) {
-		p.Rule[id].Update() // 更新Ping监听器状态
-		delete(p.Rule, id)  // 从规则映射表中移除指定ID的Ping监听器
-		return nil
-	} else {
-		return errors.New("del ping failed") // 若执行结果状态不是成功或关联ID不匹配，则返回移除失败的错误信息
+			// 反序列化接收到的消息为RunResult结构体
+			res := listener.RunResult{}
+			if err := json.Unmarshal(c.Body, &res); err != nil {
+				return err // 反序列化失败，则返回错误信息
+			}
+			fmt.Println(res) // 打印接收到的执行结果
+
+			// 检查执行结果状态和关联ID，若成功且匹配，则添加TCP监听器至规则映射表并返回nil
+			if res.Status == "success" {
+				if res.Corrlation_id == fmt.Sprintf("%d", id) {
+					p.Rule[id] = rule.NewTcp(id, p.RedisClientPool, p.mail, p.db)
+					return nil
+				}
+
+			} else {
+				return errors.New("add tcp failed") // 若执行结果状态不是成功或关联ID不匹配，则返回添加失败的错误信息
+			}
+		case <-control:
+			return errors.New("communication with cpp timed out")
+		}
 	}
 }
 
@@ -380,24 +416,40 @@ func (p *ListenerPool) DelTCP(id int) error {
 	if err != nil {
 		return err // 构造或发送消息失败，则返回错误信息
 	}
-	p.cSendQ.SendMessage(m) // 发送消息至C++端
-
-	// 接收C++端返回的执行结果
-	c := <-p.cGetch // 从控制信息接收通道接收消息
-
-	// 反序列化接收到的消息为RunResult结构体
-	res := listener.RunResult{}
-	if err := json.Unmarshal(c.Body, &res); err != nil {
-		return err // 反序列化失败，则返回错误信息
+	err = p.cSendQ.SendMessage(m) // 发送消息至C++端
+	if err != nil {
+		return err // 发送失败，则返回错误信息
 	}
+	// 循环等待接收C++端返回的执行结果
+	control := make(chan bool)
+	go func() {
+		time.Sleep(time.Second)
+		close(control)
+	}()
+	for {
+		select {
+		case c := <-p.cGetch: // 从控制信息接收通道接收消息
 
-	// 检查执行结果状态和关联ID，若成功且匹配，则更新TCP监听器状态并从规则映射表中移除，然后返回nil
-	if res.Status == "success" && res.Corrlation_id == fmt.Sprintf("%d", id) {
-		p.Rule[id].Update() // 更新TCP监听器状态
-		delete(p.Rule, id)  // 从规则映射表中移除指定ID的TCP监听器
-		return nil
-	} else {
-		return errors.New("del tcp failed") // 若执行结果状态不是成功或关联ID不匹配，则返回移除失败的错误信息
+			// 反序列化接收到的消息为RunResult结构体
+			res := listener.RunResult{}
+			if err := json.Unmarshal(c.Body, &res); err != nil {
+				return err // 反序列化失败，则返回错误信息
+			}
+			fmt.Println(res) // 打印接收到的执行结果
+
+			// 检查执行结果状态和关联ID，若成功且匹配，则添加TCP监听器至规则映射表并返回nil
+			if res.Status == "success" {
+				if res.Corrlation_id == fmt.Sprintf("%d", id) {
+					p.Rule[id] = rule.NewTcp(id, p.RedisClientPool, p.mail, p.db)
+					return nil
+				}
+
+			} else {
+				return errors.New("add tcp failed") // 若执行结果状态不是成功或关联ID不匹配，则返回添加失败的错误信息
+			}
+		case <-control:
+			return errors.New("communication with cpp timed out")
+		}
 	}
 }
 
@@ -444,7 +496,7 @@ func (p *ListenerPool) UpdateTCP(id int) error {
 //
 // 返回值：无
 
-func (p *ListenerPool) Close() {
+func (p *ListenerPool) Close() error {
 	// 构造并向C++端发送停止所有监听任务的请求消息
 	m, err := json.Marshal(listener.Request{
 		Type:           "request",
@@ -461,33 +513,46 @@ func (p *ListenerPool) Close() {
 	}
 	err = p.cSendQ.SendMessage(m) // 发送消息至C++端
 	if err != nil {
-		log.Println(err)
+		return err // 发送失败，则返回错误信息
 	}
-	// 接收C++端返回的执行结果
-	c := <-p.cGetch // 从控制信息接收通道接收消息
+	// 循环等待接收C++端返回的执行结果
+	control := make(chan bool)
+	go func() {
+		time.Sleep(time.Second)
+		close(control)
+	}()
+	for {
+		select {
+		case c := <-p.cGetch: // 从控制信息接收通道接收消息
 
-	// 反序列化接收到的消息为RunResult结构体
-	res := listener.RunResult{}
-	if err := json.Unmarshal(c.Body, &res); err != nil {
-		log.Println(err) // 反序列化失败，打印错误信息
+			// 反序列化接收到的消息为RunResult结构体
+			res := listener.RunResult{}
+			if err := json.Unmarshal(c.Body, &res); err != nil {
+				return err // 反序列化失败，则返回错误信息
+			}
+			//fmt.Println(res) // 打印接收到的执行结果
+
+			// 检查执行结果状态和关联ID，若成功且匹配，则添加TCP监听器至规则映射表并返回nil
+			if res.Status == "success" {
+				// 关闭相关通道及连接
+				p.cGetQ.Close()  // 关闭控制信息接收队列
+				p.cSendQ.Close() // 关闭控制信息发送队列
+				p.cConn.Close()  // 关闭与C++端的连接
+
+				// 关闭所有监听器
+				for _, v := range p.ListenerList {
+					v.Close() // 关闭单个监听器
+				}
+				log.Println("close all") // 输出关闭所有资源的日志信息
+				return nil
+			} else {
+				return errors.New("add tcp failed") // 若执行结果状态不是成功或关联ID不匹配，则返回添加失败的错误信息
+
+			}
+
+		case <-control:
+			return errors.New("communication with cpp timed out")
+		}
 	}
-	fmt.Println(res) // 打印接收到的执行结果
 
-	// 根据执行结果状态输出相应日志信息
-	if res.Status == "success" {
-		log.Println("cpp stop all success") // 停止所有任务成功
-	} else {
-		log.Println("cpp stop all lose") // 停止所有任务失败
-	}
-
-	// 关闭相关通道及连接
-	p.cGetQ.Close()  // 关闭控制信息接收队列
-	p.cSendQ.Close() // 关闭控制信息发送队列
-	p.cConn.Close()  // 关闭与C++端的连接
-
-	// 关闭所有监听器
-	for _, v := range p.ListenerList {
-		v.Close() // 关闭单个监听器
-	}
-	log.Println("close all") // 输出关闭所有资源的日志信息
 }
