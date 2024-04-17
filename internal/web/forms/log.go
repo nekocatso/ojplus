@@ -78,7 +78,7 @@ type UserLogConditions struct {
 }
 
 type UserLogCreate struct {
-	Type string `validate:"omitempty oneof=导出"`
+	Type string `validate:"omitempty,oneof=导出"`
 }
 
 func NewUserLogCreate(ctx *gin.Context) (*UserLogCreate, error) {

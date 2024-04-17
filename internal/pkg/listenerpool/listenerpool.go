@@ -563,6 +563,9 @@ func (p *ListenerPool) Close() error {
 }
 
 func (p *ListenerPool) Listen(assetRuleID int) error {
+	if p == nil {
+		return errors.New("listenerPooll not init")
+	}
 	// 从数据库中获取与监听任务ID关联的AssetRule记录
 	assetRule := new(models.AssetRule)
 	has, err := p.db.Engine.ID(assetRuleID).Get(&assetRule)

@@ -51,7 +51,6 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 		responseWithMessage(ctx, hasMessage, 40901, nil)
 		return
 	}
-	user.IsActive = true
 	err = ctrl.svc.CreateUser(user)
 	if merr, ok := err.(*mysql.MySQLError); ok {
 		if merr.Number == 1062 {

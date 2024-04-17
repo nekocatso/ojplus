@@ -36,7 +36,7 @@ func (svc *Alarm) UpdateAlarm(alarmID int, updateMap map[string]interface{}) err
 	if updateMap["note"] != nil {
 		alarm.Note = updateMap["note"].(*string)
 	}
-	if updateMap["interval"] != 0 {
+	if updateMap["interval"] != nil && updateMap["interval"] != 0 {
 		alarm.Interval = updateMap["interval"].(int)
 	}
 	if updateMap["mails"] != nil {
