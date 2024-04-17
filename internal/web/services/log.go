@@ -158,27 +158,10 @@ func (svc *Log) FindUserLogs(userID int, conditions map[string]interface{}) ([]m
 	for i := range logs {
 		if !processedIDs[logs[i].ID] {
 			processedIDs[logs[i].ID] = true
-			user, err := GetUserByID(svc.db.Engine, logs[i].UserID)
-			if err != nil {
-				return nil, err
-			}
-			if user == nil {
-				continue
-			}
-			err = svc.packUserLog(&logs[i], user)
-			if err != nil {
-				return nil, err
-			}
 			uniqueLogs = append(uniqueLogs, logs[i])
 		}
 	}
 	return uniqueLogs, nil
-}
-
-func (svc *Log) packUserLog(log *models.UserLog, user *models.User) error {
-	log.Username = user.Username
-	log.Phone = user.Phone
-	return nil
 }
 
 func (svc *Log) GetAlarmLogByID(alarmLogID int) (*models.AlarmLog, error) {
