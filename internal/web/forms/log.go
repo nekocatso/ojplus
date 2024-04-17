@@ -6,7 +6,7 @@ import (
 
 type AlarmLogSelect struct {
 	Page       int `validate:"required,gt=0"`
-	PageSize   int `validate:"required,gt=0,lte=100"`
+	PageSize   int `validate:"required,gt=0,lte=10000"`
 	Query      *AlarmLogConditions
 	Conditions map[string]interface{} `validate:"-"`
 }
@@ -62,7 +62,7 @@ func (form *AlarmLogSelect) check() map[string]string {
 
 type UserLogSelect struct {
 	Page       int `validate:"required,gt=0"`
-	PageSize   int `validate:"required,gt=0,lte=100"`
+	PageSize   int `validate:"required,gt=0,lte=10000"`
 	Query      *UserLogConditions
 	Conditions map[string]interface{} `validate:"-"`
 }
@@ -77,6 +77,23 @@ type UserLogConditions struct {
 	CreateTimeEnd   int    `validate:"required_with=CreateTimeBegin,gtefield=CreateTimeBegin"`
 }
 
+type UserLogCreate struct {
+	Type string `validate:"omitempty oneof=导出"`
+}
+
+func NewUserLogCreate(ctx *gin.Context) (*UserLogCreate, error) {
+	var form *UserLogCreate
+	err := ctx.ShouldBind(&form)
+	if err != nil {
+		return nil, err
+	}
+	return form, nil
+}
+
+func (form *UserLogCreate) check() map[string]string {
+	result := make(map[string]string)
+	return result
+}
 func NewUserLogSelect(ctx *gin.Context) (*UserLogSelect, error) {
 	var form *UserLogSelect
 	err := ctx.ShouldBind(&form)

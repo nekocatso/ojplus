@@ -63,7 +63,7 @@ func (ctrl *Account) CreateUser(ctx *gin.Context) {
 		response(ctx, 500, nil)
 	}
 	response(ctx, 201, map[string]int{"userID": user.ID})
-	err = ctrl.logger.SaveUserLog(ctx, user.ID, &logs.UserLog{
+	err = ctrl.logger.SaveUserLog(ctx, user, &logs.UserLog{
 		Module:  "账号管理",
 		Type:    "新增",
 		Content: user.Username,
@@ -160,7 +160,7 @@ func (ctrl *Account) UpdateUser(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 200, nil)
-	err = ctrl.logger.SaveUserLog(ctx, loginerID, &logs.UserLog{
+	err = ctrl.logger.SaveUserLog(ctx, loginer, &logs.UserLog{
 		Module:  "账号管理",
 		Type:    "编辑",
 		Content: user.Username,

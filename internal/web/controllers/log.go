@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"Alarm/internal/web/forms"
+	"Alarm/internal/web/logs"
+	"Alarm/internal/web/models"
 	"Alarm/internal/web/services"
 	"log"
 	"strconv"
@@ -10,13 +12,15 @@ import (
 )
 
 type Log struct {
-	svc *services.Log
-	cfg map[string]interface{}
+	svc    *services.Log
+	cfg    map[string]interface{}
+	logger *logs.Logger
 }
 
 func NewLog(cfg map[string]interface{}) *Log {
 	svc := services.NewLog(cfg)
-	return &Log{svc: svc, cfg: cfg}
+	logger := logs.NewLogger(cfg["db"].(*models.Database))
+	return &Log{svc: svc, cfg: cfg, logger: logger}
 }
 
 func (ctrl *Log) GetAlarmLogs(ctx *gin.Context) {
@@ -114,6 +118,46 @@ func (ctrl *Log) SelectAlarmLogs(ctx *gin.Context) {
 	data["logs"] = alarmLogs[start:end]
 	response(ctx, 200, data)
 }
+
+func (ctrl *Log) CreateUserLog(ctx *gin.Context) {
+	form, err := forms.NewUserLogCreate(ctx)
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	isValid, errorsMap, err := forms.Verify(form)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !isValid {
+		response(ctx, 40002, errorsMap)
+		return
+	}
+	userID := GetUserIDByContext(ctx)
+	user, err := ctrl.svc.GetUserByID(userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if user != nil {
+		response(ctx, 404, nil)
+		return
+	}
+	err = ctrl.logger.SaveUserLog(ctx, user, &logs.UserLog{
+		Module:  "操作日志",
+		Type:    "导出",
+		Content: "",
+	})
+	if err != nil {
+		response(ctx, 500, nil)
+		log.Println(err)
+	}
+	response(ctx, 200, nil)
+}
+
 func (ctrl *Log) GetUserLogs(ctx *gin.Context) {
 	pageStr := ctx.Query("page")
 	pageSizeStr := ctx.Query("pageSize")

@@ -22,13 +22,15 @@ type UserLog struct {
 	Content string
 }
 
-func (l *Logger) SaveUserLog(ctx *gin.Context, userID int, userLog *UserLog) error {
+func (l *Logger) SaveUserLog(ctx *gin.Context, user *models.User, userLog *UserLog) error {
 	_, err := l.db.Engine.Insert(&models.UserLog{
-		UserID:  userID,
-		Module:  userLog.Module,
-		Type:    userLog.Type,
-		Content: userLog.Content,
-		IP:      ctx.ClientIP(),
+		UserID:   user.ID,
+		Username: user.Username,
+		Phone:    user.Phone,
+		Module:   userLog.Module,
+		Type:     userLog.Type,
+		Content:  userLog.Content,
+		IP:       ctx.ClientIP(),
 	})
 	return err
 }

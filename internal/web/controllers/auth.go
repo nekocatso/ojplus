@@ -148,7 +148,7 @@ func (ctrl *Auth) Login(ctx *gin.Context) {
 		response(ctx, 500, nil)
 		return
 	}
-	err = ctrl.logger.SaveUserLog(ctx, user.ID, &logs.UserLog{
+	err = ctrl.logger.SaveUserLog(ctx, user, &logs.UserLog{
 		Module:  "权限控制",
 		Type:    "登录",
 		Content: user.Username,

@@ -441,7 +441,7 @@ func (svc *Asset) CountAsset(userID int, conditions map[string]interface{}) (int
 	assets := new(models.Asset)
 	queryBuilder := svc.db.Engine.Table(new(models.Asset))
 	queryBuilder = queryBuilder.Join("LEFT", "asset_user", "asset.id = asset_user.asset_id")
-	queryBuilder = queryBuilder.Where("asset_user.user_id = ? OR asset.creator_id = ?", userID, userID)
+	queryBuilder = queryBuilder.Where("asset_user.user_id = ?", userID)
 	for key, value := range conditions {
 		switch key {
 		case "enable":

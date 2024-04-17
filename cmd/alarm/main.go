@@ -143,6 +143,7 @@ func main() {
 		group.POST("/log/alarm/info", AuthCtrl.LoginMiddleware, LogCtrl.GetAlarmLogInfo)
 		group.POST("/log/alarms/query", AuthCtrl.LoginMiddleware, LogCtrl.SelectAlarmLogs)
 		group.GET("/log/users", AuthCtrl.LoginMiddleware, LogCtrl.GetUserLogs)
+		group.POST("/log/user", AuthCtrl.LoginMiddleware, LogCtrl.CreateUserLog)
 		group.POST("/log/users/query", AuthCtrl.LoginMiddleware, LogCtrl.SelectUserLogs)
 	}
 	engine.Run(globalConfig.Gin.Port)

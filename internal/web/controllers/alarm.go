@@ -43,6 +43,16 @@ func (ctrl *Alarm) CreateAlarm(ctx *gin.Context) {
 	}
 	alarm := form.Model
 	userID := GetUserIDByContext(ctx)
+	user, err := ctrl.svc.GetUserByID(userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if user != nil {
+		response(ctx, 404, nil)
+		return
+	}
 	alarm.CreatorID = userID
 	err = ctrl.svc.CreateAlarm(alarm)
 	if merr, ok := err.(*mysql.MySQLError); ok {
@@ -62,7 +72,7 @@ func (ctrl *Alarm) CreateAlarm(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 201, map[string]int{"ararmID": alarm.ID})
-	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+	err = ctrl.logger.SaveUserLog(ctx, user, &logs.UserLog{
 		Module:  "通知策略",
 		Type:    "新增",
 		Content: alarm.Name,
@@ -96,6 +106,16 @@ func (ctrl *Alarm) UpdateAlarmByID(ctx *gin.Context) {
 	}
 	// 权限校验
 	userID := GetUserIDByContext(ctx)
+	user, err := ctrl.svc.GetUserByID(userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if user != nil {
+		response(ctx, 404, nil)
+		return
+	}
 	alarm, err := ctrl.svc.GetAlarmByID(assetID)
 	if err != nil {
 		response(ctx, 500, nil)
@@ -117,7 +137,7 @@ func (ctrl *Alarm) UpdateAlarmByID(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 200, nil)
-	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+	err = ctrl.logger.SaveUserLog(ctx, user, &logs.UserLog{
 		Module:  "通知策略",
 		Type:    "编辑",
 		Content: alarm.Name,
@@ -262,6 +282,16 @@ func (ctrl *Alarm) DeleteAlarmByID(ctx *gin.Context) {
 	}
 	// 权限校验
 	userID := GetUserIDByContext(ctx)
+	user, err := ctrl.svc.GetUserByID(userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if user != nil {
+		response(ctx, 404, nil)
+		return
+	}
 	alarm, err := ctrl.svc.GetAlarmByID(alarmID)
 	if err != nil {
 		log.Println(err)
@@ -284,7 +314,7 @@ func (ctrl *Alarm) DeleteAlarmByID(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 200, nil)
-	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+	err = ctrl.logger.SaveUserLog(ctx, user, &logs.UserLog{
 		Module:  "通知策略",
 		Type:    "删除",
 		Content: alarm.Name,

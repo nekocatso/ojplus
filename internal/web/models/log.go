@@ -19,11 +19,11 @@ type AlarmLog struct {
 type UserLog struct {
 	ID       int       `json:"id" xorm:"'id' pk autoincr"`
 	UserID   int       `json:"-" xorm:"'user_id' notnull"`
+	Username string    `json:"username" xorm:"notnull"`
+	Phone    string    `json:"phone" xorm:"notnull"`
 	Module   string    `json:"module" xorm:"notnull"`
 	Type     string    `json:"type" xorm:"notnull"`
 	Content  string    `json:"content" xorm:"notnull"`
 	IP       string    `json:"ip" xorm:"'ip' notnull"`
 	CreateAt time.Time `json:"createdAt" xorm:"'created_at' created"`
-	Username string    `json:"username" xorm:"-"`
-	Phone    string    `json:"phone" xorm:"-"`
 }

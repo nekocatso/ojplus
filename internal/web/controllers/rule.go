@@ -45,6 +45,16 @@ func (ctrl *Rule) CreateRule(ctx *gin.Context) {
 	// 权限校验
 	rule := ruleForm.Model
 	userID := GetUserIDByContext(ctx)
+	user, err := ctrl.svc.GetUserByID(userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if user != nil {
+		response(ctx, 404, nil)
+		return
+	}
 	for _, asset := range ruleForm.Assets {
 		access, err := ctrl.svc.IsAccessAsset(asset, userID)
 		if err != nil {
@@ -69,7 +79,7 @@ func (ctrl *Rule) CreateRule(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 201, map[string]interface{}{"ruleID": rule.ID})
-	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+	err = ctrl.logger.SaveUserLog(ctx, user, &logs.UserLog{
 		Module:  "监控规则",
 		Type:    "新增",
 		Content: rule.Name,
@@ -108,6 +118,16 @@ func (ctrl *Rule) UpdateRuleByID(ctx *gin.Context) {
 	}
 	// 权限校验
 	userID := GetUserIDByContext(ctx)
+	user, err := ctrl.svc.GetUserByID(userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if user != nil {
+		response(ctx, 404, nil)
+		return
+	}
 	rule, err := ctrl.svc.GetRuleByID(ruleID, userID)
 	if err != nil {
 		response(ctx, 500, nil)
@@ -128,7 +148,7 @@ func (ctrl *Rule) UpdateRuleByID(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 200, nil)
-	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+	err = ctrl.logger.SaveUserLog(ctx, user, &logs.UserLog{
 		Module:  "监控规则",
 		Type:    "编辑",
 		Content: rule.Name,
@@ -356,6 +376,16 @@ func (ctrl *Rule) DeleteRuleByID(ctx *gin.Context) {
 	}
 	// 权限校验
 	userID := GetUserIDByContext(ctx)
+	user, err := ctrl.svc.GetUserByID(userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if user != nil {
+		response(ctx, 404, nil)
+		return
+	}
 	rule, err := ctrl.svc.GetRuleByID(ruleID, userID)
 	if err != nil {
 		log.Println(err)
@@ -378,7 +408,7 @@ func (ctrl *Rule) DeleteRuleByID(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 200, nil)
-	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+	err = ctrl.logger.SaveUserLog(ctx, user, &logs.UserLog{
 		Module:  "监控规则",
 		Type:    "删除",
 		Content: rule.Name,

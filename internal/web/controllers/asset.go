@@ -43,6 +43,16 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 	}
 	asset := form.Model
 	userID := GetUserIDByContext(ctx)
+	user, err := ctrl.svc.GetUserByID(userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if user != nil {
+		response(ctx, 404, nil)
+		return
+	}
 	asset.CreatorID = userID
 	has, hasMessage, err := ctrl.svc.GetAssetExistInfo(asset)
 	if err != nil {
@@ -68,7 +78,7 @@ func (ctrl *Asset) CreateAsset(ctx *gin.Context) {
 		}
 	}
 	response(ctx, 201, map[string]int{"assetID": asset.ID})
-	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+	err = ctrl.logger.SaveUserLog(ctx, user, &logs.UserLog{
 		Module:  "资产管理",
 		Type:    "新增",
 		Content: asset.Name,
@@ -112,6 +122,16 @@ func (ctrl *Asset) UpdateAssetByID(ctx *gin.Context) {
 	}
 	// 权限校验
 	userID := GetUserIDByContext(ctx)
+	user, err := ctrl.svc.GetUserByID(userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if user != nil {
+		response(ctx, 404, nil)
+		return
+	}
 	asset, err := ctrl.svc.GetAssetByID(assetID)
 	if err != nil {
 		response(ctx, 500, nil)
@@ -133,7 +153,7 @@ func (ctrl *Asset) UpdateAssetByID(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 200, nil)
-	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+	err = ctrl.logger.SaveUserLog(ctx, user, &logs.UserLog{
 		Module:  "资产管理",
 		Type:    "编辑",
 		Content: asset.Name,
@@ -321,6 +341,16 @@ func (ctrl *Asset) DeleteAsset(ctx *gin.Context) {
 	}
 	// 权限校验
 	userID := GetUserIDByContext(ctx)
+	user, err := ctrl.svc.GetUserByID(userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if user != nil {
+		response(ctx, 404, nil)
+		return
+	}
 	asset, err := ctrl.svc.GetAssetByID(assetID)
 	if err != nil {
 		response(ctx, 500, nil)
@@ -342,7 +372,7 @@ func (ctrl *Asset) DeleteAsset(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 200, nil)
-	err = ctrl.logger.SaveUserLog(ctx, userID, &logs.UserLog{
+	err = ctrl.logger.SaveUserLog(ctx, user, &logs.UserLog{
 		Module:  "资产管理",
 		Type:    "删除",
 		Content: asset.Name,
