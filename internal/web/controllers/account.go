@@ -333,6 +333,16 @@ func (ctrl *Account) DeleteUser(ctx *gin.Context) {
 		response(ctx, 404, nil)
 		return
 	}
+	user, err := ctrl.svc.GetUserByID(userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if user == nil {
+		response(ctx, 404, nil)
+		return
+	}
 	loginerID := GetUserIDByContext(ctx)
 	loginer, err := ctrl.svc.GetUserByID(loginerID)
 	if err != nil {
@@ -354,4 +364,12 @@ func (ctrl *Account) DeleteUser(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 200, nil)
+	err = ctrl.logger.SaveUserLog(ctx, loginer, &logs.UserLog{
+		Module:  "账号管理",
+		Type:    "删除",
+		Content: user.Username,
+	})
+	if err != nil {
+		log.Println(err)
+	}
 }

@@ -74,6 +74,7 @@ func (svc *Account) GetUserByID(id int) (*models.User, error) {
 func (svc *Account) FindUsers(conditions map[string]interface{}) ([]models.User, error) {
 	var users []models.User
 	queryBuilder := svc.db.Engine.Table("user")
+	queryBuilder = queryBuilder.Desc("user.id")
 	for key, value := range conditions {
 		switch key {
 		case "username":

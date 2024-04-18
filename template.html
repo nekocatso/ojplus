@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>email</title>
+    <style>
+      .ah4 {
+        margin: 30px 50px 0;
+        color: red;
+      }
+      .bdiv {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        /* height: 40px; */
+        flex-wrap: nowrap;
+        margin: 0 50px;
+      }
+      .ch3 {
+        min-width: 100px;
+        font-size: 16px;
+      }
+      .dheader {
+        height: 100px;
+        background-color: #1777ff;
+        color: white;
+        display: flex;
+        align-items: center;
+        border-radius: 5px;
+        justify-content: center;
+        gap: 10px;
+      }
+	  span {
+		  font-size: 14px;
+	  }
+    </style>
+  </head>
+  <body>
+    <header class="dheader">
+      <h3>{{.Title}}</h3>
+    </header>
+
+    <div class="bdiv" style="padding-top: 30px;">
+      <h3 class="ch3">告警类型:</h3>
+      <span>{{.Type  }}</span>
+    </div>
+    <div class="bdiv">
+      <h3 class="ch3">告警状态:</h3>
+      <span>{{.State }}</span>
+    </div>
+
+    <div class="bdiv">
+      <h3 class="ch3">告警资产:</h3>
+      <span>{{.Asset  }}</span>
+    </div>
+    <div class="bdiv">
+      <h3 class="ch3">资产地址:</h3>
+      <span>{{.Address  }}</span>
+    </div>
+    <div class="bdiv">
+      <h3 class="ch3">检测规则:</h3>
+      <span>{{.Rule  }}</span>
+    </div>
+
+    <div class="bdiv">
+      <h3 class="ch3">告警内容:</h3>
+      <span>{{.Body  }}</span>
+    </div>
+    <div class="bdiv">
+      <h3 class="ch3">告警时间:</h3>
+      <span>{{ .Time }}</span>
+    </div>
+    <h3 class="ah4" style="font-size: 14px;">{{.Tips }}</h3>
+  </body>
+</html>

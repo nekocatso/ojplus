@@ -384,62 +384,69 @@ func (p *Tcp) Alarm() {
 	// 如果已设置告警ID（表示已配置告警），则进行告警通知
 	if p.alarm_id > 0 {
 		// 根据当前状态构建告警主题、消息及接收人列表
-		var subject, message string
-		var to []string
+		var subject string
+		var maildata mail.Maildata
+
 		if p.State.Status == 3 { // 异常结束
 			subject = fmt.Sprintf("【告警】%s资产-【规则】-异常结束", p.asset_name)
-			message = fmt.Sprintf(`告警类型：TCP检测<br>
-		告警节点：异常结束<br>
-		告警资产：%s<br>
-		资产地址：%s<br>
-		检测规则：%s<br>
-		告警内容：<br>
-		&nbsp&nbsp&nbsp&nbsp该资产监控出现变更，本次告警中止并解除<br>
-		告警时间：%s<br><br>`, p.asset_name,
-				p.address, p.rule, p.State.time.Format("2006-01-02 15:04:05"))
+
+			maildata = mail.Maildata{
+				Title:   fmt.Sprintf("【告警】%s资产-【规则】-异常结束", p.asset_name),
+				Type:    "TCP检测",
+				State:   "异常结束",
+				Asset:   p.asset_name,
+				Address: p.address,
+				Rule:    p.rule,
+				Body:    "该资产监控出现变更",
+				Time:    p.State.time.Format("2006-01-02 15:04:05"),
+				Tips:    "本次告警中止并解除",
+			}
 		} else if p.State.abn == p.wrong_limit { //告警次数达到告警限制,异常触发
 			subject = fmt.Sprintf("【告警】%s资产-【规则】-异常触发", p.asset_name)
-			message = fmt.Sprintf(`告警类型：TCP端口探测<br>
-		告警节点：异常触发<br>
-		告警资产：%s<br>
-		资产地址：%s<br>
-		检测规则：%s<br>
-		告警内容：<br>
-		&nbsp&nbsp&nbsp&nbsp%s<br>
-		告警时间：%s<br><br>
-		该资产在此规则监控下触发异常，请尽快处理！`, p.asset_name,
-				p.address, p.rule, p.State.reason, p.State.time.Format("2006-01-02 15:04:05"))
-			to = p.mailto
+
+			maildata = mail.Maildata{
+				Title:   fmt.Sprintf("【告警】%s资产-【规则】-异常触发", p.asset_name),
+				Type:    "TCP检测",
+				State:   "异常触发",
+				Asset:   p.asset_name,
+				Address: p.address,
+				Rule:    p.rule,
+				Body:    p.State.reason,
+				Time:    p.State.time.Format("2006-01-02 15:04:05"),
+				Tips:    "该资产在此规则监控下触发异常，请尽快处理！",
+			}
 		} else if p.State.abn > p.wrong_limit { //告警持续,异常持续
 			subject = fmt.Sprintf("【告警】%s资产-【规则】-异常持续", p.asset_name)
-			message = fmt.Sprintf(`告警类型：TCP端口探测<br>
-		告警节点：异常持续<br>
-		告警资产：%s<br>
-		资产地址：%s<br>
-		检测规则：%s<br>
-		告警内容：<br>
-		&nbsp&nbsp&nbsp&nbsp%s<br>
-		告警时间：%s<br><br>
-		该资产在此规则监控下处于异常持续中，请尽快处理！`, p.asset_name,
-				p.address, p.rule, p.State.reason, p.State.time.Format("2006-01-02 15:04:05"))
-			to = p.mailto
+
+			maildata = mail.Maildata{
+				Title:   fmt.Sprintf("【告警】%s资产-【规则】-异常持续", p.asset_name),
+				Type:    "TCP检测",
+				State:   "异常持续",
+				Asset:   p.asset_name,
+				Address: p.address,
+				Rule:    p.rule,
+				Body:    p.State.reason,
+				Time:    p.State.time.Format("2006-01-02 15:04:05"),
+				Tips:    "该资产在此规则监控下处于异常持续中，请尽快处理！",
+			}
 		} else if p.State.nor > 0 { //告警解除,异常恢复
 			subject = fmt.Sprintf("【告警解除】%s资产-【规则】-异常恢复", p.asset_name)
-			message = fmt.Sprintf(`告警类型：TCP端口探测<br>
-		告警节点：异常恢复<br>
-		告警资产：%s<br>
-		资产地址：%s<br>
-		检测规则：%s<br>
-		告警内容：<br>
-		&nbsp&nbsp&nbsp&nbsp%s<br>
-		告警时间：%s<br><br>
-		该资产在此规则监控下解除异常，告警结束`, p.asset_name,
-				p.address, p.rule, p.State.reason, p.State.time.Format("2006-01-02 15:04:05"))
-			to = p.mailto
+
+			maildata = mail.Maildata{
+				Title:   fmt.Sprintf("【告警】%s资产-【规则】-异常恢复", p.asset_name),
+				Type:    "TCP检测",
+				State:   "异常恢复",
+				Asset:   p.asset_name,
+				Address: p.address,
+				Rule:    p.rule,
+				Body:    p.State.reason,
+				Time:    p.State.time.Format("2006-01-02 15:04:05"),
+				Tips:    "该资产在此规则监控下解除异常，告警结束",
+			}
 		}
 
 		// 发送告警邮件
-		err := p.tools.mail.SendMail(subject, to, []string{}, []string{}, message, []string{})
+		err := p.tools.mail.SendMail(subject, p.mailto, []string{}, []string{}, maildata, []string{})
 		if err != nil {
 			log.Println(err)
 

@@ -226,7 +226,6 @@ func (p *Ping) Scan() error {
 //	error // 错误信息，若判断过程中发生错误则返回相应的错误信息，否则返回nil
 func (p *Ping) Jude() (bool, error) {
 	// 打印开始进行ping操作的信息，包括监控对象地址
-	
 
 	// 通过RCP客户端发送GET请求，获取与correlation_id关联的数据
 	res, err := p.tools.Rcp.Client.Get(fmt.Sprintf("%d", p.State.correlation_id)).Bytes()
@@ -251,7 +250,7 @@ func (p *Ping) Jude() (bool, error) {
 		if p.mode == 1 { // 同时错误
 
 			// 若响应时间小于等于延迟阈值且丢包率小于等于丢包阈值，返回true
-			if rl < float64(p.latency_limit) && rp < float64(p.lost_limit) {
+			if rl < float64(p.latency_limit) || rp < float64(p.lost_limit) {
 				return true, nil
 			} else {
 				// 否则更新监控状态的reason字段，记录不符合预期的原因，并返回false
@@ -262,7 +261,7 @@ func (p *Ping) Jude() (bool, error) {
 		} else { // 任一错误
 
 			// 若响应时间小于延迟阈值或丢包率小于丢包阈值，返回true
-			if rl < float64(p.latency_limit) || rp < float64(p.lost_limit) {
+			if (p.latency_limit == 0 || rl < float64(p.latency_limit)) && (p.lost_limit == 0 || rp < float64(p.lost_limit)) {
 				return true, nil
 			} else {
 				// 否则根据具体情况更新监控状态的reason字段，记录不符合预期的原因，并返回false
@@ -292,60 +291,66 @@ func (p *Ping) Jude() (bool, error) {
 func (p *Ping) Alarm() {
 	// 根据当前监控状态确定邮件主题和内容
 	if p.alarm_id != 0 {
-		var subject, message string
+		var subject string
+		var maildata mail.Maildata
 		if p.State.Status == 3 { //异常结束
 			subject = fmt.Sprintf("【告警】%s资产-【规则】-异常结束", p.asset_name)
-			message = fmt.Sprintf(`告警类型：PING检测<br>
-		告警节点：异常结束<br>
-		告警资产：%s<br>
-		资产地址：%s<br>
-		检测规则：%s<br>
-		告警内容：<br>
-		&nbsp&nbsp&nbsp&nbsp该资产监控出现变更，本次告警中止并解除<br>
-		告警时间：%s<br><br>`, p.asset_name,
-				p.address, p.rule, p.State.time.Format("2006-01-02 15:04:05"))
 
+			maildata = mail.Maildata{
+				Title:   fmt.Sprintf("【告警】%s资产-【规则】-异常结束", p.asset_name),
+				Type:    "PING检测",
+				State:   "异常结束",
+				Asset:   p.asset_name,
+				Address: p.address,
+				Rule:    p.rule,
+				Body:    "该资产监控出现变更",
+				Time:    p.State.time.Format("2006-01-02 15:04:05"),
+				Tips:    "本次告警中止并解除",
+			}
 		} else if p.State.abn == p.wrong_limit { //异常触发
 			subject = fmt.Sprintf("【告警】%s资产-【规则】-异常触发", p.asset_name)
-			message = fmt.Sprintf(`告警类型：PING检测<br>
-		告警节点：异常触发<br>
-		告警资产：%s<br>
-		资产地址：%s<br>
-		检测规则：%s<br>
-		告警内容：<br>
-		&nbsp&nbsp&nbsp&nbsp%s<br>
-		告警时间：%s<br><br>
-		该资产在此规则监控下触发异常，请尽快处理！`, p.asset_name,
-				p.address, p.rule, p.State.reason, p.State.time.Format("2006-01-02 15:04:05"))
 
+			maildata = mail.Maildata{
+				Title:   fmt.Sprintf("【告警】%s资产-【规则】-异常触发", p.asset_name),
+				Type:    "PING检测",
+				State:   "异常触发",
+				Asset:   p.asset_name,
+				Address: p.address,
+				Rule:    p.rule,
+				Body:    p.State.reason,
+				Time:    p.State.time.Format("2006-01-02 15:04:05"),
+				Tips:    "该资产在此规则监控下触发异常，请尽快处理！",
+			}
 		} else if p.State.abn > p.wrong_limit { //异常持续
 			subject = fmt.Sprintf("【告警】%s资产-【规则】-异常持续", p.asset_name)
-			message = fmt.Sprintf(`告警类型：PING检测<br>
-		告警节点：异常持续<br>
-		告警资产：%s<br>
-		资产地址：%s<br>
-		检测规则：%s<br>
-		告警内容：<br>
-		&nbsp&nbsp&nbsp&nbsp%s<br>
-		告警时间：%s<br><br>
-		该资产在此规则监控下处于异常持续中，请尽快处理！`, p.asset_name,
-				p.address, p.rule, p.State.reason, p.State.time.Format("2006-01-02 15:04:05"))
 
+			maildata = mail.Maildata{
+				Title:   fmt.Sprintf("【告警】%s资产-【规则】-异常持续", p.asset_name),
+				Type:    "PING检测",
+				State:   "异常持续",
+				Asset:   p.asset_name,
+				Address: p.address,
+				Rule:    p.rule,
+				Body:    p.State.reason,
+				Time:    p.State.time.Format("2006-01-02 15:04:05"),
+				Tips:    "该资产在此规则监控下处于异常持续中，请尽快处理！",
+			}
 		} else if p.State.nor > 0 { //异常结束
 			subject = fmt.Sprintf("【告警解除】%s资产-【规则】-异常恢复", p.asset_name)
-			message = fmt.Sprintf(`告警类型：PING检测<br>
-		告警节点：异常终止<br>
-		告警资产：%s<br>
-		资产地址：%s<br>
-		检测规则：%s<br>
-		告警内容：<br>
-		&nbsp&nbsp&nbsp&nbsp%s<br>
-		告警时间：%s<br><br>
-		该资产在此规则监控下解除异常，告警结束`, p.asset_name,
-				p.address, p.rule, p.State.reason, p.State.time.Format("2006-01-02 15:04:05"))
+			maildata = mail.Maildata{
+				Title:   fmt.Sprintf("【告警】%s资产-【规则】-异常恢复", p.asset_name),
+				Type:    "PING检测",
+				State:   "异常恢复",
+				Asset:   p.asset_name,
+				Address: p.address,
+				Rule:    p.rule,
+				Body:    p.State.reason,
+				Time:    p.State.time.Format("2006-01-02 15:04:05"),
+				Tips:    "该资产在此规则监控下解除异常，告警结束",
+			}
 		}
 		// 发送邮件，使用邮件服务对象和邮件接收人列表
-		err := p.tools.mail.SendMail(subject, p.mailto, []string{}, []string{}, message, []string{})
+		err := p.tools.mail.SendMail(subject, p.mailto, []string{}, []string{}, maildata, []string{})
 		// 若发送邮件过程中发生错误，打印错误信息
 		if err != nil {
 			log.Println(err)

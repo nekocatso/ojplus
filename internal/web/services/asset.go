@@ -310,6 +310,7 @@ func (svc *Asset) FindAssets(userID int, conditions map[string]interface{}) ([]m
 	queryBuilder = queryBuilder.Join("LEFT", "asset_user", "asset.id = asset_user.asset_id")
 	queryBuilder = queryBuilder.Join("LEFT", "asset_rule", "asset.id = asset_rule.asset_id")
 	queryBuilder = queryBuilder.Join("LEFT", "rule", "rule.id = asset_rule.rule_id")
+	queryBuilder = queryBuilder.Desc("asset.id")
 	for key, value := range conditions {
 		switch key {
 		case "name":
@@ -426,7 +427,7 @@ func (svc *Asset) DeleteAsset(assetID int) error {
 	var enableAssetRules []models.AssetRule
 	svc.db.Engine.Where("asset_id = ?", assetID).Join("LEFT", "asset", "asset.id = asset_rule.asset_id").And("asset.state > 0").Find(&enableAssetRules)
 	for _, enableAssetRule := range enableAssetRules {
-		err := svc.listener.DelPing(enableAssetRule.ID)
+		err := svc.listener.Listen(enableAssetRule.ID)
 		if err != nil {
 			session.Rollback()
 			return err

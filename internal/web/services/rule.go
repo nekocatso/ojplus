@@ -248,6 +248,7 @@ func (svc *Rule) FindRules(userID int, conditions map[string]interface{}) ([]mod
 	queryBuilder = queryBuilder.Join("LEFT", "asset_user", "asset_rule.asset_id = asset_user.asset_id")
 	queryBuilder = queryBuilder.And("asset_user.user_id = ?", userID)
 	queryBuilder = queryBuilder.Or("rule.creator_id = ?", userID)
+	queryBuilder = queryBuilder.Desc("rule.id")
 	for key, value := range conditions {
 		switch key {
 		case "name":

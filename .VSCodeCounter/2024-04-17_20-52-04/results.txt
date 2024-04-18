@@ -1,0 +1,92 @@
+Date : 2024-04-17 20:52:04
+Directory : /projects/alarm
+Total : 47 files,  7583 codes, 3 comments, 685 blanks, all 8271 lines
+
+Languages
++------------------+------------+------------+------------+------------+------------+
+| language         | files      | code       | comment    | blank      | total      |
++------------------+------------+------------+------------+------------+------------+
+| Go               |         44 |      7,295 |          0 |        676 |      7,971 |
+| Go Checksum File |          1 |        209 |          0 |          1 |        210 |
+| Go Module File   |          1 |         62 |          0 |          5 |         67 |
+| TOML             |          1 |         17 |          3 |          3 |         23 |
++------------------+------------+------------+------------+------------+------------+
+
+Directories
++----------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                           | files      | code       | comment    | blank      | total      |
++----------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                              |         47 |      7,583 |          3 |        685 |      8,271 |
+| . (Files)                                                      |          3 |        288 |          3 |          9 |        300 |
+| cmd                                                            |          1 |        184 |          0 |         22 |        206 |
+| cmd/alarm                                                      |          1 |        184 |          0 |         22 |        206 |
+| internal                                                       |         43 |      7,111 |          0 |        654 |      7,765 |
+| internal/config                                                |          1 |         54 |          0 |         10 |         64 |
+| internal/pkg                                                   |         10 |      2,350 |          0 |        280 |      2,630 |
+| internal/pkg/listener                                          |          3 |        334 |          0 |         30 |        364 |
+| internal/pkg/listenerpool                                      |          1 |        600 |          0 |         52 |        652 |
+| internal/pkg/mail                                              |          1 |        118 |          0 |         20 |        138 |
+| internal/pkg/messagequeue                                      |          2 |        447 |          0 |         53 |        500 |
+| internal/pkg/rule                                              |          3 |        851 |          0 |        125 |        976 |
+| internal/utils                                                 |          2 |         36 |          0 |          8 |         44 |
+| internal/web                                                   |         30 |      4,671 |          0 |        356 |      5,027 |
+| internal/web/controllers                                       |          8 |      2,073 |          0 |         84 |      2,157 |
+| internal/web/forms                                             |          7 |        883 |          0 |         95 |        978 |
+| internal/web/logs                                              |          1 |         30 |          0 |          7 |         37 |
+| internal/web/models                                            |          7 |        187 |          0 |         32 |        219 |
+| internal/web/services                                          |          7 |      1,498 |          0 |        138 |      1,636 |
++----------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++----------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| filename                                                       | language         | code       | comment    | blank      | total      |
++----------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| /projects/alarm/cmd/alarm/main.go                              | Go               |        184 |          0 |         22 |        206 |
+| /projects/alarm/config.toml                                    | TOML             |         17 |          3 |          3 |         23 |
+| /projects/alarm/go.mod                                         | Go Module File   |         62 |          0 |          5 |         67 |
+| /projects/alarm/go.sum                                         | Go Checksum File |        209 |          0 |          1 |        210 |
+| /projects/alarm/internal/config/config.go                      | Go               |         54 |          0 |         10 |         64 |
+| /projects/alarm/internal/pkg/listener/listener.go              | Go               |        159 |          0 |         20 |        179 |
+| /projects/alarm/internal/pkg/listener/listener_test.go         | Go               |         89 |          0 |          4 |         93 |
+| /projects/alarm/internal/pkg/listener/messageparse.go          | Go               |         86 |          0 |          6 |         92 |
+| /projects/alarm/internal/pkg/listenerpool/listenerpool.go      | Go               |        600 |          0 |         52 |        652 |
+| /projects/alarm/internal/pkg/mail/mail.go                      | Go               |        118 |          0 |         20 |        138 |
+| /projects/alarm/internal/pkg/messagequeue/messagequeue.go      | Go               |        183 |          0 |         28 |        211 |
+| /projects/alarm/internal/pkg/messagequeue/messagequeue_test.go | Go               |        264 |          0 |         25 |        289 |
+| /projects/alarm/internal/pkg/rule/ping.go                      | Go               |        366 |          0 |         60 |        426 |
+| /projects/alarm/internal/pkg/rule/rule.go                      | Go               |         29 |          0 |          5 |         34 |
+| /projects/alarm/internal/pkg/rule/tcp.go                       | Go               |        456 |          0 |         60 |        516 |
+| /projects/alarm/internal/utils/handler.go                      | Go               |         20 |          0 |          4 |         24 |
+| /projects/alarm/internal/utils/validator.go                    | Go               |         16 |          0 |          4 |         20 |
+| /projects/alarm/internal/web/controllers/account.go            | Go               |        345 |          0 |         13 |        358 |
+| /projects/alarm/internal/web/controllers/alarm.go              | Go               |        317 |          0 |         11 |        328 |
+| /projects/alarm/internal/web/controllers/asset.go              | Go               |        391 |          0 |         14 |        405 |
+| /projects/alarm/internal/web/controllers/auth.go               | Go               |        216 |          0 |         11 |        227 |
+| /projects/alarm/internal/web/controllers/log.go                | Go               |        303 |          0 |         12 |        315 |
+| /projects/alarm/internal/web/controllers/response.go           | Go               |         85 |          0 |          6 |         91 |
+| /projects/alarm/internal/web/controllers/rule.go               | Go               |        407 |          0 |         14 |        421 |
+| /projects/alarm/internal/web/controllers/util.go               | Go               |          9 |          0 |          3 |         12 |
+| /projects/alarm/internal/web/forms/account.go                  | Go               |        144 |          0 |         14 |        158 |
+| /projects/alarm/internal/web/forms/alarm.go                    | Go               |        112 |          0 |         15 |        127 |
+| /projects/alarm/internal/web/forms/asset.go                    | Go               |        202 |          0 |         17 |        219 |
+| /projects/alarm/internal/web/forms/auth.go                     | Go               |         41 |          0 |          9 |         50 |
+| /projects/alarm/internal/web/forms/form.go                     | Go               |         52 |          0 |          7 |         59 |
+| /projects/alarm/internal/web/forms/log.go                      | Go               |        147 |          0 |         15 |        162 |
+| /projects/alarm/internal/web/forms/rule.go                     | Go               |        185 |          0 |         18 |        203 |
+| /projects/alarm/internal/web/logs/user.go                      | Go               |         30 |          0 |          7 |         37 |
+| /projects/alarm/internal/web/models/account.go                 | Go               |         17 |          0 |          3 |         20 |
+| /projects/alarm/internal/web/models/alarm.go                   | Go               |         18 |          0 |          4 |         22 |
+| /projects/alarm/internal/web/models/asset.go                   | Go               |         28 |          0 |          5 |         33 |
+| /projects/alarm/internal/web/models/cache.go                   | Go               |         24 |          0 |          5 |         29 |
+| /projects/alarm/internal/web/models/db.go                      | Go               |         33 |          0 |          5 |         38 |
+| /projects/alarm/internal/web/models/log.go                     | Go               |         26 |          0 |          4 |         30 |
+| /projects/alarm/internal/web/models/rule.go                    | Go               |         41 |          0 |          6 |         47 |
+| /projects/alarm/internal/web/services/account.go               | Go               |        166 |          0 |         16 |        182 |
+| /projects/alarm/internal/web/services/alarm.go                 | Go               |        208 |          0 |         16 |        224 |
+| /projects/alarm/internal/web/services/asset.go                 | Go               |        437 |          0 |         33 |        470 |
+| /projects/alarm/internal/web/services/auth.go                  | Go               |         87 |          0 |         18 |        105 |
+| /projects/alarm/internal/web/services/log.go                   | Go               |        171 |          0 |         16 |        187 |
+| /projects/alarm/internal/web/services/rule.go                  | Go               |        380 |          0 |         32 |        412 |
+| /projects/alarm/internal/web/services/util.go                  | Go               |         49 |          0 |          7 |         56 |
+| Total                                                          |                  |      7,583 |          3 |        685 |      8,271 |
++----------------------------------------------------------------+------------------+------------+------------+------------+------------+

@@ -57,12 +57,13 @@ func main() {
 		})
 	}
 	// Mail Init
-	mail, err := mail.NewMailPool(mailBox)
+	mail, err := mail.NewMailPool(mailBox, "./template.html")
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	// ListeningPool Init
-	listener, err := listenerpool.NewListenerPool(db, cache, mail, "amqp://user:mkjsix7@1.12.250.106:5672/")
+	listener, err := listenerpool.NewListenerPool(db, cache, mail, globalConfig.Listener.Rabbitmqurl)
 	// var listener *listenerpool.ListenerPool
 	if err != nil {
 		if err.Error() == "communication with cpp timed out" {

@@ -16,6 +16,7 @@ account.superAdminID = 1
 account.defaultPassword = "dc483e80a7a0bd9ef71d8cf973673924"
 
 [listener]
+rabbitmqurl = "amqp://user:mkjsix7@1.12.250.106:5672/"
 [[listener.mails]]
 name = "yangquanmailtest@163.com"
 password = "APQJNHKHMXPGRFVO"

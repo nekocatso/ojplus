@@ -2,6 +2,7 @@ package services
 
 import (
 	"Alarm/internal/web/models"
+	"errors"
 
 	"time"
 )
@@ -23,12 +24,12 @@ func NewLog(cfg map[string]interface{}) *Log {
 func (svc *Log) FindALarmLogs(userID int, conditions map[string]interface{}) ([]models.AlarmLog, error) {
 	logs := []models.AlarmLog{}
 	// 构建查询条件
-	// svc.db.Engine.ShowSQL(true)
 	queryBuilder := svc.db.Engine.Table("alarm_log").Alias("log")
 	queryBuilder = queryBuilder.Join("LEFT", "rule", "log.rule_id = rule.id")
 	queryBuilder = queryBuilder.Join("LEFT", "asset", "log.asset_id = asset.id")
 	queryBuilder = queryBuilder.Join("LEFT", "asset_user", "log.asset_id = asset.id")
 	queryBuilder = queryBuilder.Where("asset_user.user_id = ?", userID).Or("asset.creator_id = ?", userID)
+	queryBuilder = queryBuilder.Desc("log.id")
 	for key, value := range conditions {
 		switch key {
 		case "assetID":
@@ -90,7 +91,7 @@ func (svc *Log) packALarmLog(log *models.AlarmLog) error {
 	if err != nil {
 		return err
 	}
-	log.Admin = creator.Name
+	log.Admin = creator.Username
 	return nil
 }
 
@@ -109,17 +110,26 @@ func (svc *Log) CountAlarmLog(conditions map[string]interface{}) (int64, error) 
 			queryBuilder = queryBuilder.And("created_at <= ?", tm)
 		}
 	}
-	return queryBuilder.Count(&logs)
+	return queryBuilder.Count(logs)
 }
 
 func (svc *Log) FindUserLogs(userID int, conditions map[string]interface{}) ([]models.UserLog, error) {
 	logs := []models.UserLog{}
 	// 构建查询条件
 	// svc.db.Engine.ShowSQL(true)
+	user, err := svc.GetUserByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
 	queryBuilder := svc.db.Engine.Table("user_log").Alias("log")
 	queryBuilder = queryBuilder.Join("LEFT", "user", "log.user_id = user.id")
-	queryBuilder = queryBuilder.And("log.user_id = user.id")
-	queryBuilder = queryBuilder.Or("user.role >= 30")
+	if user.Role < 30 {
+		queryBuilder = queryBuilder.And("log.user_id = ?", userID)
+	}
+	queryBuilder = queryBuilder.Desc("log.id")
 	for key, value := range conditions {
 		switch key {
 		case "username":
@@ -147,7 +157,7 @@ func (svc *Log) FindUserLogs(userID int, conditions map[string]interface{}) ([]m
 		queryBuilder = queryBuilder.And("log.module != ?", value)
 	}
 
-	err := queryBuilder.Find(&logs)
+	err = queryBuilder.Find(&logs)
 	if err != nil {
 		return nil, err
 	}

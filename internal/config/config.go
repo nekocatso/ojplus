@@ -40,7 +40,8 @@ type Account struct {
 
 // Listener
 type Listener struct {
-	Mails []Mail
+	Rabbitmqurl string
+	Mails       []Mail
 }
 
 type Mail struct {

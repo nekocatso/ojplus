@@ -1,6 +1,10 @@
 package mail
 
 import (
+	"bytes"
+	"fmt"
+	"text/template"
+
 	"gopkg.in/gomail.v2"
 )
 
@@ -29,9 +33,21 @@ type MailBox struct {
 //	num int // 当前使用邮箱，整数类型
 //	mailbox []MailBox // 邮箱账户切片，存储一组MailBox实例
 type MailPool struct {
-	sum     int       // 总邮箱数
-	num     int       // 当前使用邮箱数
-	mailbox []MailBox // 邮箱账户切片
+	sum      int                // 总邮箱数
+	num      int                // 当前使用邮箱数
+	template *template.Template // 邮件模板
+	mailbox  []MailBox          // 邮箱账户切片
+}
+type Maildata struct {
+	Title   string
+	Type    string
+	State   string
+	Asset   string
+	Address string
+	Rule    string
+	Body    string
+	Time    string
+	Tips    string
 }
 
 // NewMailPool
@@ -48,7 +64,7 @@ type MailPool struct {
 //
 //	*MailPool // 初始化后的MailPool指针，若成功则返回新创建的邮箱池实例，否则返回nil
 //	error // 错误信息，若创建过程中出现错误则返回相应的错误信息，否则返回nil
-func NewMailPool(mb []MailBox) (*MailPool, error) {
+func NewMailPool(mb []MailBox, templatePath string) (*MailPool, error) {
 	// 创建空MailPool实例
 	var mp MailPool
 
@@ -62,6 +78,13 @@ func NewMailPool(mb []MailBox) (*MailPool, error) {
 
 	// 初始化mp.num为0，表示当前可用邮箱数
 	mp.num = 0
+	var err error
+	// 读取HTML模板文件
+	mp.template, err = template.ParseFiles(templatePath)
+	if err != nil {
+
+		return nil, err
+	}
 
 	// 返回新创建的MailPool实例及其指针
 	return &mp, nil
@@ -82,12 +105,22 @@ func NewMailPool(mb []MailBox) (*MailPool, error) {
 // 返回值：
 //
 //	error // 错误信息，若发送邮件过程中出现错误则返回相应的错误信息，否则返回nil
-func (mp *MailPool) SendMail(subject string, to []string, Cc []string, Bcc []string, message string, annex []string) error {
+func (mp *MailPool) SendMail(subject string, to []string, Cc []string, Bcc []string, message Maildata, annex []string) error {
+
+	// 创建一个bytes.Buffer来存储渲染后的HTML内容
+	var buf bytes.Buffer
+
+	// 渲染模板并将输出写入到bytes.Buffer
+	err := mp.template.ExecuteTemplate(&buf, "template.html", message)
+	if err != nil {
+		return err
+	}
+	htmlString := buf.String()
 	// 创建一个新的gomail.Message实例
 	m := gomail.NewMessage()
 
 	// 设置发件人信息，使用MailPool中当前可用邮箱账户
-	m.SetHeader("From", mp.mailbox[mp.num].Name)
+	m.SetHeader("From", fmt.Sprintf("alarm <%s>", mp.mailbox[mp.num].Name))
 
 	// 设置邮件主题
 	m.SetHeader("Subject", subject)
@@ -112,7 +145,7 @@ func (mp *MailPool) SendMail(subject string, to []string, Cc []string, Bcc []str
 		"Bcc": Bcc,
 	})
 	// 设置邮件正文，采用HTML格式
-	m.SetBody("text/html", message)
+	m.SetBody("text/html", htmlString)
 
 	// 添加附件
 	for _, a := range annex {
