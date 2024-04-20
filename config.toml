@@ -1,7 +1,7 @@
 [gin]
-port = ":8080"
+port = ":4010"
 # Mysql
-mysql.dsn = "alarm:123.com@tcp(127.0.0.1:3306)/alarm?charset=utf8"
+mysql.dsn = "ojer:123.com@tcp(127.0.0.1:3306)/ojplus?charset=utf8"
 # Redis
 redis.addr = "127.0.0.1:6379"
 redis.password = ""
@@ -9,16 +9,5 @@ redis.db = 0
 
 token.privateKeyPath = "."
 # token.accessValidity = 3600   # 1小时
-token.accessValidity = 172800  # 1小时
+token.accessValidity = 172800  # 2天
 token.refreshValidity = 172800 # 2天
-
-account.superAdminID = 1
-account.defaultPassword = "dc483e80a7a0bd9ef71d8cf973673924"
-
-[listener]
-rabbitmqurl = "amqp://user:mkjsix7@1.12.250.106:5672/"
-[[listener.mails]]
-name = "yangquanmailtest@163.com"
-password = "APQJNHKHMXPGRFVO"
-host = "smtp.163.com"
-port = 25

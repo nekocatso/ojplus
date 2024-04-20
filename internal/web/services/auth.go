@@ -1,7 +1,8 @@
 package services
 
 import (
-	"Alarm/internal/web/models"
+	"Ojplus/internal/web/models"
+	"errors"
 	"fmt"
 	"time"
 
@@ -9,34 +10,84 @@ import (
 )
 
 type Auth struct {
-	db    *models.Database
-	cache *models.Cache
-	cfg   map[string]interface{}
+	db         *models.Database
+	cache      *models.Cache
+	privateKey any
+	publicKey  any
+	cfg        map[string]any
 }
 
-func NewAuth(cfg map[string]interface{}) *Auth {
+func NewAuth(cfg map[string]any) *Auth {
 	return &Auth{
-		db:    cfg["db"].(*models.Database),
-		cache: cfg["cache"].(*models.Cache),
-		cfg:   cfg,
+		db:         cfg["db"].(*models.Database),
+		cache:      cfg["cache"].(*models.Cache),
+		privateKey: cfg["privateKey"],
+		publicKey:  cfg["publicKey"],
+		cfg:        cfg,
 	}
 }
 
-// RefreshToken 用于刷新token，可以创建新的token或者延长现有token的过期时间。
-//
-// 如果 tokenStr 为空字符串，则使用私钥创建新的token。
-func (svc *Auth) GenerateToken(privateKey interface{}, validSeconds int, data map[string]interface{}) (string, error) {
-	claims := jwt.MapClaims{
-		"exp": time.Now().Add(time.Second * time.Duration(validSeconds)).Unix(),
+// User
+func (svc *Auth) GetUserExistInfo(username, email string) (string, error) {
+	exist, err := svc.db.Engine.Where("username = ?", username).Exist(&models.User{})
+	if err != nil {
+		return "", err
 	}
+	if exist {
+		return "该学号已被注册", nil
+	}
+	exist, err = svc.db.Engine.Where("email = ?", username).Exist(&models.User{})
+	if err != nil {
+		return "", err
+	}
+	if exist {
+		return "该邮箱已被注册", nil
+	}
+	return "", nil
+}
 
-	for key, value := range data {
-		claims[key] = value
+func (svc *Auth) CreateUser(form any) (int, error) {
+	userManager := models.NewUserManager(svc.db)
+	return userManager.Create(form)
+}
+
+func (svc *Auth) UpdateUser(userID int, form any) error {
+	userManager := models.NewUserManager(svc.db)
+	return userManager.Update(userID, form)
+}
+
+func (svc *Auth) DeleteUser(userID int) error {
+	userManager := models.NewUserManager(svc.db)
+	return userManager.Delete(userID)
+}
+
+func (svc *Auth) GenerateToken(userID int) (map[string]string, error) {
+	accessToken, err := svc.generateOneToken(userID, "access")
+	if err != nil {
+		return nil, err
+	}
+	refreshToken, err := svc.generateOneToken(userID, "refresh")
+	if err != nil {
+		return nil, err
+	}
+	data := map[string]string{
+		"accessToken":  accessToken,
+		"refreshToken": refreshToken,
+	}
+	return data, nil
+}
+
+func (svc *Auth) generateOneToken(userID int, tokenType string) (string, error) {
+	validSeconds := svc.cfg["refreshTokenValidity"].(int)
+	claims := jwt.MapClaims{
+		"exp":    time.Now().Add(time.Second * time.Duration(validSeconds)).Unix(),
+		"userID": userID,
+		"type":   tokenType,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 
-	tokenStr, err := token.SignedString(privateKey)
+	tokenStr, err := token.SignedString(svc.privateKey)
 	if err != nil {
 		return "", err
 	}
@@ -44,61 +95,72 @@ func (svc *Auth) GenerateToken(privateKey interface{}, validSeconds int, data ma
 	return tokenStr, nil
 }
 
-func (svc *Auth) ParseToken(publicKey interface{}, tokenStr string) (jwt.MapClaims, error) {
+func (svc *Auth) ParseToken(tokenStr string) (map[string]any, error) {
 	// 解析令牌
-	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (any, error) {
 		// 验证签名方法是否为RS256
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("invalid signing method: %v", token.Header["alg"])
 		}
-
-		return publicKey, nil
+		return svc.publicKey, nil
 	})
 	if err != nil {
 		return nil, err
 	}
-
 	// 验证令牌是否有效
 	if !token.Valid {
 		return nil, fmt.Errorf("invalid token")
 	}
-
 	// 解析声明
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		return nil, fmt.Errorf("invalid claims")
 	}
-
 	// 验证过期时间
 	expirationTime := time.Unix(int64(claims["exp"].(float64)), 0)
 	if time.Now().UTC().After(expirationTime) {
 		return nil, fmt.Errorf("token has expired")
 	}
-
-	return claims, nil
+	return map[string]any(claims), nil
 }
-func (svc *Auth) VerifyPassword(username string, password string) (bool, error) {
-	user := &models.User{
-		Username: username,
-		Password: password,
+
+func (svc *Auth) CheckPermisson(userID int, role int) (bool, error) {
+	if userID <= 0 {
+		return false, nil
 	}
-	has, err := svc.db.Engine.Exist(user)
+	if role <= 0 {
+		return true, nil
+	}
+	userManager := models.NewUserManager(svc.db)
+	user, err := userManager.GetByID(userID)
 	if err != nil {
 		return false, err
 	}
-	return has, nil
-}
-
-func (svc *Auth) GetUserByUsername(username string) (*models.User, error) {
-	user := &models.User{Username: username}
-	_, err := svc.db.Engine.Get(user)
-	if err != nil {
-		return nil, err
+	if user == nil {
+		return false, errors.New("user not found")
 	}
-	userInfo := user
-	return userInfo, nil
+	if !*user.Disable {
+		return false, nil
+	}
+	return *user.Role >= role, nil
 }
 
-func (svc *Auth) GetUserByID(userID int) (*models.User, error) {
-	return GetUserByID(svc.db.Engine, userID)
+// 校验账号密码，成功返回UserID，失败返回0
+func (svc *Auth) VerifyPassword(userID int, password string) (bool, error) {
+	if userID <= 0 || password == "" {
+		return false, nil
+	}
+	return svc.db.Engine.ID(userID).And("password = ?", password).Exist()
+}
+
+func (svc *Auth) GetUserIDByAccount(account string) (int, error) {
+	var userID int
+	exist, err := svc.db.Engine.Where("stu_id = ?", account).Or("email = ?", account).Cols("id").Get(&userID)
+	if err != nil {
+		return 0, err
+	}
+	if !exist {
+		return 0, nil
+	}
+	return userID, nil
 }

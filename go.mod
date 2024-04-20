@@ -1,4 +1,4 @@
-module Alarm
+module Ojplus
 
 go 1.22.0
 

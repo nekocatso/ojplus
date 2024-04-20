@@ -77,11 +77,11 @@ var responseStatus = map[int]string{
 	40901: "唯一性约束数据已存在",
 }
 
-func response(ctx *gin.Context, code int, data interface{}) {
+func response(ctx *gin.Context, code int, data any) {
 	responseWithMessage(ctx, responseStatus[code], code, data)
 }
 
-func responseWithMessage(ctx *gin.Context, message string, code int, data interface{}) {
+func responseWithMessage(ctx *gin.Context, message string, code int, data any) {
 	ctx.JSON(200, gin.H{
 		"message": message,
 		"code":    code,

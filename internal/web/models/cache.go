@@ -1,7 +1,7 @@
 package models
 
 import (
-	"Alarm/internal/config"
+	"Ojplus/internal/config"
 	"errors"
 
 	"github.com/go-redis/redis"
