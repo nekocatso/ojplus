@@ -6,6 +6,13 @@ import (
 )
 
 func getUserIDByContext(ctx *gin.Context) int {
-	claims := ctx.Value("claims").(jwt.MapClaims)
-	return claims["userID"].(int)
+	claims := ctx.Value("claims")
+	if claims == nil {
+		return 0
+	}
+	userID := claims.(jwt.MapClaims)["userID"]
+	if userID == nil {
+		return 0
+	}
+	return userID.(int)
 }

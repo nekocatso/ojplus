@@ -1,0 +1,13 @@
+[gin]
+port = ":4010"
+# Mysql
+mysql.dsn = "ojer:123.com@tcp(127.0.0.1:3306)/ojplus?charset=utf8"
+# Redis
+redis.addr = "127.0.0.1:6379"
+redis.password = ""
+redis.db = 1
+
+token.privateKeyPath = "."
+# token.accessValidity = 3600   # 1小时
+token.accessValidity = 172800  # 2天
+token.refreshValidity = 172800 # 2天

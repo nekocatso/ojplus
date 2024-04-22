@@ -1,29 +1,29 @@
 package services
 
 import (
+	"Ojplus/internal/config"
 	"Ojplus/internal/web/models"
 	"errors"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
 type Auth struct {
-	db         *models.Database
-	cache      *models.Cache
-	privateKey any
-	publicKey  any
-	cfg        map[string]any
+	db     *models.Database
+	cache  *models.Cache
+	global *config.Global
+	cfg    map[string]any
 }
 
 func NewAuth(cfg map[string]any) *Auth {
 	return &Auth{
-		db:         cfg["db"].(*models.Database),
-		cache:      cfg["cache"].(*models.Cache),
-		privateKey: cfg["privateKey"],
-		publicKey:  cfg["publicKey"],
-		cfg:        cfg,
+		db:     cfg["db"].(*models.Database),
+		cache:  cfg["cache"].(*models.Cache),
+		global: cfg["global"].(*config.Global),
+		cfg:    cfg,
 	}
 }
 
@@ -87,7 +87,7 @@ func (svc *Auth) generateOneToken(userID int, tokenType string) (string, error) 
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 
-	tokenStr, err := token.SignedString(svc.privateKey)
+	tokenStr, err := token.SignedString(svc.cfg["privateKey"])
 	if err != nil {
 		return "", err
 	}
@@ -102,7 +102,7 @@ func (svc *Auth) ParseToken(tokenStr string) (map[string]any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("invalid signing method: %v", token.Header["alg"])
 		}
-		return svc.publicKey, nil
+		return svc.cfg["publicKey"], nil
 	})
 	if err != nil {
 		return nil, err
@@ -163,4 +163,43 @@ func (svc *Auth) GetUserIDByAccount(account string) (int, error) {
 		return 0, nil
 	}
 	return userID, nil
+}
+
+// 邮箱验证码登录
+func (svc *Auth) LoginByEmail(userID int, verification string) (bool, error) {
+	key := fmt.Sprintf("auth:user:%d:emailVerification", userID)
+	trueVerification, err := svc.cache.Client.Get(key).Result()
+	if err != nil {
+		return false, err
+	}
+	if trueVerification != verification {
+		return false, nil
+	}
+	return true, nil
+}
+
+func (svc *Auth) SendVerification(userID int, behavior string, email *string) error {
+	if email == nil {
+		userManager := models.NewUserManager(svc.db)
+		user, err := userManager.GetByID(userID)
+		if err != nil {
+			return err
+		}
+		email = user.Email
+	}
+	verification := svc.genVerification(*email)
+	if err := svc.global.Gin.Email.SendVerification(*email, behavior, verification); err != nil {
+		return err
+	}
+	return nil
+}
+
+// 生成邮箱验证码
+func (svc *Auth) genVerification(email string) int {
+	min := 100000
+	max := 999999
+	verification := rand.New(rand.NewSource(time.Now().UnixNano())).Intn(max-min+1) + min
+	key := fmt.Sprintf("auth:email:%s:verification", email)
+	svc.cache.Client.Set(key, verification, time.Duration(svc.global.Gin.Auth.VerificationExp)*time.Second)
+	return verification
 }

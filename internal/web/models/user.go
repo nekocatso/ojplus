@@ -60,12 +60,18 @@ func (manager *UserManager) Delete(userID int) error {
 	if err != nil {
 		return err
 	}
+	if user == nil {
+		return nil
+	}
 	addDelSuffix(user)
 	_, err = manager.db.Engine.ID(userID).Delete(&User{})
 	return err
 }
 
 func (manager *UserManager) GetByID(userID int) (*User, error) {
+	if userID <= 0 {
+		return nil, nil
+	}
 	user := new(User)
 	_, err := manager.db.Engine.ID(userID).Get(user)
 	return user, err

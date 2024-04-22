@@ -1,13 +1,23 @@
 [gin]
-port = ":4010"
+port = ":4009"
 # Mysql
-mysql.dsn = "ojer:123.com@tcp(127.0.0.1:3306)/ojplus?charset=utf8"
+mysql.dsn = "ojer:123.com@tcp(127.0.0.1:3306)/ojplustest?charset=utf8"
 # Redis
 redis.addr = "127.0.0.1:6379"
 redis.password = ""
-redis.db = 0
+redis.db = 2
 
 token.privateKeyPath = "."
 # token.accessValidity = 3600   # 1小时
-token.accessValidity = 172800  # 2天
-token.refreshValidity = 172800 # 2天
+token.accessExp = 172800  # 2天
+token.refreshExp = 172800 # 2天
+
+#Auth
+auth.verificationExp = 300 # 5分钟
+
+#Mail
+email.host = "smtp-mail.outlook.com"
+email.port = 587
+email.username = "xtuojplus@outlook.com"
+email.password = "ojer@123.com"
+email.from = "XTU OJ++<xtuojplus@outlook.com>"

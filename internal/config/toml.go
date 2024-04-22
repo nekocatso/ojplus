@@ -1,21 +1,23 @@
 package config
 
 import (
+	"Ojplus/internal/email"
+
 	"github.com/spf13/viper"
 )
 
 type Global struct {
-	Gin      *Gin
-	Listener *Listener
+	Gin *Gin
 }
 
 // Gin
 type Gin struct {
-	Port    string
-	Mysql   *Mysql
-	Redis   *Redis
-	Token   *Token
-	Account *Account
+	Port  string
+	Mysql *Mysql
+	Redis *Redis
+	Token *Token
+	Auth  *Auth
+	Email *email.Email
 }
 
 type Mysql struct {
@@ -28,27 +30,13 @@ type Redis struct {
 	DB       int
 }
 type Token struct {
-	PrivateKeyPath  string
-	RefreshValidity int
-	AccessValidity  int
+	PrivateKeyPath string
+	RefreshExp     int
+	AccessExp      int
 }
 
-type Account struct {
-	SuperAdminID    int
-	DefaultPassword string
-}
-
-// Listener
-type Listener struct {
-	Rabbitmqurl string
-	Mails       []Mail
-}
-
-type Mail struct {
-	Name     string
-	Password string
-	Host     string
-	Port     int
+type Auth struct {
+	VerificationExp int
 }
 
 func NewConfig(configPath, configName string) (*Global, error) {

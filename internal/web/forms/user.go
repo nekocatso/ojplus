@@ -7,10 +7,10 @@ import (
 // User
 // -Create
 type UserCreate struct {
-	Username     *string `validate:"required,len=12" xorm:"notnull unique"`
-	Password     *string `validate:"required,min=6,max=128" xorm:"null"`
-	Name         *string `validate:"omitempty,max=24" xorm:"notnull"`
-	Email        *string `validate:"required,email" xorm:"notnull unique"`
+	Username     *string `validate:"required,len=12"`
+	Password     *string `validate:"required,min=6,max=128"`
+	Name         *string `validate:"omitempty,max=24"`
+	Email        *string `validate:"required,email"`
 	Verification *string `validate:"required,number,min=2,max=12" xorm:"-"`
 }
 

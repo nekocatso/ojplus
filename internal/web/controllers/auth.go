@@ -89,9 +89,9 @@ func (ctrl *Auth) SuperAdminMiddleware(ctx *gin.Context) {
 	ctx.Next()
 }
 
-func (ctrl *Auth) Login(ctx *gin.Context) {
+func (ctrl *Auth) TokenCreate(ctx *gin.Context) {
 	//校验表单
-	form, err := forms.NewLogin(ctx)
+	form, err := forms.NewTokenCreate(ctx)
 	if err != nil {
 		response(ctx, 40001, nil)
 		return
@@ -106,18 +106,23 @@ func (ctrl *Auth) Login(ctx *gin.Context) {
 		response(ctx, 400, errorsMap)
 		return
 	}
-	//校验密码
-	userID, err := ctrl.svc.GetUserIDByAccount(form.Account)
+	var pass bool
+	userID, err := ctrl.svc.GetUserIDByAccount(*form.Account)
 	if err != nil {
 		response(ctx, 500, nil)
 		return
 	}
 	if userID == 0 {
-		response(ctx, 404, nil)
+		response(ctx, 401, nil)
 		return
 	}
-	pass, err := ctrl.svc.VerifyPassword(userID, form.Password)
+	if form.Account != nil && form.Password != nil {
+		pass, err = ctrl.svc.VerifyPassword(userID, *form.Password)
+	} else if form.Email != nil && form.Verification != nil {
+		pass, err = ctrl.svc.LoginByEmail(userID, *form.Verification)
+	}
 	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}
@@ -135,8 +140,8 @@ func (ctrl *Auth) Login(ctx *gin.Context) {
 	response(ctx, 200, data)
 }
 
-func (ctrl *Auth) Refresh(ctx *gin.Context) {
-	form, err := forms.NewRefresh(ctx)
+func (ctrl *Auth) TokenRefresh(ctx *gin.Context) {
+	form, err := forms.NewTokenRefresh(ctx)
 	if err != nil {
 		response(ctx, 40001, nil)
 		return
@@ -172,6 +177,57 @@ func (ctrl *Auth) Refresh(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 200, data)
+}
+
+func (ctrl *Auth) CreateVerification(ctx *gin.Context) {
+	form, err := forms.NewEmailRequire(ctx)
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	isValid, errorsMap, err := forms.Verify(form)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !isValid {
+		response(ctx, 400, errorsMap)
+		return
+	}
+	err = ctrl.svc.SendVerification(0, "账号登录", form.Email)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	response(ctx, 201, nil)
+}
+
+func (ctrl *Auth) SigninEmailVerification(ctx *gin.Context) {
+	form, err := forms.NewEmailOmitempty(ctx)
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	isValid, errorsMap, err := forms.Verify(form)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !isValid {
+		response(ctx, 400, errorsMap)
+		return
+	}
+	userID := getUserIDByContext(ctx)
+	err = ctrl.svc.SendVerification(userID, "邮箱确认", form.Email)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	response(ctx, 201, nil)
 }
 
 // User
