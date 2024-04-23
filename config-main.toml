@@ -11,3 +11,20 @@ token.privateKeyPath = "."
 # token.accessValidity = 3600   # 1小时
 token.accessValidity = 172800  # 2天
 token.refreshValidity = 172800 # 2天
+
+#Auth
+auth.verificationExp = 300 # 永久
+
+#Mail
+email.host = "smtp.163.com"
+email.port = 465
+email.username = "xtuojplus@163.com"
+email.password = "WYMXPNAVGMASMWPT"
+email.from = "XTU OJ++<xtuojplus@163.com>"
+
+#Mail 备份
+# email.host = "smtp-mail.outlook.com"
+# email.port = 587
+# email.username = "xtuojplus@outlook.com"
+# email.password = "ojer@123.com"
+# email.from = "XTU OJ++<xtuojplus@outlook.com>"

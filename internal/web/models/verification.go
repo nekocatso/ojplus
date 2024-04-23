@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -29,13 +30,13 @@ func (v *Verification) Generate(cache *Cache, exp int) {
 		code := rand.New(rand.NewSource(time.Now().UnixNano())).Intn(max-min+1) + min
 		v.Code = fmt.Sprint(code)
 	}
-	key := fmt.Sprintf(cacheKey, v.Email)
+	key := strings.ToLower(fmt.Sprintf(cacheKey, v.Email))
 	cache.Client.Set(key, v.Code, time.Duration(exp)*time.Second)
 
 }
 
 func (v *Verification) Verify(cache *Cache) (bool, error) {
-	key := fmt.Sprintf(cacheKey, v.Email)
+	key := strings.ToLower(fmt.Sprintf(cacheKey, v.Email))
 	trueCode, err := cache.Client.Get(key).Result()
 	if err == redis.Nil {
 		return false, nil

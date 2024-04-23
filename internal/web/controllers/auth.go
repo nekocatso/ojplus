@@ -341,6 +341,18 @@ func (ctrl *Auth) UpdateUser(ctx *gin.Context) {
 		response(ctx, 40002, errorsMap)
 		return
 	}
+	if form.Email != nil {
+		msg, err := ctrl.svc.GetUserExistInfo("", *form.Email)
+		if err != nil {
+			log.Println(err)
+			response(ctx, 500, nil)
+			return
+		}
+		if msg != "" {
+			responseWithMessage(ctx, msg, 40901, nil)
+			return
+		}
+	}
 	// 修改密码的处理
 	if form.Password != nil && form.OldPassword != nil {
 		pass, err := ctrl.svc.VerifyPassword(userID, *form.OldPassword)
@@ -369,7 +381,12 @@ func (ctrl *Auth) UpdateUser(ctx *gin.Context) {
 	}
 	//更新数据
 	err = ctrl.svc.UpdateUser(userID, form)
-	if err != nil {
+	if merr, ok := err.(*mysql.MySQLError); ok {
+		if merr.Number == 1062 {
+			response(ctx, 40901, nil)
+			return
+		}
+	} else if err != nil {
 		log.Println(err)
 		response(ctx, 500, nil)
 		return

@@ -27,19 +27,23 @@ func NewAuth(cfg map[string]any) *Auth {
 }
 
 func (svc *Auth) GetUserExistInfo(username, email string) (string, error) {
-	exist, err := svc.db.Engine.Where("username = ?", username).Exist(&models.User{})
-	if err != nil {
-		return "", err
+	if username != "" {
+		exist, err := svc.db.Engine.Where("username = ?", username).Exist(&models.User{})
+		if err != nil {
+			return "", err
+		}
+		if exist {
+			return "该学号已被注册", nil
+		}
 	}
-	if exist {
-		return "该学号已被注册", nil
-	}
-	exist, err = svc.db.Engine.Where("email = ?", email).Exist(&models.User{})
-	if err != nil {
-		return "", err
-	}
-	if exist {
-		return "该邮箱已被注册", nil
+	if email != "" {
+		exist, err := svc.db.Engine.Where("email = ?", email).Exist(&models.User{})
+		if err != nil {
+			return "", err
+		}
+		if exist {
+			return "该邮箱已被注册", nil
+		}
 	}
 	return "", nil
 }
