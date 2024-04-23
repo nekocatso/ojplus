@@ -350,7 +350,7 @@ func (ctrl *Auth) UpdateUser(ctx *gin.Context) {
 			return
 		}
 		if !pass {
-			response(ctx, 40101, nil)
+			response(ctx, 401, nil)
 			return
 		}
 	}
@@ -363,7 +363,7 @@ func (ctrl *Auth) UpdateUser(ctx *gin.Context) {
 			return
 		}
 		if !pass {
-			response(ctx, 40101, nil)
+			response(ctx, 401, nil)
 			return
 		}
 	}
@@ -388,22 +388,8 @@ func (ctrl *Auth) DeleteUser(ctx *gin.Context) {
 		response(ctx, 40002, nil)
 		return
 	}
-	// 权限校验
-	loginerID := getUserIDByContext(ctx)
-	if loginerID != userID {
-		pass, err := ctrl.svc.CheckPermisson(loginerID, 30)
-		if err != nil {
-			log.Println(err)
-			response(ctx, 500, nil)
-			return
-		}
-		if !pass {
-			response(ctx, 404, nil)
-			return
-		}
-	}
 	// 表单校验
-	form, err := forms.NewUserCreate(ctx)
+	form, err := forms.NewUserDelete(ctx)
 	if err != nil {
 		response(ctx, 40001, nil)
 		return
@@ -417,6 +403,31 @@ func (ctrl *Auth) DeleteUser(ctx *gin.Context) {
 	if !isValid {
 		response(ctx, 40002, errorsMap)
 		return
+	}
+	// 权限校验
+	loginerID := getUserIDByContext(ctx)
+	if loginerID != userID {
+		pass, err := ctrl.svc.CheckPermisson(loginerID, 30)
+		if err != nil {
+			log.Println(err)
+			response(ctx, 500, nil)
+			return
+		}
+		if !pass {
+			response(ctx, 404, nil)
+			return
+		}
+	} else {
+		pass, err := ctrl.svc.VerifyEmail(*form.Email, *form.Verification)
+		if err != nil {
+			log.Println(err)
+			response(ctx, 500, nil)
+			return
+		}
+		if !pass {
+			response(ctx, 401, nil)
+			return
+		}
 	}
 	// 数据校验
 	err = ctrl.svc.DeleteUser(userID)

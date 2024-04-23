@@ -9,16 +9,16 @@ import (
 
 type User struct {
 	ID        int       `json:"id" xorm:"'id' pk autoincr"`
-	Username  *string   `json:"username" xorm:" notnull unique"`
+	Username  *string   `json:"username" xorm:" notnull unique(username)"`
 	Nickname  *string   `json:"nickname" xorm:"null"`
 	Name      *string   `json:"name" xorm:"null"`
 	Password  *string   `json:"-" xorm:"notnull"`
-	Email     *string   `json:"email" xorm:"notnull unique"`
+	Email     *string   `json:"email" xorm:"notnull unique(email)"`
 	Role      *int      `json:"role" xorm:"default(10)"`
 	Disable   *bool     `json:"disable" xorm:"default(false)"`
 	CreatedAt time.Time `json:"createdAt" xorm:"created"`
 	UpdatedAt time.Time `json:"-" xorm:"updated"`
-	DeletedAt time.Time `json:"-" xorm:"deleted"`
+	DeletedAt time.Time `json:"-" xorm:"deleted unique(username) unique(email)"`
 }
 
 type UserManager struct {
@@ -64,7 +64,6 @@ func (manager *UserManager) Delete(userID int) error {
 	if user == nil {
 		return nil
 	}
-	addDelSuffix(user)
 	_, err = manager.db.Engine.ID(userID).Delete(&User{})
 	return err
 }

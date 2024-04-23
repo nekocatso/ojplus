@@ -53,7 +53,8 @@ func (form *UserUpdate) check() map[string]string {
 
 // -Delete
 type UserDelete struct {
-	Verification *string `validate:"required,number,min=2,max=12"`
+	Email        *string `validate:"omitempty,email"`
+	Verification *string `validate:"omitempty,number,min=2,max=12"`
 }
 
 func NewUserDelete(ctx *gin.Context) (*UserDelete, error) {
