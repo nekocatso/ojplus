@@ -230,6 +230,10 @@ func (ctrl *Auth) SigninEmailVerification(ctx *gin.Context) {
 	response(ctx, 201, nil)
 }
 
+func (ctrl *Auth) Test(ctx *gin.Context) {
+	response(ctx, 200, nil)
+}
+
 // User
 func (ctrl *Auth) CreateUser(ctx *gin.Context) {
 	form, err := forms.NewUserCreate(ctx)
