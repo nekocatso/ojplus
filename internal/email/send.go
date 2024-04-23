@@ -2,7 +2,6 @@ package email
 
 import (
 	"crypto/tls"
-	"fmt"
 	"os"
 	"strings"
 
@@ -42,14 +41,14 @@ func (m *Email) send(msg *gomail.Message) error {
 	return nil
 }
 
-func (e *Email) SendVerification(address, behavior string, verification int) error {
+func (e *Email) SendVerification(address, behavior, verification string) error {
 	msg := gomail.NewMessage()
 	msg.SetHeader("From", e.From)
 	msg.SetHeader("To", address)
 	msg.SetHeader("Subject", "[OJ++]邮箱验证码")
 	template := e.verificationTemplate
 	template = strings.Replace(template, "{{behavior}}", behavior, -1)
-	template = strings.Replace(template, "{{verification}}", fmt.Sprint(verification), -1)
+	template = strings.Replace(template, "{{verification}}", verification, -1)
 	msg.SetBody("text/html", template)
 	err := e.send(msg)
 	return err

@@ -9,8 +9,8 @@ redis.db = 2
 
 token.privateKeyPath = "."
 # token.accessValidity = 3600   # 1小时
-token.accessExp = 172800  # 2天
-token.refreshExp = 172800 # 2天
+token.accessExp = 999999999  # 永久
+token.refreshExp = 999999999 # 永久
 
 #Auth
 auth.verificationExp = 300 # 5分钟

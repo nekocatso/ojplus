@@ -10,6 +10,7 @@ import (
 type User struct {
 	ID        int       `json:"id" xorm:"'id' pk autoincr"`
 	Username  *string   `json:"username" xorm:" notnull unique"`
+	Nickname  *string   `json:"nickname" xorm:"null"`
 	Name      *string   `json:"name" xorm:"null"`
 	Password  *string   `json:"-" xorm:"notnull"`
 	Email     *string   `json:"email" xorm:"notnull unique"`
@@ -51,7 +52,7 @@ func (manager *UserManager) Create(model any) (int, error) {
 }
 
 func (manager *UserManager) Update(userID int, model any) error {
-	_, err := manager.db.Engine.Table(new(User)).ID(userID).Update(model)
+	_, err := manager.db.Engine.Table(new(User)).Where("id = ?", userID).Update(model)
 	return err
 }
 
@@ -77,6 +78,20 @@ func (manager *UserManager) GetByID(userID int) (*User, error) {
 	return user, err
 }
 
+func (manager *UserManager) GetByPage(page, pageSize int) ([]User, error) {
+	var users []User
+	offset := (page - 1) * pageSize
+	err := manager.db.Engine.Limit(pageSize, offset).Find(&users)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 func (manager *UserManager) GetBySelf(user *User) (bool, error) {
 	return manager.db.Engine.Get(user)
+}
+
+func (manager *UserManager) Count(query interface{}, args ...interface{}) (int64, error) {
+	return manager.db.Engine.Where(query, args...).Count(&User{})
 }

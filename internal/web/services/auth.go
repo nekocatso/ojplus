@@ -5,7 +5,6 @@ import (
 	"Ojplus/internal/web/models"
 	"errors"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -27,7 +26,6 @@ func NewAuth(cfg map[string]any) *Auth {
 	}
 }
 
-// User
 func (svc *Auth) GetUserExistInfo(username, email string) (string, error) {
 	exist, err := svc.db.Engine.Where("username = ?", username).Exist(&models.User{})
 	if err != nil {
@@ -36,7 +34,7 @@ func (svc *Auth) GetUserExistInfo(username, email string) (string, error) {
 	if exist {
 		return "该学号已被注册", nil
 	}
-	exist, err = svc.db.Engine.Where("email = ?", username).Exist(&models.User{})
+	exist, err = svc.db.Engine.Where("email = ?", email).Exist(&models.User{})
 	if err != nil {
 		return "", err
 	}
@@ -59,6 +57,28 @@ func (svc *Auth) UpdateUser(userID int, form any) error {
 func (svc *Auth) DeleteUser(userID int) error {
 	userManager := models.NewUserManager(svc.db)
 	return userManager.Delete(userID)
+}
+
+func (svc *Auth) GetUserByID(userID int) (*models.User, error) {
+	userManager := models.NewUserManager(svc.db)
+	return userManager.GetByID(userID)
+}
+
+// 按页查询，返回用户列表和总数
+func (svc *Auth) GetUsersByPage(page, pageSize int) ([]models.User, int64, error) {
+	userManager := models.NewUserManager(svc.db)
+	users, err := userManager.GetByPage(page, pageSize)
+	if err != nil {
+		return nil, 0, err
+	}
+	if users == nil {
+		return []models.User{}, 0, nil
+	}
+	cnt, err := userManager.Count("")
+	if err != nil {
+		return nil, 0, err
+	}
+	return users, cnt, nil
 }
 
 func (svc *Auth) GenerateToken(userID int) (map[string]string, error) {
@@ -124,6 +144,7 @@ func (svc *Auth) ParseToken(tokenStr string) (map[string]any, error) {
 	return map[string]any(claims), nil
 }
 
+// 若user.role > role, 则校验通过，返回true
 func (svc *Auth) CheckPermisson(userID int, role int) (bool, error) {
 	if userID <= 0 {
 		return false, nil
@@ -150,12 +171,12 @@ func (svc *Auth) VerifyPassword(userID int, password string) (bool, error) {
 	if userID <= 0 || password == "" {
 		return false, nil
 	}
-	return svc.db.Engine.ID(userID).And("password = ?", password).Exist()
+	return svc.db.Engine.ID(userID).And("password = ?", password).Exist(&models.User{})
 }
 
 func (svc *Auth) GetUserIDByAccount(account string) (int, error) {
 	var userID int
-	exist, err := svc.db.Engine.Where("stu_id = ?", account).Or("email = ?", account).Cols("id").Get(&userID)
+	exist, err := svc.db.Engine.Table(new(models.User)).Where("username = ?", account).Or("email = ?", account).Cols("id").Get(&userID)
 	if err != nil {
 		return 0, err
 	}
@@ -165,17 +186,9 @@ func (svc *Auth) GetUserIDByAccount(account string) (int, error) {
 	return userID, nil
 }
 
-// 邮箱验证码登录
-func (svc *Auth) LoginByEmail(userID int, verification string) (bool, error) {
-	key := fmt.Sprintf("auth:user:%d:emailVerification", userID)
-	trueVerification, err := svc.cache.Client.Get(key).Result()
-	if err != nil {
-		return false, err
-	}
-	if trueVerification != verification {
-		return false, nil
-	}
-	return true, nil
+func (svc *Auth) VerifyEmail(email, verification string) (bool, error) {
+	v := models.NewVerification(email, verification)
+	return v.Verify(svc.cache)
 }
 
 func (svc *Auth) SendVerification(userID int, behavior string, email *string) error {
@@ -187,19 +200,10 @@ func (svc *Auth) SendVerification(userID int, behavior string, email *string) er
 		}
 		email = user.Email
 	}
-	verification := svc.genVerification(*email)
-	if err := svc.global.Gin.Email.SendVerification(*email, behavior, verification); err != nil {
+	v := models.NewVerification(*email, "")
+	v.Generate(svc.cache, svc.global.Gin.Auth.VerificationExp)
+	if err := svc.global.Gin.Email.SendVerification(*email, behavior, v.Code); err != nil {
 		return err
 	}
 	return nil
-}
-
-// 生成邮箱验证码
-func (svc *Auth) genVerification(email string) int {
-	min := 100000
-	max := 999999
-	verification := rand.New(rand.NewSource(time.Now().UnixNano())).Intn(max-min+1) + min
-	key := fmt.Sprintf("auth:email:%s:verification", email)
-	svc.cache.Client.Set(key, verification, time.Duration(svc.global.Gin.Auth.VerificationExp)*time.Second)
-	return verification
 }

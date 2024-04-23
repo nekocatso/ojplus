@@ -6,9 +6,9 @@ import (
 
 type TokenCreate struct {
 	Account      *string `validate:"omitempty,max=32"`
-	Password     *string `validate:"required_with=Account,min=6,max=48"`
+	Password     *string `validate:"omitempty,required_with=Account"`
 	Email        *string `validate:"omitempty,email"`
-	Verification *string `validate:"required_with=Email,number,min=2,max=12" xorm:"-"`
+	Verification *string `validate:"omitempty,required_with=Email,number,min=2,max=12" xorm:"-"`
 }
 
 func NewTokenCreate(ctx *gin.Context) (*TokenCreate, error) {
@@ -26,7 +26,7 @@ func (form *TokenCreate) check() map[string]string {
 }
 
 type TokenRefresh struct {
-	Token string `validate:"required"`
+	RefreshToken string `validate:"required"`
 }
 
 func NewTokenRefresh(ctx *gin.Context) (*TokenRefresh, error) {

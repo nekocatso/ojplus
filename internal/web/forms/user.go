@@ -31,7 +31,7 @@ func (form *UserCreate) check() map[string]string {
 // -Update
 type UserUpdate struct {
 	Email        *string `validate:"omitempty,email"`
-	Verification *string `validate:"required_with=Email,number,min=2,max=12" xorm:"-"`
+	Verification *string `validate:"omitempty,required_with=Email,number,min=2,max=12" xorm:"-"`
 	Password     *string `validate:"omitempty,min=6,max=128"`
 	OldPassword  *string `validate:"omitempty,required_with=Password,min=6,max=128" xorm:"-"`
 	Nickname     *string `validate:"omitempty,max=12"`

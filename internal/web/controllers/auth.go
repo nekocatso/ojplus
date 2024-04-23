@@ -4,6 +4,7 @@ import (
 	"Ojplus/internal/web/forms"
 	"Ojplus/internal/web/services"
 	"log"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-sql-driver/mysql"
@@ -38,9 +39,14 @@ func (ctrl *Auth) LoginMiddleware(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-	userID := int(claims["userID"].(float64))
+	var userID int
 	if _, ok := claims["userID"]; ok {
+		userID = int(claims["userID"].(float64))
 		claims["userID"] = userID
+	} else {
+		response(ctx, 401, nil)
+		ctx.Abort()
+		return
 	}
 	pass, err := ctrl.svc.CheckPermisson(userID, 0)
 	if err != nil {
@@ -107,8 +113,17 @@ func (ctrl *Auth) TokenCreate(ctx *gin.Context) {
 		return
 	}
 	var pass bool
-	userID, err := ctrl.svc.GetUserIDByAccount(*form.Account)
+	var userID int
+	if form.Account != nil {
+		userID, err = ctrl.svc.GetUserIDByAccount(*form.Account)
+	} else if form.Email != nil {
+		userID, err = ctrl.svc.GetUserIDByAccount(*form.Email)
+	} else {
+		response(ctx, 40002, nil)
+		return
+	}
 	if err != nil {
+		log.Println(err)
 		response(ctx, 500, nil)
 		return
 	}
@@ -119,7 +134,7 @@ func (ctrl *Auth) TokenCreate(ctx *gin.Context) {
 	if form.Account != nil && form.Password != nil {
 		pass, err = ctrl.svc.VerifyPassword(userID, *form.Password)
 	} else if form.Email != nil && form.Verification != nil {
-		pass, err = ctrl.svc.LoginByEmail(userID, *form.Verification)
+		pass, err = ctrl.svc.VerifyEmail(*form.Email, *form.Verification)
 	}
 	if err != nil {
 		log.Println(err)
@@ -157,7 +172,7 @@ func (ctrl *Auth) TokenRefresh(ctx *gin.Context) {
 		return
 	}
 	//解析刷新令牌
-	claims, err := ctrl.svc.ParseToken(form.Token)
+	claims, err := ctrl.svc.ParseToken(form.RefreshToken)
 	if err != nil || claims == nil {
 		response(ctx, 401, nil)
 		ctx.Abort()
@@ -169,7 +184,7 @@ func (ctrl *Auth) TokenRefresh(ctx *gin.Context) {
 		return
 	}
 	//生成Token
-	userID := claims["userID"].(int)
+	userID := int(claims["userID"].(float64))
 	data, err := ctrl.svc.GenerateToken(userID)
 	if err != nil {
 		log.Println(err)
@@ -261,6 +276,16 @@ func (ctrl *Auth) CreateUser(ctx *gin.Context) {
 		responseWithMessage(ctx, msg, 40901, nil)
 		return
 	}
+	pass, err := ctrl.svc.VerifyEmail(*form.Email, *form.Verification)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if !pass {
+		response(ctx, 401, nil)
+		return
+	}
 	userID, err := ctrl.svc.CreateUser(form)
 	if merr, ok := err.(*mysql.MySQLError); ok {
 		if merr.Number == 1062 {
@@ -276,8 +301,30 @@ func (ctrl *Auth) CreateUser(ctx *gin.Context) {
 }
 
 func (ctrl *Auth) UpdateUser(ctx *gin.Context) {
-	// 用户校验
-	userID := getUserIDByContext(ctx)
+	// 参数校验
+	userID, err := strconv.Atoi(ctx.Param("userId"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	if userID <= 0 {
+		response(ctx, 40002, nil)
+		return
+	}
+	// 权限校验
+	loginerID := getUserIDByContext(ctx)
+	if loginerID != userID {
+		pass, err := ctrl.svc.CheckPermisson(loginerID, 30)
+		if err != nil {
+			log.Println(err)
+			response(ctx, 500, nil)
+			return
+		}
+		if !pass {
+			response(ctx, 404, nil)
+			return
+		}
+	}
 	// 表单校验
 	form, err := forms.NewUserUpdate(ctx)
 	if err != nil {
@@ -307,6 +354,19 @@ func (ctrl *Auth) UpdateUser(ctx *gin.Context) {
 			return
 		}
 	}
+	// 修改邮箱的处理
+	if form.Email != nil && form.Verification != nil {
+		pass, err := ctrl.svc.VerifyEmail(*form.Email, *form.Verification)
+		if err != nil {
+			log.Println(err)
+			response(ctx, 500, nil)
+			return
+		}
+		if !pass {
+			response(ctx, 40101, nil)
+			return
+		}
+	}
 	//更新数据
 	err = ctrl.svc.UpdateUser(userID, form)
 	if err != nil {
@@ -318,6 +378,31 @@ func (ctrl *Auth) UpdateUser(ctx *gin.Context) {
 }
 
 func (ctrl *Auth) DeleteUser(ctx *gin.Context) {
+	// 参数校验
+	userID, err := strconv.Atoi(ctx.Param("userId"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	if userID <= 0 {
+		response(ctx, 40002, nil)
+		return
+	}
+	// 权限校验
+	loginerID := getUserIDByContext(ctx)
+	if loginerID != userID {
+		pass, err := ctrl.svc.CheckPermisson(loginerID, 30)
+		if err != nil {
+			log.Println(err)
+			response(ctx, 500, nil)
+			return
+		}
+		if !pass {
+			response(ctx, 404, nil)
+			return
+		}
+	}
+	// 表单校验
 	form, err := forms.NewUserCreate(ctx)
 	if err != nil {
 		response(ctx, 40001, nil)
@@ -334,7 +419,6 @@ func (ctrl *Auth) DeleteUser(ctx *gin.Context) {
 		return
 	}
 	// 数据校验
-	userID := getUserIDByContext(ctx)
 	err = ctrl.svc.DeleteUser(userID)
 	if err != nil {
 		log.Println(err)
@@ -342,6 +426,47 @@ func (ctrl *Auth) DeleteUser(ctx *gin.Context) {
 		return
 	}
 	response(ctx, 200, nil)
+}
+
+func (ctrl *Auth) GetUser(ctx *gin.Context) {
+	// 参数校验
+	userID, err := strconv.Atoi(ctx.Param("userId"))
+	if err != nil {
+		response(ctx, 40001, nil)
+		return
+	}
+	if userID <= 0 {
+		response(ctx, 40002, nil)
+		return
+	}
+	user, err := ctrl.svc.GetUserByID(userID)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	if user == nil {
+		response(ctx, 404, nil)
+		return
+	}
+	response(ctx, 200, user)
+}
+
+func (ctrl *Auth) GetUsers(ctx *gin.Context) {
+	page, pageSize := getPageInfoByContext(ctx)
+	users, total, err := ctrl.svc.GetUsersByPage(page, pageSize)
+	if err != nil {
+		log.Println(err)
+		response(ctx, 500, nil)
+		return
+	}
+	pages := (int(total) + pageSize - 1) / pageSize
+	data := map[string]any{
+		"users": users,
+		"total": total,
+		"pages": pages,
+	}
+	response(ctx, 200, data)
 }
 
 // func (ctrl *Auth) GetUsers(ctx *gin.Context) {

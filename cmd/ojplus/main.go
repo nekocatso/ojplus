@@ -78,8 +78,10 @@ func main() {
 	group := engine.Group("/api/v1")
 	{
 		group.POST("/user", AuthCtrl.CreateUser)
-		group.PATCH("/users/:userID", AuthCtrl.LoginMiddleware, AuthCtrl.UpdateUser)
-		group.DELETE("/users/:userID", AuthCtrl.LoginMiddleware, AuthCtrl.DeleteUser)
+		group.GET("/users/:userId", AuthCtrl.LoginMiddleware, AuthCtrl.GetUser)
+		group.GET("/users", AuthCtrl.LoginMiddleware, AuthCtrl.GetUsers)
+		group.PATCH("/users/:userId", AuthCtrl.LoginMiddleware, AuthCtrl.UpdateUser)
+		group.DELETE("/users/:userId", AuthCtrl.LoginMiddleware, AuthCtrl.DeleteUser)
 
 		group.GET("/auth/test/login", AuthCtrl.LoginMiddleware, AuthCtrl.Test)
 		group.POST("/token", AuthCtrl.TokenCreate)
